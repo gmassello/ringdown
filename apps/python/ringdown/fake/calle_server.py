@@ -8,20 +8,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import urlparse
 
-MCP_TO_REST = {
-    "COMPLETED": "completed",
-    "DECLINED": "completed",
-    "FAILED": "failed",
-    "NO_ANSWER": "failed",
-    "VOICEMAIL": "failed",
-    "BUSY": "failed",
-    "EXPIRED": "failed",
-    "CANCELED": "canceled",
-    "CANCELLED": "canceled",
-    "QUEUED": "queued",
-    "IN_PROGRESS": "in_progress",
-}
-
 FAILURE_TO_MCP = {
     "no_answer": "NO_ANSWER",
     "voicemail": "VOICEMAIL",
@@ -190,12 +176,6 @@ class FakeCalle:
         }
         return view | overrides
 
-    def events_view(self, record: CallRecord) -> list[dict[str, Any]]:
-        if not record.settled:
-            return []
-        kind = "call.completed" if record.status == "completed" else "call.failed"
-        return [{"type": kind, "call_id": record.id, "occurred_at": record.completed_at}]
-
 
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
@@ -256,9 +236,6 @@ class Handler(BaseHTTPRequestHandler):
         fault = self.fake.take_fault(record.recipient_phone, "get")
         if fault is not None:
             self._fail(fault)
-            return
-        if len(parts) == 4 and parts[3] == "events":
-            self._send(200, {"events": self.fake.events_view(record)})
             return
         self._send(200, self.fake.rest_view(self.fake.read(parts[2])))
 
@@ -346,7 +323,7 @@ class FakeCalleServer:
         self._server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         self._server.fake = self.fake
         self._thread = threading.Thread(
-            target=self._server.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True
+            target=self._server.serve_forever, kwargs={"poll_interval": 0.0005}, daemon=True
         )
 
     @property
