@@ -7,7 +7,7 @@ import pytest
 from fake.calle_server import FakeCalleServer, FakeScenario
 from ringdown.calle import McpClient, RestClient
 from ringdown.incident import Incident, load_incident, load_rotation
-from tests.data import ALICE, EXAMPLES, an_incident
+from tests.data import EXAMPLES, an_incident
 
 
 @pytest.fixture
@@ -34,8 +34,8 @@ def now() -> datetime:
 def serving():
     running: list[FakeCalleServer] = []
 
-    def start(scenario: FakeScenario, phone: str = ALICE.phone) -> FakeCalleServer:
-        server = FakeCalleServer({phone: scenario})
+    def start(by_phone: dict[str, FakeScenario]) -> FakeCalleServer:
+        server = FakeCalleServer(by_phone)
         running.append(server.__enter__())
         return server
 

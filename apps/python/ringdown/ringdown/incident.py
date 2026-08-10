@@ -102,6 +102,10 @@ def mask_phone(phone: str) -> str:
     return phone[:2] + "*" * (len(phone) - 4) + phone[-2:]
 
 
+def first_name(contact: Contact) -> str:
+    return contact.name.split()[0].lower()
+
+
 def validate_timezone(raw: Any, where: str) -> str:
     if not isinstance(raw, str) or not raw:
         raise IncidentError(f"{where} must be an IANA timezone such as America/New_York")

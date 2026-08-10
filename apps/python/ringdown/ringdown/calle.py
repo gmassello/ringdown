@@ -113,12 +113,13 @@ def snapshot_from(body: Mapping[str, Any]) -> CallSnapshot:
     attempts = first.get("attempts") or [{}]
     last = attempts[-1] if isinstance(attempts[-1], dict) else {}
     confidence = body.get("completion_confidence") or {}
+    label = confidence.get("label")
     return CallSnapshot(
         id=str(body.get("id", "")),
         status=str(body.get("status", "")),
         task_completed=body.get("task_completed"),
         confidence_score=confidence.get("score"),
-        confidence_label=confidence.get("label"),
+        confidence_label=label.lower() if isinstance(label, str) else None,
         failure_code=body.get("failure_code"),
         completed_at=body.get("completed_at"),
         recipient_phone=first.get("phone"),

@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from ringdown.script import attempt_id, call_payload, call_task, idempotency_key
-from tests.conftest import ALICE, BEN, LADDER, an_incident
+from ringdown.script import call_payload, call_task, idempotency_key
+from tests.data import ALICE, BEN, LADDER, an_incident
 
 
 def key_for(incident, rung, attempt=1) -> str:
-    payload = call_payload(incident, rung, attempt)
-    return idempotency_key(payload, attempt_id(incident, rung, attempt))
+    return idempotency_key(call_payload(incident, rung, attempt))
 
 
 def test_the_idempotency_key_is_stable_across_two_runs_of_the_same_attempt(incident):

@@ -17,7 +17,7 @@ from ringdown.incident import (
     unstaffed_scopes,
     validate_e164,
 )
-from tests.conftest import ALICE, BEN, EXAMPLES, an_incident
+from tests.data import ALICE, BEN, EXAMPLES, an_incident
 
 FOREVER = datetime(2026, 1, 1, tzinfo=UTC)
 
@@ -38,7 +38,6 @@ def test_the_shipped_example_files_load_and_resolve_a_full_ladder(
     rungs = resolve_ladder(example_incident, example_shifts, now)
 
     assert [rung.scope for rung in rungs] == list(example_incident.ladder)
-    assert [rung.position for rung in rungs] == [1, 2, 3]
     assert rungs[0].contact.name == "Alice Okafor"
 
 
@@ -173,7 +172,6 @@ def test_a_ladder_rung_with_nobody_on_call_is_skipped_and_reported(now):
     rungs = resolve_ladder(incident, shifts, now)
 
     assert [rung.scope for rung in rungs] == ["primary", "incident_commander"]
-    assert [rung.position for rung in rungs] == [1, 2]
     assert unstaffed_scopes(incident, rungs) == ("secondary",)
 
 

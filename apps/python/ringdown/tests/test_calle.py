@@ -12,7 +12,7 @@ from ringdown.calle import (
     assert_trusted_base_url,
 )
 from ringdown.script import attempt_id, call_payload, idempotency_key
-from tests.conftest import ALICE, LADDER
+from tests.data import ALICE, LADDER
 
 KEY = "rd-test-1"
 
