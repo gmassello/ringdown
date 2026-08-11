@@ -19,6 +19,8 @@ LADDER = (
 
 KEY = "rd-test-key-1"
 
+FAST = Policy(per_call_timeout_seconds=0.05, poll_interval_seconds=0.005)
+
 
 def example_body(name: str) -> dict:
     return json.loads((EXAMPLES / f"{name}.example.json").read_text())

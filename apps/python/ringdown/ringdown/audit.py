@@ -1,0 +1,119 @@
+from __future__ import annotations
+
+import fcntl
+import json
+import os
+from pathlib import Path
+from typing import Sequence
+
+from ringdown.canonical import canonical_json, digest
+from ringdown.escalate import Attempt, LadderResult, ladder_verdict
+from ringdown.incident import mask_phone
+
+Check = tuple[bool, str]
+
+GENESIS = "sha256:" + "0" * 64
+
+
+def sealed(record: dict) -> dict:
+    body = {name: value for name, value in record.items() if name != "hash"}
+    return {**body, "hash": digest(body)}
+
+
+def attempt_record(attempt: Attempt) -> dict:
+    extraction = attempt.extraction
+    spans: dict[str, str] = {}
+    if extraction is not None:
+        spans = {
+            name: span
+            for name, span in (
+                ("disposition", extraction.disposition_span),
+                ("owner", extraction.owner_span),
+                ("eta", extraction.eta_span),
+            )
+            if span
+        }
+    return {
+        "type": "attempt",
+        "attempt_id": attempt.attempt_id,
+        "contact": attempt.rung.contact.id,
+        "phone": mask_phone(attempt.rung.contact.phone),
+        "key": attempt.key,
+        "call_id": attempt.call_id,
+        "verdict": attempt.verdict,
+        "reason": attempt.reason,
+        "spans": spans,
+        "eta_minutes": extraction.eta_minutes if extraction else None,
+    }
+
+
+def verdict_record(incident_id: str, result: LadderResult) -> dict:
+    last = result.attempts[-1] if result.attempts else None
+    settled = last is not None and result.verdict in ("acknowledged", "declined")
+    return {
+        "type": "verdict",
+        "incident": incident_id,
+        "verdict": result.verdict,
+        "owner": last.rung.contact.id if settled else None,
+        "eta_minutes": last.extraction.eta_minutes if settled and last.extraction else None,
+    }
+
+
+def verification_record(incident_id: str, checks: Sequence[Check]) -> dict:
+    total = len(checks)
+    confirmed = sum(ok for ok, _ in checks)
+    return {
+        "type": "verification",
+        "incident": incident_id,
+        "verified": bool(total) and confirmed == total,
+        "passed": confirmed,
+        "total": total,
+    }
+
+
+def append_record(path: Path, record: dict) -> None:
+    fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
+    with os.fdopen(fd, "r+") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        lines = handle.read().splitlines()
+        prev = json.loads(lines[-1])["hash"] if lines else GENESIS
+        handle.write(canonical_json(sealed({**record, "prev": prev})) + "\n")
+
+
+def chain_checks(path: Path) -> list[Check]:
+    records: list[dict] = []
+    for number, line in enumerate(path.read_text().splitlines(), 1):
+        try:
+            records.append(json.loads(line))
+        except json.JSONDecodeError:
+            return [(False, f"record {number} is not readable JSON")]
+
+    checks: list[Check] = []
+    prev = GENESIS
+    for number, record in enumerate(records, 1):
+        target = "the genesis hash" if number == 1 else f"record {number - 1}"
+        checks.append((record.get("prev") == prev, f"record {number} links to {target}"))
+        prev = record.get("hash", "")
+    for number, record in enumerate(records, 1):
+        checks.append(
+            (
+                record.get("hash") == sealed(record)["hash"],
+                f"record {number} hash matches its content",
+            )
+        )
+    verdicts: list[str] = []
+    for number, record in enumerate(records, 1):
+        if record.get("type") == "attempt":
+            verdicts.append(str(record.get("verdict")))
+        if record.get("type") != "verdict":
+            continue
+        recorded = str(record.get("verdict"))
+        derived = ladder_verdict(verdicts)
+        verdicts = []
+        tail = (
+            "follows from the recorded attempts"
+            if recorded == derived
+            else f"does not follow from the recorded attempts ({derived})"
+        )
+        checks.append((recorded == derived, f"record {number} verdict {recorded} {tail}"))
+    return checks

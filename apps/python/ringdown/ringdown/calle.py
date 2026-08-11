@@ -12,6 +12,17 @@ TRUSTED_HOSTS = frozenset({"api.heycall-e.com"})
 LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 AMBIGUOUS_STATUSES = frozenset({408, 409, 425, 429})
 TERMINAL_STATUSES = frozenset({"completed", "failed", "canceled"})
+STATUS_MAP = {
+    "COMPLETED": "completed",
+    "FAILED": "failed",
+    "CANCELED": "canceled",
+    "QUEUED": "queued",
+    "IN_PROGRESS": "in_progress",
+    "NO_ANSWER": "failed",
+    "VOICEMAIL": "failed",
+    "BUSY": "failed",
+    "EXPIRED": "failed",
+}
 
 
 class CalleError(Exception):

@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from fake import scenarios
 from ringdown.escalate import place_and_settle, run_ladder
-from ringdown.incident import Policy
-from tests.data import ALICE, BEN, CARLA, LADDER, an_incident
-
-FAST = Policy(per_call_timeout_seconds=0.05, poll_interval_seconds=0.005)
+from tests.data import ALICE, BEN, CARLA, FAST, LADDER, an_incident
 
 
 def test_the_on_call_engineer_picks_up_and_the_ladder_stops_at_the_first_rung(
