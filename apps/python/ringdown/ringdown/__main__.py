@@ -124,7 +124,8 @@ def run(args: argparse.Namespace) -> int:
     if not api_key:
         emit("CALLE_API_KEY is not set in the environment")
         return EXIT_USAGE
-    base_url = assert_trusted_base_url(args.base_url, frozenset(args.allow_host))
+    allowed = frozenset(args.allow_host)
+    base_url = assert_trusted_base_url(args.base_url, allowed)
     incident = load_incident(args.incident)
     start = datetime.now(UTC)
     rungs = _ladder(incident, args.rotation, start)
@@ -139,7 +140,7 @@ def run(args: argparse.Namespace) -> int:
         emit(*report.attempt_lines(attempt, incident.policy), "")
 
     result = run_ladder(
-        RestClient(base_url, api_key),
+        RestClient(base_url, api_key, allowed_hosts=allowed),
         incident,
         rungs,
         log=lambda line: emit(report.progress_line(line)),
@@ -155,7 +156,7 @@ def run(args: argparse.Namespace) -> int:
         code = EXIT_USAGE
         emit(*report.NOTHING_PLACED)
     else:
-        mcp = McpClient(f"{base_url}/mcp", api_key, allowed_hosts=frozenset(args.allow_host))
+        mcp = McpClient(f"{base_url}/mcp", api_key, allowed_hosts=allowed)
         checks = _verify(mcp, incident, result, start)
         append_record(args.ledger, verification_record(incident.id, checks))
         if not all_ok(checks):
