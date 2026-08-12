@@ -121,6 +121,7 @@ SCENARIOS: list[tuple[str, str, Scenarios]] = [
 
 
 def demo() -> None:
+    os.environ["CALLE_API_KEY"] = "demo-local-only"
     shutil.rmtree(OUT, ignore_errors=True)
     OUT.mkdir(parents=True)
     EXAMPLE_LEDGER.unlink(missing_ok=True)
