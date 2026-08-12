@@ -124,12 +124,15 @@ setup are in the [operational manual](apps/python/ringdown/README.md).
 
 > [!WARNING]
 > `run` refuses to dial without `--confirm 'place real calls'`, exiting 30 having placed nothing.
-> `--base-url` is a **trust boundary, not a convenience**: the API key travels on every request, so
-> a host that is neither loopback nor production is refused before any client is built.
+> `--base-url` and `--mcp-url` are a **trust boundary, not a convenience**: the API key travels on
+> every request, so a host that is neither loopback nor production is refused before any client is
+> built. The two channels live on different hosts and are named separately; neither is derived
+> from the other.
 
-Six exit codes — 0 acknowledged and verified, 10 declined, 20 ladder exhausted, 25 call state
-unknown, 30 usage, 40 the second channel disagrees — and 40 overrides 0, 10 and 20 alike, so a
-decline the second channel does not support exits 40, not 10.
+Seven exit codes — 0 acknowledged and verified, 10 declined, 20 ladder exhausted, 25 call state
+unknown, 30 usage, 40 the second channel disagrees, 45 the second channel could not be reached —
+and 40 overrides 0, 10, 20 and 45 alike, so a decline the second channel does not support exits
+40, not 10. A channel that is down is never read as a channel that disagrees.
 [Full table](apps/python/ringdown/README.md#exit-codes).
 
 ## What it proves

@@ -9,8 +9,10 @@ from ringdown.escalate import Attempt, LadderResult
 from ringdown.extract import extract, minutes_in, normalise
 from ringdown.incident import first_name, mask_phone
 
-Check = tuple[bool, str]
+Check = tuple[bool | None, str]
 Block = tuple[str, list[Check]]
+
+MARKS = {True: "x", False: " ", None: "?"}
 
 
 def inside(completed_at: str | None, window: tuple[datetime, datetime]) -> bool:
@@ -32,8 +34,8 @@ def ack_checks(
     returned = f"second channel returned a run for call {attempt.call_id}"
     try:
         run = mcp.get_call_run(attempt.call_id)
-    except CalleError:
-        return [(False, returned)]
+    except CalleError as error:
+        return [(None if error.ambiguous else False, returned)]
     extraction = attempt.extraction
     grounded = ground(extraction, run.turns)
     return [
@@ -75,8 +77,8 @@ def no_ack_checks(mcp: McpClient, attempt: Attempt) -> list[Check]:
     label = f"run for {attempt.rung.contact.name} reports no acknowledgement"
     try:
         run = mcp.get_call_run(attempt.call_id)
-    except CalleError:
-        return [(False, label)]
+    except CalleError as error:
+        return [(None if error.ambiguous else False, label)]
     re_extracted = extract(run.turns)
     committed = re_extracted.disposition == "acknowledged" and re_extracted.eta_minutes is not None
     return [(not committed, label)]
@@ -110,7 +112,15 @@ def all_checks(blocks: Sequence[Block]) -> list[Check]:
 
 
 def passed(checks: Sequence[Check]) -> int:
-    return sum(ok for ok, _ in checks)
+    return sum(1 for ok, _ in checks if ok is True)
+
+
+def unresolved(checks: Sequence[Check]) -> int:
+    return sum(1 for ok, _ in checks if ok is None)
+
+
+def contradicted(checks: Sequence[Check]) -> int:
+    return sum(1 for ok, _ in checks if ok is False)
 
 
 def all_ok(checks: Sequence[Check]) -> bool:
@@ -118,7 +128,9 @@ def all_ok(checks: Sequence[Check]) -> bool:
 
 
 def tally(checks: Sequence[Check]) -> str:
-    return f"verified {passed(checks)}/{len(checks)}"
+    unknown = unresolved(checks)
+    tail = f", {unknown} unresolved" if unknown else ""
+    return f"verified {passed(checks)}/{len(checks)}{tail}"
 
 
 def render_blocks(blocks: Sequence[Block]) -> str:
@@ -127,6 +139,6 @@ def render_blocks(blocks: Sequence[Block]) -> str:
         if lines:
             lines.append("")
         lines.append(f"# {title}")
-        lines.extend(f"- [{'x' if ok else ' '}] {label}" for ok, label in checks)
+        lines.extend(f"- [{MARKS[ok]}] {label}" for ok, label in checks)
     lines.extend(["", tally(all_checks(blocks))])
     return "\n".join(lines)

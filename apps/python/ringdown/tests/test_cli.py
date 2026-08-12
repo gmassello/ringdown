@@ -11,10 +11,12 @@ from ringdown.__main__ import (
     CONFIRMATION,
     EXIT_ACKNOWLEDGED,
     EXIT_UNKNOWN,
+    EXIT_UNRESOLVED,
     EXIT_UNVERIFIED,
     EXIT_USAGE,
     main,
 )
+from ringdown.calle import RestClient
 from tests.data import ALICE, BEN, CARLA, EXAMPLES, example_body, write_json
 
 ROTATION = str(EXAMPLES / "rotation.example.json")
@@ -33,7 +35,7 @@ def incident_file(tmp_path: Path) -> Path:
     return write_json(tmp_path, "incident.json", body)
 
 
-def _run(base_url: str, incident_file: Path, ledger: Path, *extra: str) -> int:
+def _run(base_url: str, incident_file: Path, ledger: Path, *extra: str, mcp_url: str = "") -> int:
     return main(
         [
             "run",
@@ -41,6 +43,7 @@ def _run(base_url: str, incident_file: Path, ledger: Path, *extra: str) -> int:
             "--rotation", ROTATION,
             "--ledger", str(ledger),
             "--base-url", base_url,
+            "--mcp-url", mcp_url or f"{base_url}/mcp",
             *extra,
         ]
     )
@@ -97,7 +100,7 @@ def test_an_acknowledged_and_verified_call_exits_zero(serving, incident_file, tm
     code = _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION)
     assert code == EXIT_ACKNOWLEDGED
     kinds = [json.loads(line)["type"] for line in ledger.read_text().splitlines()]
-    assert kinds == ["attempt", "verdict", "verification"]
+    assert kinds == ["intent", "attempt", "verdict", "verification"]
 
 
 def test_a_channel_mismatch_exits_forty(serving, incident_file, tmp_path, capsys):
@@ -105,6 +108,71 @@ def test_a_channel_mismatch_exits_forty(serving, incident_file, tmp_path, capsys
     code = _run(server.base_url, incident_file, tmp_path / "l.jsonl", "--confirm", CONFIRMATION)
     assert code == EXIT_UNVERIFIED
     assert "verified 6/10" in capsys.readouterr().out
+
+
+def test_the_second_channel_is_read_from_the_url_it_was_given(
+    serving, incident_file, tmp_path, capsys
+):
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    code = _run(
+        server.base_url,
+        incident_file,
+        tmp_path / "l.jsonl",
+        "--confirm",
+        CONFIRMATION,
+        mcp_url=f"{server.base_url}/somewhere-else",
+    )
+    assert code == EXIT_UNVERIFIED
+    assert "[ ] second channel returned a run" in capsys.readouterr().out
+
+
+def test_a_second_channel_that_cannot_be_reached_is_unresolved_not_a_mismatch(
+    serving, incident_file, tmp_path, capsys, monkeypatch
+):
+    monkeypatch.setattr("ringdown.calle.MCP_RETRY_DELAY", 0)
+    server = serving(
+        {ALICE.phone: scenarios.unreachable_second_channel("Alice Okafor", "alice")}
+    )
+    ledger = tmp_path / "l.jsonl"
+
+    code = _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION)
+
+    assert code == EXIT_UNRESOLVED
+    out = capsys.readouterr().out
+    assert "[?] second channel returned a run" in out
+    assert "1 unresolved" in out
+    assert "Treat this incident as unowned." not in out
+    verification = json.loads(ledger.read_text().splitlines()[-1])
+    assert verification["unresolved"] == 1
+
+
+def test_a_crash_mid_ladder_leaves_the_placed_attempt_and_the_pending_key_on_the_ledger(
+    serving, incident_file, tmp_path, monkeypatch
+):
+    server = serving(
+        {
+            ALICE.phone: scenarios.no_answer(),
+            BEN.phone: scenarios.answer_ack("Ben Mensah", "ben"),
+        }
+    )
+    ledger = tmp_path / "l.jsonl"
+    placing = RestClient.create_call
+    keys: list[str] = []
+
+    def crash(self, payload, key):
+        keys.append(key)
+        if len(keys) == 2:
+            raise KeyboardInterrupt
+        return placing(self, payload, key)
+
+    monkeypatch.setattr(RestClient, "create_call", crash)
+    with pytest.raises(KeyboardInterrupt):
+        _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION)
+
+    records = [json.loads(line) for line in ledger.read_text().splitlines()]
+    assert [record["type"] for record in records] == ["intent", "attempt", "intent"]
+    assert records[2]["key"] == keys[1]
+    assert records[1]["call_id"] is not None
 
 
 def test_an_unknown_call_state_is_not_verified(serving, incident_file, tmp_path, capsys):

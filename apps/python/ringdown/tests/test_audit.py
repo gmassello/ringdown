@@ -36,7 +36,7 @@ def an_attempt(**overrides) -> Attempt:
 
 def write_run(path, verdict="unacknowledged", attempt=None):
     attempt = attempt or an_attempt()
-    append_record(path, attempt_record(attempt))
+    append_record(path, attempt_record(attempt, "inc-1"))
     append_record(path, verdict_record("inc-1", LadderResult(verdict, (attempt,))))
     append_record(
         path,
@@ -120,6 +120,33 @@ def test_a_fabricated_verdict_with_no_attempts_underneath_does_not_follow(tmp_pa
         False,
         "record 1 verdict acknowledged does not follow from the recorded attempts (unacknowledged)",
     ) in checks
+
+
+def test_two_incidents_interleaved_in_one_ledger_each_derive_their_own_verdict(tmp_path):
+    ledger = tmp_path / "ledger.jsonl"
+    one = an_attempt(attempt_id="inc-1/primary/1")
+    two = an_attempt(attempt_id="inc-2/primary/1", verdict="declined")
+    append_record(ledger, attempt_record(one, "inc-1"))
+    append_record(ledger, attempt_record(two, "inc-2"))
+    append_record(ledger, verdict_record("inc-1", LadderResult("unacknowledged", (one,))))
+    append_record(ledger, verdict_record("inc-2", LadderResult("declined", (two,))))
+
+    checks = chain_checks(ledger)
+
+    assert all_ok(checks)
+    assert checks[-2][1] == "record 3 verdict unacknowledged follows from the recorded attempts"
+    assert checks[-1][1] == "record 4 verdict declined follows from the recorded attempts"
+
+
+def test_an_attempt_written_before_the_incident_field_existed_still_verifies(tmp_path):
+    ledger = tmp_path / "ledger.jsonl"
+    attempt = an_attempt()
+    older = {name: value for name, value in attempt_record(attempt, "inc-1").items()
+             if name != "incident"}
+    append_record(ledger, older)
+    append_record(ledger, verdict_record("inc-1", LadderResult("unacknowledged", (attempt,))))
+
+    assert all_ok(chain_checks(ledger))
 
 
 def test_the_ledger_masks_phones_and_keeps_only_the_quoted_spans(tmp_path):

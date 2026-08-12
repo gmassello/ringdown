@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fake import scenarios
 from ringdown.escalate import place_and_settle, run_ladder
+from ringdown.report import unknown_lines
 from tests.data import ALICE, BEN, CARLA, FAST, LADDER, an_incident
 
 
@@ -145,6 +146,38 @@ def test_the_ladder_runs_out_unacknowledged_when_nobody_commits(serving, rest_cl
     assert result.verdict == "unacknowledged"
     assert [a.reason for a in result.attempts] == ["no_answer", "voicemail", "low_confidence"]
     assert len(server.created) == 3
+
+
+def test_the_call_that_may_be_live_is_the_one_that_decided_not_the_first_placed(
+    serving, rest_client
+):
+    server = serving(
+        {
+            ALICE.phone: scenarios.no_answer(),
+            BEN.phone: scenarios.queued_forever(),
+        }
+    )
+
+    result = run_ladder(rest_client(server), an_incident(policy=FAST), LADDER)
+
+    assert result.verdict == "unknown"
+    assert result.attempts[0].call_id is not None
+    assert result.live_call_id == result.attempts[1].call_id
+    assert f"call {result.attempts[0].call_id} may still be live" not in unknown_lines(result)
+
+
+def test_the_idempotency_key_is_announced_before_the_request_is_sent(serving, rest_client):
+    server = serving({ALICE.phone: scenarios.error_before_create(ALICE.name, "alice")})
+    announced: list[tuple[str, str]] = []
+
+    attempt = place_and_settle(
+        rest_client(server),
+        an_incident(policy=FAST),
+        LADDER[0],
+        announce=lambda aid, key, _: announced.append((aid, key)),
+    )
+
+    assert announced == [(attempt.attempt_id, attempt.key)]
 
 
 def test_the_idempotency_key_is_printed_before_the_request_is_sent(serving, rest_client):

@@ -40,7 +40,7 @@ class LadderResult:
 
     @property
     def live_call_id(self) -> str | None:
-        return next((a.call_id for a in self.attempts if a.call_id), None)
+        return self.deciding.call_id if self.deciding else None
 
 
 def place_and_settle(
@@ -49,11 +49,13 @@ def place_and_settle(
     rung: Rung,
     attempt: int = 1,
     log: Callable[[str], None] = lambda _: None,
+    announce: Callable[[str, str, Rung], None] = lambda *_: None,
 ) -> Attempt:
     payload = call_payload(incident, rung, attempt)
     key = idempotency_key(payload)
     aid = attempt_id(incident, rung, attempt)
     log(f"idempotency key {key}")
+    announce(aid, key, rung)
     try:
         created = rest.create_call(payload, key)
     except CalleError as error:
@@ -116,11 +118,12 @@ def run_ladder(
     rungs: Sequence[Rung],
     log: Callable[[str], None] = lambda _: None,
     watch: Callable[[int, Rung, Attempt | None], None] = lambda *_: None,
+    announce: Callable[[str, str, Rung], None] = lambda *_: None,
 ) -> LadderResult:
     attempts: list[Attempt] = []
     for position, rung in enumerate(rungs, 1):
         watch(position, rung, None)
-        placed = place_and_settle(rest, incident, rung, log=log)
+        placed = place_and_settle(rest, incident, rung, log=log, announce=announce)
         watch(position, rung, placed)
         attempts.append(placed)
         if placed.verdict != "not_acknowledged":

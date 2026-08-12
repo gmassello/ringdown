@@ -42,6 +42,7 @@ def _run(title: str, blurb: str, by_phone: Scenarios, ledger: Path, incident: Pa
                 "--ledger", str(ledger),
                 "--confirm", CONFIRMATION,
                 "--base-url", server.base_url,
+                "--mcp-url", server.mcp_url,
             ]
         )
         print(f"exit {code}")

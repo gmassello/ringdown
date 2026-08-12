@@ -62,7 +62,7 @@ verdict acknowledged  owner a.okafor  eta 15 minutes
 
 verified 10/10
 
-ledger 3 records  head sha256:1dc2…  calls placed 1
+ledger 4 records  head sha256:ae0d…  calls placed 1
 exit 0
 ```
 
@@ -116,7 +116,7 @@ verdict acknowledged  owner b.mensah  eta 20 minutes
 
 verified 11/11
 
-ledger 4 records  head sha256:8d97…  calls placed 2
+ledger 6 records  head sha256:475b…  calls placed 2
 exit 0
 ```
 
@@ -164,7 +164,7 @@ verdict unacknowledged  the ladder is exhausted and this incident has no owner
 
 verified 3/3
 
-ledger 5 records  head sha256:c718…  calls placed 3
+ledger 8 records  head sha256:fd56…  calls placed 3
 exit 20
 ```
 
@@ -211,7 +211,7 @@ verdict acknowledged  owner a.okafor  eta 15 minutes
 
 verified 10/10
 
-ledger 3 records  head sha256:1dc2…  calls placed 1
+ledger 4 records  head sha256:ae0d…  calls placed 1
 exit 0
 POST requests sent 2, calls created 1, people woken 1
 ```
@@ -232,7 +232,7 @@ If the replay had also come back ambiguous, Ringdown stops instead of guessing:
 verdict unknown  call state could not be established
 Reconcile this call before running again. Do not re-run to find out.
 
-ledger 2 records  head sha256:6334…  calls placed 0
+ledger 3 records  head sha256:c87c…  calls placed 0
 exit 25
 POST requests sent 2, calls created 0, people woken 0
 ```
@@ -266,7 +266,7 @@ verdict declined by a.okafor  the ladder was not continued
 
 verified 1/1
 
-ledger 3 records  head sha256:12fe…  calls placed 1
+ledger 4 records  head sha256:2a67…  calls placed 1
 exit 10
 ```
 
@@ -310,7 +310,7 @@ verified 6/10
 The acknowledgement recorded on the placing channel is not supported by the second channel.
 Treat this incident as unowned.
 
-ledger 3 records  head sha256:976f…  calls placed 1
+ledger 4 records  head sha256:56f6…  calls placed 1
 exit 40
 ```
 
@@ -319,7 +319,9 @@ exit 40
 ## The ledger check the demo runs last
 
 Scenario 3 writes its ledger to `examples/ledger.example.jsonl`, and that file is committed
-exactly as it comes out. Five records: three attempts, the verdict, and the verification.
+exactly as it comes out. Eight records: an intent and an attempt for each of the three rungs,
+then the verdict and the verification. The intent carries the idempotency key and is written
+before the request that places the call, so a crash mid-ladder still leaves the key behind.
 
 The demo finishes by verifying that ledger, and then a tampered copy in which the verdict was
 rewritten from `unacknowledged` to `acknowledged`, the record resealed, **and every record after
@@ -335,14 +337,20 @@ $ python -m ringdown verify --ledger examples/ledger.example.jsonl
 - [x] record 3 links to record 2
 - [x] record 4 links to record 3
 - [x] record 5 links to record 4
+- [x] record 6 links to record 5
+- [x] record 7 links to record 6
+- [x] record 8 links to record 7
 - [x] record 1 hash matches its content
 - [x] record 2 hash matches its content
 - [x] record 3 hash matches its content
 - [x] record 4 hash matches its content
 - [x] record 5 hash matches its content
-- [x] record 4 verdict unacknowledged follows from the recorded attempts
+- [x] record 6 hash matches its content
+- [x] record 7 hash matches its content
+- [x] record 8 hash matches its content
+- [x] record 7 verdict unacknowledged follows from the recorded attempts
 
-verified 11/11
+verified 17/17
 exit 0
 
 $ python -m ringdown verify --ledger demo/out/tampered.jsonl
@@ -352,13 +360,19 @@ $ python -m ringdown verify --ledger demo/out/tampered.jsonl
 - [x] record 3 links to record 2
 - [x] record 4 links to record 3
 - [x] record 5 links to record 4
+- [x] record 6 links to record 5
+- [x] record 7 links to record 6
+- [x] record 8 links to record 7
 - [x] record 1 hash matches its content
 - [x] record 2 hash matches its content
 - [x] record 3 hash matches its content
 - [x] record 4 hash matches its content
 - [x] record 5 hash matches its content
-- [ ] record 4 verdict acknowledged does not follow from the recorded attempts (unacknowledged)
+- [x] record 6 hash matches its content
+- [x] record 7 hash matches its content
+- [x] record 8 hash matches its content
+- [ ] record 7 verdict acknowledged does not follow from the recorded attempts (unacknowledged)
 
-verified 10/11
+verified 16/17
 exit 40
 ```

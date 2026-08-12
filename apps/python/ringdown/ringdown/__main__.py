@@ -15,6 +15,7 @@ from ringdown.audit import (
     attempt_record,
     chain_checks,
     head,
+    intent_record,
     verdict_record,
     verification_record,
 )
@@ -32,7 +33,7 @@ from ringdown.incident import (
     unstaffed_scopes,
 )
 from ringdown.script import call_payload, call_task, idempotency_key
-from ringdown.verify import all_checks, all_ok, render_blocks, verify_ladder
+from ringdown.verify import Check, all_checks, all_ok, contradicted, render_blocks, verify_ladder
 
 EXIT_ACKNOWLEDGED = 0
 EXIT_DECLINED = 10
@@ -40,9 +41,11 @@ EXIT_UNACKNOWLEDGED = 20
 EXIT_UNKNOWN = 25
 EXIT_USAGE = 30
 EXIT_UNVERIFIED = 40
+EXIT_UNRESOLVED = 45
 
 CONFIRMATION = "place real calls"
 DEFAULT_BASE_URL = "https://api.heycall-e.com"
+DEFAULT_MCP_URL = "https://seleven-mcp-sg.airudder.com/mcp/openagent_oauth"
 WINDOW_SLACK = timedelta(seconds=60)
 
 BY_VERDICT = {
@@ -73,6 +76,7 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--ledger", type=Path, required=True)
     run.add_argument("--confirm", default="")
     run.add_argument("--base-url", default=DEFAULT_BASE_URL)
+    run.add_argument("--mcp-url", default=DEFAULT_MCP_URL)
     run.add_argument("--allow-host", action="append", default=[])
 
     verify = commands.add_parser("verify")
@@ -101,15 +105,9 @@ def preview(args: argparse.Namespace) -> int:
     return EXIT_ACKNOWLEDGED
 
 
-def _record_ladder(ledger: Path, incident_id: str, result: LadderResult) -> None:
-    for attempt in result.attempts:
-        append_record(ledger, attempt_record(attempt))
-    append_record(ledger, verdict_record(incident_id, result))
-
-
 def _verify(
     mcp: McpClient, incident: Incident, result: LadderResult, start: datetime
-) -> list[tuple[bool, str]]:
+) -> list[Check]:
     window = (start - WINDOW_SLACK, datetime.now(UTC) + WINDOW_SLACK)
     blocks = verify_ladder(mcp, incident.id, result, window)
     emit("", render_blocks(blocks))
@@ -126,6 +124,7 @@ def run(args: argparse.Namespace) -> int:
         return EXIT_USAGE
     allowed = frozenset(args.allow_host)
     base_url = assert_trusted_base_url(args.base_url, allowed)
+    mcp_url = assert_trusted_base_url(args.mcp_url, allowed)
     incident = load_incident(args.incident)
     start = datetime.now(UTC)
     rungs = _ladder(incident, args.rotation, start)
@@ -137,7 +136,11 @@ def run(args: argparse.Namespace) -> int:
         if attempt is None:
             emit(report.attempt_header(position, total, rung))
             return
+        append_record(args.ledger, attempt_record(attempt, incident.id))
         emit(*report.attempt_lines(attempt, incident.policy), "")
+
+    def announce(attempt_id: str, key: str, rung: Rung) -> None:
+        append_record(args.ledger, intent_record(incident.id, attempt_id, key, rung))
 
     result = run_ladder(
         RestClient(base_url, api_key, allowed_hosts=allowed),
@@ -145,8 +148,9 @@ def run(args: argparse.Namespace) -> int:
         rungs,
         log=lambda line: emit(report.progress_line(line)),
         watch=watch,
+        announce=announce,
     )
-    _record_ladder(args.ledger, incident.id, result)
+    append_record(args.ledger, verdict_record(incident.id, result))
     emit(*report.verdict_lines(result))
 
     code = BY_VERDICT[result.verdict]
@@ -156,13 +160,14 @@ def run(args: argparse.Namespace) -> int:
         code = EXIT_USAGE
         emit(*report.NOTHING_PLACED)
     else:
-        mcp = McpClient(f"{base_url}/mcp", api_key, allowed_hosts=allowed)
+        mcp = McpClient(mcp_url, api_key, allowed_hosts=allowed)
         checks = _verify(mcp, incident, result, start)
         append_record(args.ledger, verification_record(incident.id, checks))
         if not all_ok(checks):
-            code = EXIT_UNVERIFIED
+            denied = contradicted(checks) > 0
+            code = EXIT_UNVERIFIED if denied else EXIT_UNRESOLVED
             if result.verdict == "acknowledged":
-                emit("", *report.MISMATCH_ADVICE)
+                emit("", *(report.MISMATCH_ADVICE if denied else report.UNRESOLVED_ADVICE))
     emit("", *report.ledger_lines(*head(args.ledger), result))
     return code
 

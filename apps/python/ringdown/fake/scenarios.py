@@ -151,3 +151,7 @@ def channel_mismatch(name: str, first_name: str) -> FakeScenario:
 
 def unseen_on_second_channel(name: str, first_name: str) -> FakeScenario:
     return replace(answer_ack(name, first_name), mcp_overrides=None)
+
+
+def unreachable_second_channel(name: str, first_name: str) -> FakeScenario:
+    return replace(answer_ack(name, first_name), faults={"mcp": [UNAVAILABLE, UNAVAILABLE]})

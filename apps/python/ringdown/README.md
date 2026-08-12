@@ -88,9 +88,12 @@ python -m ringdown run --incident incident.json \
 
 `--confirm` must carry that exact phrase. Without it Ringdown prints
 `refusing to place calls without --confirm 'place real calls'` and exits 30 having placed
-nothing. `--base-url` selects the environment and defaults to `https://api.heycall-e.com`; any
-other host needs `--allow-host`, which is repeatable. The API key is read from the environment
-only. Why that is a trust boundary and not a convenience is in [Threat model](#threat-model).
+nothing. `--base-url` selects the REST environment and defaults to `https://api.heycall-e.com`.
+`--mcp-url` selects the second channel separately and defaults to
+`https://seleven-mcp-sg.airudder.com/mcp/openagent_oauth` — the two surfaces do not live on the
+same host, so the second channel is never derived from the first. Any other host on either flag
+needs `--allow-host`, which is repeatable. The API key is read from the environment only. Why
+that is a trust boundary and not a convenience is in [Threat model](#threat-model).
 
 ## Two channels, one verdict
 
@@ -109,7 +112,10 @@ every other attempt that reached a call, including on exit 10 and 20: the run fo
 must not report a commitment. That one catches the opposite error — escalating past somebody who
 did say yes.
 
-Zero checks is not success. A ladder with no attempts is never reported as verified.
+Zero checks is not success. A ladder with no attempts is never reported as verified. Neither is a
+check the second channel never answered: a timeout, a dropped connection or a 5xx renders `[?]`
+rather than `[ ]`, because a channel that is down does not contradict anything. Only a channel
+that answered and disagreed produces a failure.
 
 ## Exit codes
 
@@ -121,11 +127,15 @@ Zero checks is not success. A ladder with no attempts is never reported as verif
 | 25 | call state could not be established; a call may be live |
 | 30 | usage error: no confirmation phrase, no API key, untrusted host, bad incident or rotation file |
 | 40 | the recorded verdict does not reconcile on the second channel, or a ledger fails verification |
+| 45 | the second channel could not be reached, so the verdict stands unconfirmed |
 
 Precedence: 25 wins and skips verification entirely, because checks against a call that has not
 finished produce failures that are not contradictions. Then 30 when a verdict exists but no call
-was ever placed. Then 40, which overrides 0, 10 and 20 alike — a decline whose second channel
-disagrees exits 40, not 10.
+was ever placed. Then 40, which overrides 0, 10, 20 and 45 alike — a decline whose second channel
+disagrees exits 40, not 10. 45 is the weakest of the three: it only applies when nothing was
+contradicted and something went unanswered. Read 40 as *the second channel says otherwise* and 45
+as *the second channel said nothing*; the first means the incident has no owner, the second means
+the owner is unconfirmed and has to be checked another way.
 
 ## The incident file
 
@@ -169,9 +179,14 @@ rather than as a call.
 ## The ledger
 
 `run --ledger` appends one JSON object per line, each sealed with a SHA-256 digest over its whole
-body, which carries the previous record's hash. Three record types share the chain: `attempt`,
-`verdict` and `verification`. The file is created with mode `0600` and every append takes an
-exclusive lock.
+body, which carries the previous record's hash. Four record types share the chain: `intent`,
+`attempt`, `verdict` and `verification`. The file is created with mode `0600` and every append
+takes an exclusive lock.
+
+`intent` is written **before** the request that places the call and carries the idempotency key,
+so the ladder never rings a phone the ledger has no record of. Its `attempt` follows once the
+call settles. A crash between the two leaves an `intent` with no `attempt`: that is the shape
+that says a call may exist and names the key to reconcile it with.
 
 ```bash
 python -m ringdown verify --ledger examples/ledger.example.jsonl
@@ -194,8 +209,10 @@ those that are non-empty. Contact ids are stored in the clear.
   anything without the exact confirmation phrase.
 - **There is no way to cancel a call already in flight.** The provider exposes no operator-side
   cancel, so Ctrl-C stops the local waiter and nothing else. What is cancellable is the ladder:
-  the next rung is never dialled. When the call state is unknown Ringdown says so, prints the call
-  id, and tells you to reconcile it rather than run again to find out.
+  the next rung is never dialled. The ledger is written as the ladder walks, not at the end, so a
+  Ctrl-C still leaves every call it placed on record. When the call state is unknown Ringdown says
+  so, prints the id of the call that decided the verdict, and tells you to reconcile it rather
+  than run again to find out.
 - `CALLE_API_KEY` is read from the environment only. It is never written to the ledger, never
   logged, and never sent to a host outside the allowlist.
 - `run` persists only to the file named by `--ledger`, and `adapt --out` writes the file you name.
@@ -204,9 +221,10 @@ those that are non-empty. Contact ids are stored in the clear.
 
 ## Threat model
 
-The API key travels on every request, so `--base-url` is a trust boundary and not a convenience:
-a mistyped host would otherwise carry the key to whoever answers. Plain `http` to a non-loopback
-host is refused outright.
+The API key travels on every request, so `--base-url` and `--mcp-url` are trust boundaries and not
+conveniences: a mistyped host would otherwise carry the key to whoever answers. Both are validated
+against the allowlist before any client is built. Plain `http` to a non-loopback host is refused
+outright.
 
 Webhooks are not used. The provider's deliveries carry no secret, no timestamp and no signature,
 and an unsigned delivery proves nothing about its sender, so Ringdown polls instead of trusting
@@ -252,7 +270,9 @@ own call over a second transport. Same technique, different product.
 5. Two runners are not prevented. The lock on the ledger is taken per append and only serialises
    writers to that file; it is not a run lock and it is not distributed. What stops a second run
    from dialling twice is the idempotency key, which is derived from the call payload and is
-   therefore stable across processes — provided the provider honours it.
+   therefore stable across processes — provided the provider honours it. Their records may
+   interleave in a shared ledger without breaking the audit: `verify` re-derives each verdict from
+   the attempts of its own incident, not from whatever preceded it in the file.
 6. The ladder never re-calls. If that is ever added it needs another idempotency key and another
    record, never a silent retry.
 7. Re-escalation when an ETA expires is documented, not implemented. Recurrence belongs to the

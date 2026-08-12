@@ -8,9 +8,9 @@ from typing import Sequence
 
 from ringdown.canonical import canonical_json, digest
 from ringdown.escalate import Attempt, LadderResult, ladder_verdict
-from ringdown.incident import mask_phone
+from ringdown.incident import Rung, mask_phone
 
-Check = tuple[bool, str]
+Check = tuple[bool | None, str]
 
 GENESIS = "sha256:" + "0" * 64
 
@@ -20,7 +20,18 @@ def sealed(record: dict) -> dict:
     return {**body, "hash": digest(body)}
 
 
-def attempt_record(attempt: Attempt) -> dict:
+def intent_record(incident_id: str, attempt_id: str, key: str, rung: Rung) -> dict:
+    return {
+        "type": "intent",
+        "incident": incident_id,
+        "attempt_id": attempt_id,
+        "contact": rung.contact.id,
+        "phone": mask_phone(rung.contact.phone),
+        "key": key,
+    }
+
+
+def attempt_record(attempt: Attempt, incident_id: str) -> dict:
     extraction = attempt.extraction
     spans: dict[str, str] = {}
     if extraction is not None:
@@ -35,6 +46,7 @@ def attempt_record(attempt: Attempt) -> dict:
         }
     return {
         "type": "attempt",
+        "incident": incident_id,
         "attempt_id": attempt.attempt_id,
         "contact": attempt.rung.contact.id,
         "phone": mask_phone(attempt.rung.contact.phone),
@@ -62,12 +74,13 @@ def verdict_record(incident_id: str, result: LadderResult) -> dict:
 
 def verification_record(incident_id: str, checks: Sequence[Check]) -> dict:
     total = len(checks)
-    confirmed = sum(ok for ok, _ in checks)
+    confirmed = sum(1 for ok, _ in checks if ok is True)
     return {
         "type": "verification",
         "incident": incident_id,
         "verified": bool(total) and confirmed == total,
         "passed": confirmed,
+        "unresolved": sum(1 for ok, _ in checks if ok is None),
         "total": total,
     }
 
@@ -84,6 +97,13 @@ def append_record(path: Path, record: dict) -> None:
 def head(path: Path) -> tuple[int, str]:
     lines = path.read_text().splitlines() if path.exists() else []
     return len(lines), json.loads(lines[-1])["hash"] if lines else GENESIS
+
+
+def incident_of(record: dict) -> str:
+    named = record.get("incident")
+    if named is not None:
+        return str(named)
+    return str(record.get("attempt_id", "")).rsplit("/", 2)[0]
 
 
 def chain_checks(path: Path) -> list[Check]:
@@ -107,15 +127,15 @@ def chain_checks(path: Path) -> list[Check]:
                 f"record {number} hash matches its content",
             )
         )
-    verdicts: list[str] = []
+    verdicts: dict[str, list[str]] = {}
     for number, record in enumerate(records, 1):
+        incident = incident_of(record)
         if record.get("type") == "attempt":
-            verdicts.append(str(record.get("verdict")))
+            verdicts.setdefault(incident, []).append(str(record.get("verdict")))
         if record.get("type") != "verdict":
             continue
         recorded = str(record.get("verdict"))
-        derived = ladder_verdict(verdicts)
-        verdicts = []
+        derived = ladder_verdict(verdicts.pop(incident, []))
         tail = (
             "follows from the recorded attempts"
             if recorded == derived

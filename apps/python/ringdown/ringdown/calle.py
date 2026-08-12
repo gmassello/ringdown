@@ -8,9 +8,10 @@ from dataclasses import dataclass
 from typing import Any, Literal, Mapping
 from urllib.parse import urlparse
 
-TRUSTED_HOSTS = frozenset({"api.heycall-e.com"})
+TRUSTED_HOSTS = frozenset({"api.heycall-e.com", "seleven-mcp-sg.airudder.com"})
 LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 AMBIGUOUS_STATUSES = frozenset({408, 409, 425, 429})
+MCP_RETRY_DELAY = 1.0
 TERMINAL_STATUSES = frozenset({"completed", "failed", "canceled"})
 STATUS_MAP = {
     "COMPLETED": "completed",
@@ -227,6 +228,15 @@ class RestClient(_Client):
 
 class McpClient(_Client):
     def get_call_run(self, call_id: str) -> CallRun:
+        try:
+            return self._read_run(call_id)
+        except CalleError as error:
+            if not error.retriable:
+                raise
+        time.sleep(MCP_RETRY_DELAY)
+        return self._read_run(call_id)
+
+    def _read_run(self, call_id: str) -> CallRun:
         body = self._send(
             self._url,
             {

@@ -23,6 +23,11 @@ MISMATCH_ADVICE = (
     "Treat this incident as unowned.",
 )
 
+UNRESOLVED_ADVICE = (
+    "The second channel could not be reached, so the recorded acknowledgement is unconfirmed.",
+    "Nothing contradicts it. Confirm the owner another way before you stand down.",
+)
+
 NOTHING_PLACED = (
     "CALL-E accepted no call on this ladder, so there is nothing to verify and nobody was asked.",
     "Fix the refusal reported above and run again. No phone rang.",
