@@ -28,8 +28,9 @@ the recipient's own mouth.
 python -m demo.run_local
 ```
 
-Seven scenarios against a fake CALL-E on `127.0.0.1`. No credentials, no network beyond loopback,
-nothing rings. `demo/EXPECTED.md` holds the full narrated output; this is scenario 2:
+Seven scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
+nothing rings — the demo supplies its own throwaway key. `demo/EXPECTED.md` holds the full
+narrated output; this is scenario 2:
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
@@ -72,8 +73,8 @@ python -m ringdown --incident examples/incident.example.json \
 ```
 
 Prints the resolved ladder, the idempotency key of the first attempt, and the literal call task
-the recipient will hear. It opens no socket and reads no credentials. Any invocation that starts
-with a flag instead of a subcommand is a preview.
+the recipient will hear. It opens no socket and reads no credentials. Any invocation whose first
+token is a `--` flag other than `--help` is a preview.
 
 ## One live run
 
@@ -87,10 +88,9 @@ python -m ringdown run --incident incident.json \
 
 `--confirm` must carry that exact phrase. Without it Ringdown prints
 `refusing to place calls without --confirm 'place real calls'` and exits 30 having placed
-nothing. `--base-url` selects the environment and defaults to `https://api.heycall-e.com`; a host
-that is neither loopback nor the production host is refused unless it is named with
-`--allow-host`, which is repeatable. The API key is read from the environment only, and the host
-is checked before any client is built, so the key never travels to a host nobody chose.
+nothing. `--base-url` selects the environment and defaults to `https://api.heycall-e.com`; any
+other host needs `--allow-host`, which is repeatable. The API key is read from the environment
+only. Why that is a trust boundary and not a convenience is in [Threat model](#threat-model).
 
 ## Two channels, one verdict
 
@@ -105,9 +105,9 @@ call id, the run echoes the same call id and the attempt id, it reached the numb
 dialled, its uppercase status maps to the recorded one, re-extracting its transcript gives
 `acknowledged`, the disposition, owner and ETA spans are each spoken by the recipient rather than
 by the agent, and the run finished inside the escalation window. One more check runs against
-every non-acknowledged attempt, including on exit 10 and 20: the run for that person must not
-report a commitment. That one catches the opposite error — escalating past somebody who did say
-yes.
+every other attempt that reached a call, including on exit 10 and 20: the run for that person
+must not report a commitment. That one catches the opposite error — escalating past somebody who
+did say yes.
 
 Zero checks is not success. A ladder with no attempts is never reported as verified.
 
@@ -168,9 +168,10 @@ rather than as a call.
 
 ## The ledger
 
-`run --ledger` appends one JSON object per line, each sealed with a SHA-256 digest over the
-previous record's hash. Three record types share the chain: `attempt`, `verdict` and
-`verification`. The file is created with mode `0600` and every append takes an exclusive lock.
+`run --ledger` appends one JSON object per line, each sealed with a SHA-256 digest over its whole
+body, which carries the previous record's hash. Three record types share the chain: `attempt`,
+`verdict` and `verification`. The file is created with mode `0600` and every append takes an
+exclusive lock.
 
 ```bash
 python -m ringdown verify --ledger examples/ledger.example.jsonl
@@ -197,8 +198,9 @@ those that are non-empty. Contact ids are stored in the clear.
   id, and tells you to reconcile it rather than run again to find out.
 - `CALLE_API_KEY` is read from the environment only. It is never written to the ledger, never
   logged, and never sent to a host outside the allowlist.
-- Everything Ringdown persists goes to the file named by `--ledger`. Nothing is written anywhere
-  else, and the demo writes only under `demo/out/`.
+- `run` persists only to the file named by `--ledger`, and `adapt --out` writes the file you name.
+  Nothing else is written anywhere. The demo writes under `demo/out/` and regenerates
+  `examples/ledger.example.jsonl`.
 
 ## Threat model
 
@@ -227,8 +229,8 @@ X?" — of a known approver, and its failure is safe, because nothing happens. R
 first, and its failure is unsafe: nobody answers and the incident keeps running. Success is not
 permission, it is a commitment with an owner and an ETA.
 
-The Zapier recipe in `plugins/zapier-calle/examples/incident-escalation.md` covers the same
-scenario and argues its position well: a missed page costs far more than a duplicate one. It pays
+The Zapier recipe for the same scenario argues its position
+well: a missed page costs far more than a duplicate one. It pays
 for that insurance by waking two people whenever the state is unknown, because it cannot
 reconcile. Ringdown gets the same guarantee for one phone call, by replaying a content-derived
 idempotency key. It also never verifies that the acknowledgement existed, which is the whole
@@ -244,8 +246,7 @@ own call over a second transport. Same technique, different product.
    over a real acknowledgement. That is the acceptable direction of error — it costs a human
    review, not an unowned incident — but it is a real cost. The proper fix belongs to the
    provider.
-2. A verdict of `unknown` is never verified. There may be a live call, and checks against a call
-   that has not finished produce failures that are not contradictions.
+2. A verdict of `unknown` is never verified — see [Exit codes](#exit-codes).
 3. No webhooks, because they are unsigned.
 4. No cancellation of a call in flight.
 5. Two runners are not prevented. The lock on the ledger is taken per append and only serialises
