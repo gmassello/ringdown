@@ -44,6 +44,7 @@ def attempt_record(attempt: Attempt) -> dict:
         "reason": attempt.reason,
         "spans": spans,
         "eta_minutes": extraction.eta_minutes if extraction else None,
+        "instructed": attempt.instructed,
     }
 
 
@@ -78,6 +79,11 @@ def append_record(path: Path, record: dict) -> None:
         lines = handle.read().splitlines()
         prev = json.loads(lines[-1])["hash"] if lines else GENESIS
         handle.write(canonical_json(sealed({**record, "prev": prev})) + "\n")
+
+
+def head(path: Path) -> tuple[int, str]:
+    lines = path.read_text().splitlines() if path.exists() else []
+    return len(lines), json.loads(lines[-1])["hash"] if lines else GENESIS
 
 
 def chain_checks(path: Path) -> list[Check]:

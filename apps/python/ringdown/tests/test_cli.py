@@ -1,0 +1,182 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+
+from demo.run_local import tamper
+from fake import scenarios
+from ringdown.__main__ import (
+    CONFIRMATION,
+    EXIT_ACKNOWLEDGED,
+    EXIT_UNKNOWN,
+    EXIT_UNVERIFIED,
+    EXIT_USAGE,
+    main,
+)
+from tests.data import ALICE, BEN, CARLA, EXAMPLES, example_body, write_json
+
+ROTATION = str(EXAMPLES / "rotation.example.json")
+PAYLOAD = str(EXAMPLES / "alertmanager.example.json")
+
+
+@pytest.fixture(autouse=True)
+def api_key(monkeypatch):
+    monkeypatch.setenv("CALLE_API_KEY", "rd_test_key")
+
+
+@pytest.fixture
+def incident_file(tmp_path: Path) -> Path:
+    body = example_body("incident")
+    body["policy"] = {**body["policy"], "poll_interval_seconds": 0.005}
+    return write_json(tmp_path, "incident.json", body)
+
+
+def _run(base_url: str, incident_file: Path, ledger: Path, *extra: str) -> int:
+    return main(
+        [
+            "run",
+            "--incident", str(incident_file),
+            "--rotation", ROTATION,
+            "--ledger", str(ledger),
+            "--base-url", base_url,
+            *extra,
+        ]
+    )
+
+
+def _adapt(tmp_path: Path, mapping: dict, *extra: str) -> int:
+    return main(
+        [
+            "adapt",
+            "--payload", PAYLOAD,
+            "--mapping", str(write_json(tmp_path, "mapping.json", mapping)),
+            *extra,
+        ]
+    )
+
+
+def test_preview_never_touches_the_network(incident_file, capsys):
+    code = main(["--incident", str(incident_file), "--rotation", ROTATION])
+    assert code == EXIT_ACKNOWLEDGED
+    assert "idempotency key rd-inc-2026-08-09-0113-primary-1-" in capsys.readouterr().out
+
+
+def test_the_bare_command_prints_help_instead_of_guessing(capsys):
+    assert main([]) == EXIT_USAGE
+    assert "{preview,run,verify,adapt}" in capsys.readouterr().out
+
+
+def test_run_without_the_confirmation_phrase_places_no_call(serving, incident_file, tmp_path):
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    assert _run(server.base_url, incident_file, tmp_path / "l.jsonl") == EXIT_USAGE
+    assert server.created == []
+
+
+def test_run_without_an_api_key_in_the_environment_places_no_call(
+    serving, incident_file, tmp_path, monkeypatch
+):
+    monkeypatch.delenv("CALLE_API_KEY")
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    code = _run(server.base_url, incident_file, tmp_path / "l.jsonl", "--confirm", CONFIRMATION)
+    assert code == EXIT_USAGE
+    assert server.created == []
+
+
+def test_a_host_outside_the_allowlist_is_refused(incident_file, tmp_path):
+    code = _run(
+        "https://calls.example.com", incident_file, tmp_path / "l.jsonl", "--confirm", CONFIRMATION
+    )
+    assert code == EXIT_USAGE
+
+
+def test_an_acknowledged_and_verified_call_exits_zero(serving, incident_file, tmp_path):
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+    code = _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION)
+    assert code == EXIT_ACKNOWLEDGED
+    kinds = [json.loads(line)["type"] for line in ledger.read_text().splitlines()]
+    assert kinds == ["attempt", "verdict", "verification"]
+
+
+def test_a_channel_mismatch_exits_forty(serving, incident_file, tmp_path, capsys):
+    server = serving({ALICE.phone: scenarios.channel_mismatch("Alice Okafor", "alice")})
+    code = _run(server.base_url, incident_file, tmp_path / "l.jsonl", "--confirm", CONFIRMATION)
+    assert code == EXIT_UNVERIFIED
+    assert "verified 6/10" in capsys.readouterr().out
+
+
+def test_an_unknown_call_state_is_not_verified(serving, incident_file, tmp_path, capsys):
+    server = serving({ALICE.phone: scenarios.error_before_create("Alice Okafor", "alice")})
+    code = _run(server.base_url, incident_file, tmp_path / "l.jsonl", "--confirm", CONFIRMATION)
+    assert code == EXIT_UNKNOWN
+    out = capsys.readouterr().out
+    assert "verdict unknown" in out
+    assert "on the second channel" not in out
+
+
+def test_a_ladder_that_placed_no_call_is_not_reported_as_a_failed_verification(
+    serving, incident_file, tmp_path, capsys
+):
+    server = serving({contact.phone: scenarios.refused() for contact in (ALICE, BEN, CARLA)})
+    ledger = tmp_path / "l.jsonl"
+    code = _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION)
+
+    assert code == EXIT_USAGE
+    assert server.created == []
+    out = capsys.readouterr().out
+    assert "No phone rang." in out
+    assert "verified" not in out
+    kinds = [json.loads(line)["type"] for line in ledger.read_text().splitlines()]
+    assert "verification" not in kinds
+
+
+def test_an_instruction_addressed_to_the_agent_is_recorded_in_the_ledger(
+    serving, incident_file, tmp_path
+):
+    server = serving(
+        {
+            ALICE.phone: scenarios.injected_voicemail("Alice Okafor"),
+            BEN.phone: scenarios.answer_ack("Ben Mensah", "ben"),
+        }
+    )
+    ledger = tmp_path / "l.jsonl"
+    _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION)
+
+    records = [json.loads(line) for line in ledger.read_text().splitlines()]
+    attempts = [record for record in records if record["type"] == "attempt"]
+    assert [attempt["instructed"] for attempt in attempts] == [True, False]
+
+
+def test_adapt_omits_a_key_whose_path_does_not_resolve(tmp_path, capsys):
+    mapping = example_body("field-mapping")
+    mapping["runbook_url"] = "$.alerts[7].annotations.runbook_url"
+    assert _adapt(tmp_path, mapping) == EXIT_ACKNOWLEDGED
+    assert "runbook_url" not in json.loads(capsys.readouterr().out)
+
+
+def test_adapt_writes_nothing_when_the_mapped_incident_is_invalid(tmp_path):
+    mapping = example_body("field-mapping")
+    mapping["severity"] = "sev9"
+    out = tmp_path / "incident.json"
+    assert _adapt(tmp_path, mapping, "--out", str(out)) == EXIT_USAGE
+    assert not out.exists()
+
+
+def test_a_rewritten_verdict_with_a_relinked_chain_still_fails_verify_ledger(
+    serving, incident_file, tmp_path, capsys
+):
+    server = serving({ALICE.phone: scenarios.declined("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+    _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION)
+    assert main(["verify", "--ledger", str(ledger)]) == EXIT_ACKNOWLEDGED
+
+    tampered = tmp_path / "tampered.jsonl"
+    tamper(ledger, tampered)
+
+    capsys.readouterr()
+    assert main(["verify", "--ledger", str(tampered)]) == EXIT_UNVERIFIED
+    out = capsys.readouterr().out
+    assert "hash matches its content" in out
+    assert "does not follow from the recorded attempts (declined)" in out

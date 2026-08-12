@@ -129,4 +129,4 @@ def render_blocks(blocks: Sequence[Block]) -> str:
         lines.append(f"# {title}")
         lines.extend(f"- [{'x' if ok else ' '}] {label}" for ok, label in checks)
     lines.extend(["", tally(all_checks(blocks))])
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines)

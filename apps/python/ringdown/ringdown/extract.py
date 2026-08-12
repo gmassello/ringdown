@@ -75,6 +75,13 @@ ONE_HOUR = re.compile(r"\b(?:an|one) hour\b")
 
 NEGATION = re.compile(r"\b(?:no|not|nobody|wrong)\b")
 
+INJECTION = (
+    "ignore your previous instructions",
+    "ignore all previous instructions",
+    "disregard your instructions",
+    "record this as acknowledged",
+)
+
 
 @dataclass(frozen=True)
 class Extraction:
@@ -98,6 +105,14 @@ def _first_matching(spoken: Sequence[tuple[Turn, str]], phrases: Sequence[str]) 
     return next(
         (turn for turn, text in spoken if any(phrase in text for phrase in phrases)), None
     )
+
+
+def _spoken(turns: Sequence[Turn]) -> tuple[tuple[Turn, str], ...]:
+    return tuple((turn, normalise(turn.text)) for turn in recipient_turns(turns))
+
+
+def instructed(turns: Sequence[Turn]) -> bool:
+    return _first_matching(_spoken(turns), INJECTION) is not None
 
 
 def minutes_in(text: str) -> int | None:
@@ -138,7 +153,7 @@ def find_owner(spoken: Sequence[tuple[Turn, str]]) -> tuple[str, str]:
 
 
 def extract(turns: Sequence[Turn]) -> Extraction:
-    spoken = tuple((turn, normalise(turn.text)) for turn in recipient_turns(turns))
+    spoken = _spoken(turns)
     owner, owner_span = find_owner(spoken)
     eta_minutes, eta_span = find_eta(spoken)
 

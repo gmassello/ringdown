@@ -5,7 +5,7 @@ from typing import Callable, Literal, Sequence
 
 from ringdown.calle import CalleError, CallSnapshot, RestClient
 from ringdown.dispositions import Verdict, classify, ground
-from ringdown.extract import Extraction, extract
+from ringdown.extract import Extraction, extract, instructed
 from ringdown.incident import Incident, Rung
 from ringdown.script import attempt_id, call_payload, idempotency_key
 
@@ -22,6 +22,7 @@ class Attempt:
     call_id: str | None = None
     snapshot: CallSnapshot | None = None
     extraction: Extraction | None = None
+    instructed: bool = False
 
 
 @dataclass(frozen=True)
@@ -29,13 +30,25 @@ class LadderResult:
     verdict: LadderVerdict
     attempts: tuple[Attempt, ...]
 
+    @property
+    def deciding(self) -> Attempt | None:
+        return self.attempts[-1] if self.attempts else None
+
+    @property
+    def placed(self) -> int:
+        return sum(1 for attempt in self.attempts if attempt.call_id)
+
+    @property
+    def live_call_id(self) -> str | None:
+        return next((a.call_id for a in self.attempts if a.call_id), None)
+
 
 def place_and_settle(
     rest: RestClient,
     incident: Incident,
     rung: Rung,
     attempt: int = 1,
-    log: Callable[[str], None] = print,
+    log: Callable[[str], None] = lambda _: None,
 ) -> Attempt:
     payload = call_payload(incident, rung, attempt)
     key = idempotency_key(payload)
@@ -89,6 +102,7 @@ def place_and_settle(
         call_id=created.id,
         snapshot=snapshot,
         extraction=extraction,
+        instructed=instructed(snapshot.turns),
     )
 
 
@@ -100,11 +114,14 @@ def run_ladder(
     rest: RestClient,
     incident: Incident,
     rungs: Sequence[Rung],
-    log: Callable[[str], None] = print,
+    log: Callable[[str], None] = lambda _: None,
+    watch: Callable[[int, Rung, Attempt | None], None] = lambda *_: None,
 ) -> LadderResult:
     attempts: list[Attempt] = []
-    for rung in rungs:
+    for position, rung in enumerate(rungs, 1):
+        watch(position, rung, None)
         placed = place_and_settle(rest, incident, rung, log=log)
+        watch(position, rung, placed)
         attempts.append(placed)
         if placed.verdict != "not_acknowledged":
             break

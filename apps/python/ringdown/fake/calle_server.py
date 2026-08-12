@@ -96,6 +96,7 @@ class FakeCalle:
         self.calls: dict[str, CallRecord] = {}
         self.by_key: dict[str, str] = {}
         self.requests = 0
+        self.creates = 0
         self._faults = {
             phone: {route: list(faults) for route, faults in scenario.faults.items()}
             for phone, scenario in scenarios.items()
@@ -252,6 +253,7 @@ class Handler(BaseHTTPRequestHandler):
         self._not_found(f"route for {self.path}")
 
     def _handle_create(self) -> None:
+        self.fake.creates += 1
         payload = self._read_json()
         key = self.headers.get("Idempotency-Key", "")
         if not key:
@@ -342,6 +344,10 @@ class FakeCalleServer:
     @property
     def requests(self) -> int:
         return self.fake.requests
+
+    @property
+    def creates(self) -> int:
+        return self.fake.creates
 
     def __enter__(self) -> "FakeCalleServer":
         self._thread.start()

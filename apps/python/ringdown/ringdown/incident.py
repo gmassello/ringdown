@@ -116,7 +116,7 @@ def validate_timezone(raw: Any, where: str) -> str:
     return raw
 
 
-def _read_json(path: Path, what: str) -> dict[str, Any]:
+def read_json(path: Path, what: str) -> dict[str, Any]:
     try:
         loaded = json.loads(path.read_text())
     except FileNotFoundError as exc:
@@ -192,7 +192,7 @@ def parse_incident(raw: Mapping[str, Any]) -> Incident:
 
 
 def load_incident(path: Path) -> Incident:
-    return parse_incident(_read_json(path, "incident"))
+    return parse_incident(read_json(path, "incident"))
 
 
 def parse_contact(raw: Any, where: str) -> Contact:
@@ -208,7 +208,7 @@ def parse_contact(raw: Any, where: str) -> Contact:
 
 
 def load_rotation(path: Path) -> tuple[Shift, ...]:
-    raw = _read_json(path, "rotation")
+    raw = read_json(path, "rotation")
     entries = raw.get("shifts")
     if not isinstance(entries, list) or not entries:
         raise IncidentError("the rotation file must hold a non-empty 'shifts' list")
