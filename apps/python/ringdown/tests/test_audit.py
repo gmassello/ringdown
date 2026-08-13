@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from fake import scenarios
 from ringdown.audit import (
@@ -16,10 +17,11 @@ from ringdown.calle import parse_turns
 from ringdown.canonical import canonical_json
 from ringdown.escalate import Attempt, LadderResult
 from ringdown.extract import extract
-from ringdown.verify import all_ok
+from ringdown.verify import all_ok, contradicted
 from tests.data import ALICE, LADDER
 
 EXTRACTION = extract(parse_turns(scenarios.answer_ack(ALICE.name, "alice").turns))
+GOLDEN = Path(__file__).resolve().parent / "golden"
 
 
 def an_attempt(**overrides) -> Attempt:
@@ -69,10 +71,10 @@ def test_the_ledger_chain_verifies_end_to_end(tmp_path):
 
     checks = chain_checks(ledger)
 
-    assert len(checks) == 7
+    assert len(checks) == 10
     assert all_ok(checks)
     assert checks[0][1] == "record 1 links to the genesis hash"
-    assert checks[6][1] == "record 2 verdict unacknowledged follows from the recorded attempts"
+    assert checks[-1][1] == "record 2 verdict unacknowledged follows from the recorded attempts"
 
 
 def test_a_rewritten_record_with_a_recomputed_hash_still_breaks_the_chain(tmp_path):
@@ -101,9 +103,9 @@ def test_a_rewritten_verdict_with_the_whole_chain_relinked_is_still_detected(tmp
 
     checks = chain_checks(ledger)
 
-    links_and_hashes = checks[:6]
-    assert all(ok for ok, _ in links_and_hashes)
-    assert checks[6] == (
+    links_hashes_and_positions = checks[:9]
+    assert all(ok for ok, _ in links_hashes_and_positions)
+    assert checks[-1] == (
         False,
         "record 2 verdict acknowledged does not follow from the recorded attempts (unacknowledged)",
     )
@@ -177,3 +179,50 @@ def test_an_unreadable_ledger_line_is_a_failed_check_not_a_crash(tmp_path):
     checks = chain_checks(ledger)
 
     assert checks == [(False, "record 4 is not readable JSON")]
+
+
+def test_a_golden_ledger_from_an_earlier_build_still_verifies():
+    assert all_ok(chain_checks(GOLDEN / "ledger-v1.jsonl"))
+
+
+def test_a_golden_ledger_written_before_the_schema_and_position_fields_still_verifies():
+    assert all_ok(chain_checks(GOLDEN / "ledger-v0.jsonl"))
+
+
+def test_a_deleted_record_is_caught_even_when_the_chain_is_relinked_and_resealed(tmp_path):
+    ledger = tmp_path / "ledger.jsonl"
+    write_run(ledger)
+    records = read_lines(ledger)
+    del records[1]
+    previous = records[0]["hash"]
+    records[1] = sealed({**records[1], "prev": previous})
+    write_back(ledger, records)
+
+    checks = dict((label, ok) for ok, label in chain_checks(ledger))
+
+    assert checks["record 2 links to record 1"]
+    assert checks["record 2 hash matches its content"]
+    assert not checks["record 2 carries its position in the chain"]
+
+
+def test_a_ledger_written_by_a_newer_schema_is_unresolved_not_tampered(tmp_path):
+    ledger = tmp_path / "ledger.jsonl"
+    write_run(ledger)
+    records = read_lines(ledger)
+    records[1] = sealed({**records[1], "schema": 99})
+    records[2] = sealed({**records[2], "prev": records[1]["hash"]})
+    write_back(ledger, records)
+
+    checks = chain_checks(ledger)
+
+    assert (None, "record 2 was written by schema 99, which this build cannot read") in checks
+    assert not contradicted(checks)
+
+
+def test_a_truncated_tail_leaves_a_chain_that_still_verifies(tmp_path):
+    ledger = tmp_path / "ledger.jsonl"
+    write_run(ledger)
+    kept = ledger.read_text().splitlines()[:1]
+    ledger.write_text(kept[0] + "\n")
+
+    assert all_ok(chain_checks(ledger))

@@ -179,9 +179,9 @@ rather than as a call.
 ## The ledger
 
 `run --ledger` appends one JSON object per line, each sealed with a SHA-256 digest over its whole
-body, which carries the previous record's hash. Four record types share the chain: `intent`,
-`attempt`, `verdict` and `verification`. The file is created with mode `0600` and every append
-takes an exclusive lock.
+body, which carries the previous record's hash, its position in the chain and the schema version
+that wrote it. Four record types share the chain: `intent`, `attempt`, `verdict` and
+`verification`. The file is created with mode `0600` and every append takes an exclusive lock.
 
 `intent` is written **before** the request that places the call and carries the idempotency key,
 so the ladder never rings a phone the ledger has no record of. Its `attempt` follows once the
@@ -192,10 +192,11 @@ that says a call may exist and names the key to reconcile it with.
 python -m ringdown verify --ledger examples/ledger.example.jsonl
 ```
 
-`verify` does three different things: it relinks the chain, it recomputes every hash, and it
-**re-derives the verdict from the recorded attempts**. A rewritten verdict whose record was
-resealed and whose successors were relinked still fails the third check. A flat append-only log
-has nothing left to complain about at that point.
+`verify` does four things: it relinks the chain, it recomputes every hash, it checks that each
+record still sits where it says it sits, and it **re-derives the verdict from the recorded
+attempts**. A rewritten verdict whose record was resealed and whose successors were relinked
+still fails the last check; a deleted record that was relinked and resealed still fails the third.
+What none of them proves is completeness — see ceiling 11.
 
 Phone numbers are masked everywhere they are written or printed. The raw transcript is never
 stored: an attempt record keeps only the spans that were actually quoted as evidence, and only
@@ -282,6 +283,11 @@ own call over a second transport. Same technique, different product.
 9. `ladder_timeout_seconds` is validated but never enforced. The real bound is
    `per_call_timeout_seconds`, per call.
 10. Disposition and ETA extraction are English-only phrase lists and regexes.
+11. The chain proves internal consistency, not completeness. It is unkeyed and anchored to nothing
+    outside the file, so cutting records off the end leaves a file that verifies, and so does
+    renumbering and resealing the whole chain. What ties a ledger to reality is the record count
+    and head digest `run` prints when it finishes. A keyed HMAC is the real fix and a different
+    product.
 
 This is a demo app for a workflow pattern, not a CALL-E SDK and not a supported
 product API.

@@ -62,7 +62,7 @@ verdict acknowledged  owner a.okafor  eta 15 minutes
 
 verified 10/10
 
-ledger 4 records  head sha256:ae0d…  calls placed 1
+ledger 4 records  head sha256:b994…  calls placed 1
 exit 0
 ```
 
@@ -116,7 +116,7 @@ verdict acknowledged  owner b.mensah  eta 20 minutes
 
 verified 11/11
 
-ledger 6 records  head sha256:475b…  calls placed 2
+ledger 6 records  head sha256:f1f6…  calls placed 2
 exit 0
 ```
 
@@ -164,7 +164,7 @@ verdict unacknowledged  the ladder is exhausted and this incident has no owner
 
 verified 3/3
 
-ledger 8 records  head sha256:fd56…  calls placed 3
+ledger 8 records  head sha256:826c…  calls placed 3
 exit 20
 ```
 
@@ -211,7 +211,7 @@ verdict acknowledged  owner a.okafor  eta 15 minutes
 
 verified 10/10
 
-ledger 4 records  head sha256:ae0d…  calls placed 1
+ledger 4 records  head sha256:b994…  calls placed 1
 exit 0
 POST requests sent 2, calls created 1, people woken 1
 ```
@@ -232,7 +232,7 @@ If the replay had also come back ambiguous, Ringdown stops instead of guessing:
 verdict unknown  call state could not be established
 Reconcile this call before running again. Do not re-run to find out.
 
-ledger 3 records  head sha256:c87c…  calls placed 0
+ledger 3 records  head sha256:cd82…  calls placed 0
 exit 25
 POST requests sent 2, calls created 0, people woken 0
 ```
@@ -266,7 +266,7 @@ verdict declined by a.okafor  the ladder was not continued
 
 verified 1/1
 
-ledger 4 records  head sha256:2a67…  calls placed 1
+ledger 4 records  head sha256:9ccd…  calls placed 1
 exit 10
 ```
 
@@ -310,7 +310,7 @@ verified 6/10
 The acknowledgement recorded on the placing channel is not supported by the second channel.
 Treat this incident as unowned.
 
-ledger 4 records  head sha256:56f6…  calls placed 1
+ledger 4 records  head sha256:fb1c…  calls placed 1
 exit 40
 ```
 
@@ -348,9 +348,17 @@ $ python -m ringdown verify --ledger examples/ledger.example.jsonl
 - [x] record 6 hash matches its content
 - [x] record 7 hash matches its content
 - [x] record 8 hash matches its content
+- [x] record 1 carries its position in the chain
+- [x] record 2 carries its position in the chain
+- [x] record 3 carries its position in the chain
+- [x] record 4 carries its position in the chain
+- [x] record 5 carries its position in the chain
+- [x] record 6 carries its position in the chain
+- [x] record 7 carries its position in the chain
+- [x] record 8 carries its position in the chain
 - [x] record 7 verdict unacknowledged follows from the recorded attempts
 
-verified 17/17
+verified 25/25
 exit 0
 
 $ python -m ringdown verify --ledger demo/out/tampered.jsonl
@@ -371,8 +379,16 @@ $ python -m ringdown verify --ledger demo/out/tampered.jsonl
 - [x] record 6 hash matches its content
 - [x] record 7 hash matches its content
 - [x] record 8 hash matches its content
+- [x] record 1 carries its position in the chain
+- [x] record 2 carries its position in the chain
+- [x] record 3 carries its position in the chain
+- [x] record 4 carries its position in the chain
+- [x] record 5 carries its position in the chain
+- [x] record 6 carries its position in the chain
+- [x] record 7 carries its position in the chain
+- [x] record 8 carries its position in the chain
 - [ ] record 7 verdict acknowledged does not follow from the recorded attempts (unacknowledged)
 
-verified 16/17
+verified 24/25
 exit 40
 ```

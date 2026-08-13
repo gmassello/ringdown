@@ -13,6 +13,8 @@ from ringdown.incident import Rung, mask_phone
 Check = tuple[bool | None, str]
 
 GENESIS = "sha256:" + "0" * 64
+SCHEMA = 1
+VERDICT_RULES = {1: ladder_verdict}
 
 
 def sealed(record: dict) -> dict:
@@ -91,7 +93,8 @@ def append_record(path: Path, record: dict) -> None:
         fcntl.flock(handle, fcntl.LOCK_EX)
         lines = handle.read().splitlines()
         prev = json.loads(lines[-1])["hash"] if lines else GENESIS
-        handle.write(canonical_json(sealed({**record, "prev": prev})) + "\n")
+        stamped = {**record, "schema": SCHEMA, "seq": len(lines) + 1, "prev": prev}
+        handle.write(canonical_json(sealed(stamped)) + "\n")
 
 
 def head(path: Path) -> tuple[int, str]:
@@ -127,6 +130,12 @@ def chain_checks(path: Path) -> list[Check]:
                 f"record {number} hash matches its content",
             )
         )
+    for number, record in enumerate(records, 1):
+        if "seq" not in record:
+            continue
+        checks.append(
+            (record.get("seq") == number, f"record {number} carries its position in the chain")
+        )
     verdicts: dict[str, list[str]] = {}
     for number, record in enumerate(records, 1):
         incident = incident_of(record)
@@ -135,7 +144,15 @@ def chain_checks(path: Path) -> list[Check]:
         if record.get("type") != "verdict":
             continue
         recorded = str(record.get("verdict"))
-        derived = ladder_verdict(verdicts.pop(incident, []))
+        schema = record.get("schema", 1)
+        rule = VERDICT_RULES.get(schema) if isinstance(schema, int) else None
+        if rule is None:
+            verdicts.pop(incident, None)
+            checks.append(
+                (None, f"record {number} was written by schema {schema}, which this build cannot read")
+            )
+            continue
+        derived = rule(verdicts.pop(incident, []))
         tail = (
             "follows from the recorded attempts"
             if recorded == derived
