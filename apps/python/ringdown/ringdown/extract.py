@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from typing import Literal, Sequence
 
-from ringdown.calle import Turn
+from ringdown.calls import Turn
 
 Disposition = Literal["acknowledged", "declined", "unreachable", "wrong_person", "unclear"]
 

@@ -5,7 +5,8 @@ from datetime import UTC, datetime, timedelta
 
 from fake import scenarios
 from ringdown.escalate import LadderResult, run_ladder
-from ringdown.verify import all_checks, all_ok, passed, render_blocks, verify_ladder
+from ringdown.checks import all_checks, all_ok, passed, render_blocks
+from ringdown.verify import verify_ladder
 from tests.data import ALICE, BEN, CARLA, FAST, LADDER, an_incident
 
 INC = an_incident().id

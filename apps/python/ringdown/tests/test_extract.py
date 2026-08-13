@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from ringdown.calle import Turn
+from ringdown.calls import Turn
 from ringdown.extract import extract, instructed, minutes_in
 
 BOT_ASK = Turn("bot", "Are you taking this incident right now?", 9)

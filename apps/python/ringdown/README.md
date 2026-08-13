@@ -194,9 +194,9 @@ python -m ringdown verify --ledger examples/ledger.example.jsonl
 
 `verify` does four things: it relinks the chain, it recomputes every hash, it checks that each
 record still sits where it says it sits, and it **re-derives the verdict from the recorded
-attempts**. A rewritten verdict whose record was resealed and whose successors were relinked
-still fails the last check; a deleted record that was relinked and resealed still fails the third.
-What none of them proves is completeness — see ceiling 11.
+attempts** — using the rule of the schema version that record was written under, not the rule the
+ladder runs today. A rewritten verdict whose record was resealed and whose successors were
+relinked still fails the last check. What none of them proves is completeness — see ceiling 11.
 
 Phone numbers are masked everywhere they are written or printed. The raw transcript is never
 stored: an attempt record keeps only the spans that were actually quoted as evidence, and only
@@ -283,11 +283,14 @@ own call over a second transport. Same technique, different product.
 9. `ladder_timeout_seconds` is validated but never enforced. The real bound is
    `per_call_timeout_seconds`, per call.
 10. Disposition and ETA extraction are English-only phrase lists and regexes.
-11. The chain proves internal consistency, not completeness. It is unkeyed and anchored to nothing
-    outside the file, so cutting records off the end leaves a file that verifies, and so does
-    renumbering and resealing the whole chain. What ties a ledger to reality is the record count
-    and head digest `run` prints when it finishes. A keyed HMAC is the real fix and a different
-    product.
+11. The chain proves internal consistency, not completeness, and it proves nothing against an
+    adversary. It is unkeyed and anchored to nothing outside the file: cutting records off the end
+    leaves a file that verifies, and so does renumbering and resealing the whole chain. The
+    position check catches a record dropped by accident, not one dropped on purpose — whoever can
+    reseal the chain can also strip the field, and a record without it is skipped so that older
+    ledgers still verify. What ties a ledger to reality is the record count and head digest `run`
+    prints when it finishes, compared by hand. A keyed HMAC, and a `verify` that takes the expected
+    head, are the real fix and a different product.
 
 This is a demo app for a workflow pattern, not a CALL-E SDK and not a supported
 product API.

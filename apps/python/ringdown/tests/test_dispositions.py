@@ -7,7 +7,7 @@ import pytest
 
 from fake import scenarios
 from fake.calle_server import FakeCalle
-from ringdown.calle import CallSnapshot, parse_turns, snapshot_from
+from ringdown.calls import CallSnapshot, parse_turns, snapshot_from
 from ringdown.dispositions import classify, ground, ground_span
 from ringdown.extract import extract
 from ringdown.incident import Policy

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal, Sequence
 
-from ringdown.calle import CallSnapshot, Turn
+from ringdown.calls import CallSnapshot, Turn
 from ringdown.extract import Extraction, normalise, recipient_turns
 from ringdown.incident import Contact, Policy, first_name
 

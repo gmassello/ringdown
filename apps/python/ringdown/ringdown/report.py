@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from ringdown.dispositions import confident
 from ringdown.escalate import Attempt, LadderResult
 from ringdown.incident import Incident, Policy, Rung, mask_phone
 
@@ -117,7 +116,7 @@ def _quoted(span: str) -> str:
     return f'"{span}"'
 
 
-def _span_lines(attempt: Attempt, policy: Policy) -> list[str]:
+def _span_lines(attempt: Attempt) -> list[str]:
     extraction, snapshot = attempt.extraction, attempt.snapshot
     if extraction is None or snapshot is None:
         return []
@@ -129,7 +128,7 @@ def _span_lines(attempt: Attempt, policy: Policy) -> list[str]:
         ]
     if attempt.verdict == "declined":
         return [_span("disposition", _quoted(extraction.disposition_span))]
-    if snapshot.status != "completed" or not confident(snapshot, policy):
+    if snapshot.status != "completed" or attempt.reason == "low_confidence":
         return []
     disposition = (
         _quoted(extraction.disposition_span)
@@ -153,7 +152,7 @@ def _outcome_lines(attempt: Attempt, policy: Policy) -> list[str]:
 
 
 def attempt_lines(attempt: Attempt, policy: Policy) -> list[str]:
-    lines = _call_line(attempt) + _outcome_lines(attempt, policy) + _span_lines(attempt, policy)
+    lines = _call_line(attempt) + _outcome_lines(attempt, policy) + _span_lines(attempt)
     if attempt.instructed:
         lines.extend(progress_line(note) for note in INJECTION_NOTE)
     return lines

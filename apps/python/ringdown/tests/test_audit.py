@@ -3,21 +3,26 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from fake import scenarios
 from ringdown.audit import (
     GENESIS,
+    SCHEMA,
+    VERDICT_RULES,
     append_record,
     attempt_record,
     chain_checks,
     sealed,
     verdict_record,
     verification_record,
+    verdict_v1,
 )
-from ringdown.calle import parse_turns
+from ringdown.calls import parse_turns
 from ringdown.canonical import canonical_json
+from ringdown.checks import all_ok, contradicted
 from ringdown.escalate import Attempt, LadderResult
 from ringdown.extract import extract
-from ringdown.verify import all_ok, contradicted
 from tests.data import ALICE, LADDER
 
 EXTRACTION = extract(parse_turns(scenarios.answer_ack(ALICE.name, "alice").turns))
@@ -142,11 +147,11 @@ def test_two_incidents_interleaved_in_one_ledger_each_derive_their_own_verdict(t
 
 def test_an_attempt_written_before_the_incident_field_existed_still_verifies(tmp_path):
     ledger = tmp_path / "ledger.jsonl"
-    attempt = an_attempt()
+    attempt = an_attempt(verdict="declined")
     older = {name: value for name, value in attempt_record(attempt, "inc-1").items()
              if name != "incident"}
     append_record(ledger, older)
-    append_record(ledger, verdict_record("inc-1", LadderResult("unacknowledged", (attempt,))))
+    append_record(ledger, verdict_record("inc-1", LadderResult("declined", (attempt,))))
 
     assert all_ok(chain_checks(ledger))
 
@@ -226,3 +231,32 @@ def test_a_truncated_tail_leaves_a_chain_that_still_verifies(tmp_path):
     ledger.write_text(kept[0] + "\n")
 
     assert all_ok(chain_checks(ledger))
+
+
+@pytest.mark.parametrize(
+    "attempts,expected",
+    [
+        ([], "unacknowledged"),
+        (["not_acknowledged"], "unacknowledged"),
+        (["not_acknowledged", "not_acknowledged"], "unacknowledged"),
+        (["acknowledged"], "acknowledged"),
+        (["not_acknowledged", "acknowledged"], "acknowledged"),
+        (["declined"], "declined"),
+        (["not_acknowledged", "declined"], "declined"),
+        (["unknown"], "unknown"),
+        (["not_acknowledged", "unknown"], "unknown"),
+    ],
+)
+def test_the_rule_that_wrote_the_older_ledgers_is_frozen_by_value(attempts, expected):
+    assert verdict_v1(attempts) == expected
+
+
+def test_the_rule_the_ladder_runs_today_still_agrees_with_the_frozen_one():
+    from ringdown.escalate import ladder_verdict
+
+    for attempts in ([], ["not_acknowledged"], ["acknowledged"], ["declined"], ["unknown"]):
+        assert ladder_verdict(attempts) == verdict_v1(attempts)
+
+
+def test_every_schema_this_build_ever_wrote_can_still_be_re_derived():
+    assert set(VERDICT_RULES) == set(range(1, SCHEMA + 1))

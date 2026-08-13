@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Literal, Sequence
 
-from ringdown.calle import CalleError, CallSnapshot, RestClient
+from ringdown.calle import CalleError, RestClient
+from ringdown.calls import CallSnapshot
 from ringdown.dispositions import Verdict, classify, ground
 from ringdown.extract import Extraction, extract, instructed
 from ringdown.incident import Incident, Rung
@@ -47,13 +48,12 @@ def place_and_settle(
     rest: RestClient,
     incident: Incident,
     rung: Rung,
-    attempt: int = 1,
     log: Callable[[str], None] = lambda _: None,
     announce: Callable[[str, str, Rung], None] = lambda *_: None,
 ) -> Attempt:
-    payload = call_payload(incident, rung, attempt)
+    payload = call_payload(incident, rung, attempt=1)
     key = idempotency_key(payload)
-    aid = attempt_id(incident, rung, attempt)
+    aid = attempt_id(incident, rung, attempt=1)
     log(f"idempotency key {key}")
     announce(aid, key, rung)
     try:

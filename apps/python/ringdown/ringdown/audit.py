@@ -4,17 +4,24 @@ import fcntl
 import json
 import os
 from pathlib import Path
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
 from ringdown.canonical import canonical_json, digest
-from ringdown.escalate import Attempt, LadderResult, ladder_verdict
+from ringdown.checks import Check, all_ok, passed, unresolved
 from ringdown.incident import Rung, mask_phone
 
-Check = tuple[bool | None, str]
+if TYPE_CHECKING:
+    from ringdown.escalate import Attempt, LadderResult
 
 GENESIS = "sha256:" + "0" * 64
-SCHEMA = 1
-VERDICT_RULES = {1: ladder_verdict}
+
+
+def verdict_v1(verdicts: Sequence[str]) -> str:
+    return next((v for v in verdicts if v != "not_acknowledged"), "unacknowledged")
+
+
+VERDICT_RULES = {1: verdict_v1}
+SCHEMA = max(VERDICT_RULES)
 
 
 def sealed(record: dict) -> dict:
@@ -75,15 +82,13 @@ def verdict_record(incident_id: str, result: LadderResult) -> dict:
 
 
 def verification_record(incident_id: str, checks: Sequence[Check]) -> dict:
-    total = len(checks)
-    confirmed = sum(1 for ok, _ in checks if ok is True)
     return {
         "type": "verification",
         "incident": incident_id,
-        "verified": bool(total) and confirmed == total,
-        "passed": confirmed,
-        "unresolved": sum(1 for ok, _ in checks if ok is None),
-        "total": total,
+        "verified": all_ok(checks),
+        "passed": passed(checks),
+        "unresolved": unresolved(checks),
+        "total": len(checks),
     }
 
 
@@ -123,19 +128,15 @@ def chain_checks(path: Path) -> list[Check]:
         target = "the genesis hash" if number == 1 else f"record {number - 1}"
         checks.append((record.get("prev") == prev, f"record {number} links to {target}"))
         prev = record.get("hash", "")
-    for number, record in enumerate(records, 1):
-        checks.append(
-            (
-                record.get("hash") == sealed(record)["hash"],
-                f"record {number} hash matches its content",
-            )
-        )
-    for number, record in enumerate(records, 1):
-        if "seq" not in record:
-            continue
-        checks.append(
-            (record.get("seq") == number, f"record {number} carries its position in the chain")
-        )
+    checks += [
+        (record.get("hash") == sealed(record)["hash"], f"record {number} hash matches its content")
+        for number, record in enumerate(records, 1)
+    ]
+    checks += [
+        (record.get("seq") == number, f"record {number} carries its position in the chain")
+        for number, record in enumerate(records, 1)
+        if "seq" in record
+    ]
     verdicts: dict[str, list[str]] = {}
     for number, record in enumerate(records, 1):
         incident = incident_of(record)

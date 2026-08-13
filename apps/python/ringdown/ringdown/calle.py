@@ -4,26 +4,15 @@ import json
 import time
 import urllib.error
 import urllib.request
-from dataclasses import dataclass
-from typing import Any, Literal, Mapping
+from typing import Any, Mapping
 from urllib.parse import urlparse
+
+from ringdown.calls import CallRun, CallSnapshot, run_from, snapshot_from
 
 TRUSTED_HOSTS = frozenset({"api.heycall-e.com", "seleven-mcp-sg.airudder.com"})
 LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 AMBIGUOUS_STATUSES = frozenset({408, 409, 425, 429})
 MCP_RETRY_DELAY = 1.0
-TERMINAL_STATUSES = frozenset({"completed", "failed", "canceled"})
-STATUS_MAP = {
-    "COMPLETED": "completed",
-    "FAILED": "failed",
-    "CANCELED": "canceled",
-    "QUEUED": "queued",
-    "IN_PROGRESS": "in_progress",
-    "NO_ANSWER": "failed",
-    "VOICEMAIL": "failed",
-    "BUSY": "failed",
-    "EXPIRED": "failed",
-}
 
 
 class CalleError(Exception):
@@ -47,41 +36,6 @@ class UntrustedHost(ValueError):
     pass
 
 
-@dataclass(frozen=True)
-class Turn:
-    speaker: Literal["bot", "user"]
-    text: str
-    offset_seconds: int
-
-
-@dataclass(frozen=True)
-class CallSnapshot:
-    id: str
-    status: str
-    task_completed: bool | None
-    confidence_score: float | None
-    confidence_label: str | None
-    failure_code: str | None
-    completed_at: str | None
-    recipient_phone: str | None
-    metadata: dict[str, str]
-    turns: tuple[Turn, ...]
-
-    @property
-    def terminal(self) -> bool:
-        return self.status in TERMINAL_STATUSES
-
-
-@dataclass(frozen=True)
-class CallRun:
-    call_id: str
-    status: str
-    recipient_phone: str | None
-    completed_at: str | None
-    metadata: dict[str, str]
-    turns: tuple[Turn, ...]
-
-
 def assert_trusted_base_url(url: str, allowed: frozenset[str] = frozenset()) -> str:
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.hostname:
@@ -99,56 +53,6 @@ def assert_trusted_base_url(url: str, allowed: frozenset[str] = frozenset()) -> 
             f"refusing to send an API key to {host}. Name it with --allow-host to permit it."
         )
     return url.rstrip("/")
-
-
-def parse_turns(raw: Any) -> tuple[Turn, ...]:
-    if not isinstance(raw, list):
-        return ()
-    turns = []
-    for entry in raw:
-        if not isinstance(entry, dict):
-            continue
-        speaker = "user" if entry.get("speaker") == "user" else "bot"
-        turns.append(
-            Turn(
-                speaker=speaker,
-                text=str(entry.get("text", "")),
-                offset_seconds=int(entry.get("offset_seconds", 0) or 0),
-            )
-        )
-    return tuple(turns)
-
-
-def snapshot_from(body: Mapping[str, Any]) -> CallSnapshot:
-    recipients = body.get("recipients") or [{}]
-    first = recipients[0] if isinstance(recipients[0], dict) else {}
-    attempts = first.get("attempts") or [{}]
-    last = attempts[-1] if isinstance(attempts[-1], dict) else {}
-    confidence = body.get("completion_confidence") or {}
-    label = confidence.get("label")
-    return CallSnapshot(
-        id=str(body.get("id", "")),
-        status=str(body.get("status", "")),
-        task_completed=body.get("task_completed"),
-        confidence_score=confidence.get("score"),
-        confidence_label=label.lower() if isinstance(label, str) else None,
-        failure_code=body.get("failure_code"),
-        completed_at=body.get("completed_at"),
-        recipient_phone=first.get("phone"),
-        metadata=dict(body.get("metadata") or {}),
-        turns=parse_turns(last.get("transcript_turns")),
-    )
-
-
-def run_from(body: Mapping[str, Any]) -> CallRun:
-    return CallRun(
-        call_id=str(body.get("call_id", "")),
-        status=str(body.get("status", "")),
-        recipient_phone=body.get("recipient_phone"),
-        completed_at=body.get("completed_at"),
-        metadata=dict(body.get("metadata") or {}),
-        turns=parse_turns(body.get("transcript_turns")),
-    )
 
 
 class _Client:

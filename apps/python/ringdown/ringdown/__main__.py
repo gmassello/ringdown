@@ -33,7 +33,8 @@ from ringdown.incident import (
     unstaffed_scopes,
 )
 from ringdown.script import call_payload, call_task, idempotency_key
-from ringdown.verify import Check, all_checks, all_ok, contradicted, render_blocks, verify_ladder
+from ringdown.checks import Check, all_checks, all_ok, contradicted, render_blocks
+from ringdown.verify import verify_ladder
 
 EXIT_ACKNOWLEDGED = 0
 EXIT_DECLINED = 10
