@@ -16,7 +16,7 @@ KEY = "rd-test-key-1"
 def payload(attempt: str = "inc-1/primary/1") -> dict:
     return {
         "task": "page the on-call engineer",
-        "recipient": {"phone": ALICE},
+        "recipients": [{"phones": [ALICE]}],
         "metadata": {"ringdown_attempt_id": attempt},
     }
 
@@ -76,6 +76,16 @@ def test_a_request_without_bearer_credentials_is_refused(server):
 
     assert status == 401
     assert body["error"]["code"] == "unauthorized"
+
+
+def test_a_payload_with_a_field_the_contract_does_not_define_is_rejected(server):
+    body = payload() | {"recipient": {"phone": ALICE}}
+
+    status, refusal = create(server, body)
+
+    assert status == 400
+    assert refusal["error"]["code"] == "invalid_request"
+    assert server.created == []
 
 
 def test_the_two_surfaces_return_different_projections_of_the_same_call(server):

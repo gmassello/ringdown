@@ -62,7 +62,7 @@ Python 3.11 or newer. No runtime dependencies — `dependencies = []`, standard 
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install pytest
-python -m pytest -q       # 157 tests, no credentials, no outbound calls
+python -m pytest -q       # 198 tests, no credentials, no outbound calls
 ```
 
 ## Preview, which is the default
@@ -95,6 +95,13 @@ same host, so the second channel is never derived from the first. Any other host
 needs `--allow-host`, which is repeatable. The API key is read from the environment only. Why
 that is a trust boundary and not a convenience is in [Threat model](#threat-model).
 
+The two channels do not share credentials either. REST authenticates with `CALLE_API_KEY`; the
+MCP endpoint is an OAuth protected resource and refuses that key with `invalid_token`. Set
+`CALLE_MCP_TOKEN` to an access token issued by `https://dashboard.heycall-e.com/mcp-auth`, which
+grants `authorization_code` with PKCE and nothing else — there is no non-interactive grant, so
+the token is obtained out of band and Ringdown never mints one. Without it the second channel
+answers nothing and a verdict stands unconfirmed at exit 45.
+
 ## Two channels, one verdict
 
 The two surfaces of the provider are not two views of one JSON document. REST reports lowercase
@@ -116,6 +123,11 @@ Zero checks is not success. A ladder with no attempts is never reported as verif
 check the second channel never answered: a timeout, a dropped connection or a 5xx renders `[?]`
 rather than `[ ]`, because a channel that is down does not contradict anything. Only a channel
 that answered and disagreed produces a failure.
+
+All of it is proven against the fake and none of it against the live provider, which is the first
+thing to read in [Known ceilings](#known-ceilings). The live MCP surface indexes calls by a
+`run_id` that only its own placement tool hands out, so a call placed over REST may have no run to
+read at all.
 
 ## Exit codes
 
@@ -291,6 +303,28 @@ own call over a second transport. Same technique, different product.
     ledgers still verify. What ties a ledger to reality is the record count and head digest `run`
     prints when it finishes, compared by hand. A keyed HMAC, and a `verify` that takes the expected
     head, are the real fix and a different product.
+
+12. No call has ever been placed against the live provider. Every claim above is proven against
+    the fake in `fake/`, and the fake is written to the published contract, not observed from a
+    real run. Two things are known to differ and are not modelled: the live MCP surface indexes
+    calls by a `run_id` that its `get_call_run` describes as "returned by `run_call`", and a run
+    carries `result.call_id` inside it — the mapping runs from run to call, and no tool resolves a
+    call id back to a run. A call placed over REST may therefore have no run to read, which would
+    render every check `[?]` and settle every live verdict at exit 45. The untested candidate is
+    the attempt's `provider_call_id`; if that is the run id, the fix is one line in `McpClient`.
+    Deciding it needs a real call, and this app has not made one.
+13. The two channels do not share credentials, and only one of them can be automated. REST takes
+    the API key; MCP is an OAuth protected resource whose authorization server offers
+    `authorization_code` with PKCE and no machine grant at all, so the token behind
+    `CALLE_MCP_TOKEN` comes from an interactive browser login and expires. A scheduled or headless
+    run therefore verifies nothing once that token lapses, and exits 45 rather than failing.
+14. The provider does not dial every country, and Ringdown cannot tell in advance. `validate_e164`
+    proves a number is well formed, not that it is reachable: probing the provider's own planning
+    tool in August 2026 accepted the United States, Canada, Mexico, Brazil, Singapore, the
+    Philippines, India and Australia, and refused Argentina, Chile, Spain and the United Kingdom
+    with `Region is not allowed for this channel`. A rotation that lists an on-call engineer in a
+    refused region resolves cleanly, previews cleanly, and fails at the first call. Reading the
+    supported set at load time is a preflight this app does not do.
 
 This is a demo app for a workflow pattern, not a CALL-E SDK and not a supported
 product API.

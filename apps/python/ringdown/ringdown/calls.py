@@ -85,7 +85,7 @@ def snapshot_from(body: Mapping[str, Any]) -> CallSnapshot:
         confidence_label=label.lower() if isinstance(label, str) else None,
         failure_code=body.get("failure_code"),
         completed_at=body.get("completed_at"),
-        recipient_phone=first.get("phone"),
+        recipient_phone=last.get("phone") or (first.get("phones") or [None])[0],
         metadata=dict(body.get("metadata") or {}),
         turns=parse_turns(last.get("transcript_turns")),
     )

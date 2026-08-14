@@ -58,7 +58,7 @@ def call_metadata(incident: Incident, rung: Rung, attempt: int) -> dict[str, str
 def call_payload(incident: Incident, rung: Rung, attempt: int) -> dict[str, Any]:
     return {
         "task": call_task(incident, rung),
-        "recipient": {"phone": rung.contact.phone, "timezone": rung.contact.timezone},
+        "recipients": [{"phones": [rung.contact.phone]}],
         "metadata": call_metadata(incident, rung, attempt),
     }
 

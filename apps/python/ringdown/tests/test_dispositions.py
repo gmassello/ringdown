@@ -18,7 +18,7 @@ POLICY = Policy()
 
 def snapshot_for(scenario) -> CallSnapshot:
     fake = FakeCalle({ALICE.phone: scenario})
-    record, _ = fake.place({"recipient": {"phone": ALICE.phone}, "metadata": {}}, "rd-test-1")
+    record, _ = fake.place({"recipients": [{"phones": [ALICE.phone]}], "metadata": {}}, "rd-test-1")
     while not record.settled:
         fake.read(record.id)
     return snapshot_from(fake.rest_view(record))

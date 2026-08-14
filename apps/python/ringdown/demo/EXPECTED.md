@@ -39,7 +39,7 @@ ladder
   3. incident_commander  Carla Varga    +1********02
 
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-1ebde0bc3ec9
+      idempotency key rd-inc-2026-08-09-0113-primary-1-b3f62d02fece
       call call_fake1  status completed  confidence 0.94 high
       acknowledged  owner Alice Okafor  eta 15 minutes
         disposition  "yes, i am taking this incident right now"
@@ -62,7 +62,7 @@ verdict acknowledged  owner a.okafor  eta 15 minutes
 
 verified 10/10
 
-ledger 4 records  head sha256:b994…  calls placed 1
+ledger 4 records  head sha256:9180…  calls placed 1
 exit 0
 ```
 
@@ -82,7 +82,7 @@ Ben commits, and the run exits 0 on the second rung.
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-1ebde0bc3ec9
+      idempotency key rd-inc-2026-08-09-0113-primary-1-b3f62d02fece
       call call_fake1  status completed  confidence 0.91 high
       not acknowledged (no_eta)  the call completed and the provider was confident,
                                  and no number of minutes was ever spoken
@@ -90,7 +90,7 @@ Ben commits, and the run exits 0 on the second rung.
         eta          absent
 
 [2/3] secondary  Ben Mensah  +1********01
-      idempotency key rd-inc-2026-08-09-0113-secondary-1-a516f959a35f
+      idempotency key rd-inc-2026-08-09-0113-secondary-1-fd80c533c252
       call call_fake2  status completed  confidence 0.94 high
       acknowledged  owner Ben Mensah  eta 20 minutes
         disposition  "yes, i am taking this incident right now"
@@ -116,7 +116,7 @@ verdict acknowledged  owner b.mensah  eta 20 minutes
 
 verified 11/11
 
-ledger 6 records  head sha256:f1f6…  calls placed 2
+ledger 6 records  head sha256:1a12…  calls placed 2
 exit 0
 ```
 
@@ -135,19 +135,19 @@ round up to success.
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-1ebde0bc3ec9
+      idempotency key rd-inc-2026-08-09-0113-primary-1-b3f62d02fece
       call call_fake1  status failed  failure no_answer
       not acknowledged (no_answer)  nobody picked up
 
 [2/3] secondary  Ben Mensah  +1********01
-      idempotency key rd-inc-2026-08-09-0113-secondary-1-a516f959a35f
+      idempotency key rd-inc-2026-08-09-0113-secondary-1-fd80c533c252
       call call_fake2  status failed  failure voicemail
       not acknowledged (voicemail)  a recording is not a person
       note: the transcript contains an instruction addressed to this agent. It was recorded as
             evidence and not followed.
 
 [3/3] incident_commander  Carla Varga  +1********02
-      idempotency key rd-inc-2026-08-09-0113-incident-commander-1-3682a6485e6e
+      idempotency key rd-inc-2026-08-09-0113-incident-commander-1-5245ef024b79
       call call_fake3  status completed  confidence 0.05 high
       not acknowledged (low_confidence)  label high carried a score of 0.05, below the 0.7 floor
 
@@ -164,7 +164,7 @@ verdict unacknowledged  the ladder is exhausted and this incident has no owner
 
 verified 3/3
 
-ledger 8 records  head sha256:826c…  calls placed 3
+ledger 8 records  head sha256:040d…  calls placed 3
 exit 20
 ```
 
@@ -185,9 +185,9 @@ polls it, and Alice acknowledges. Two POSTs, one call, one phone rang.
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-1ebde0bc3ec9
+      idempotency key rd-inc-2026-08-09-0113-primary-1-b3f62d02fece
       CALL-E returned service_unavailable without saying whether the call exists.
-      Reconciling rd-inc-2026-08-09-0113-primary-1-1ebde0bc3ec9.
+      Reconciling rd-inc-2026-08-09-0113-primary-1-b3f62d02fece.
       Reconciled to call call_fake1.
       call call_fake1  status completed  confidence 0.94 high
       acknowledged  owner Alice Okafor  eta 15 minutes
@@ -211,7 +211,7 @@ verdict acknowledged  owner a.okafor  eta 15 minutes
 
 verified 10/10
 
-ledger 4 records  head sha256:b994…  calls placed 1
+ledger 4 records  head sha256:9180…  calls placed 1
 exit 0
 POST requests sent 2, calls created 1, people woken 1
 ```
@@ -223,16 +223,16 @@ If the replay had also come back ambiguous, Ringdown stops instead of guessing:
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-1ebde0bc3ec9
+      idempotency key rd-inc-2026-08-09-0113-primary-1-b3f62d02fece
       CALL-E returned service_unavailable without saying whether the call exists.
-      Reconciling rd-inc-2026-08-09-0113-primary-1-1ebde0bc3ec9.
-      Reconciling rd-inc-2026-08-09-0113-primary-1-1ebde0bc3ec9 failed with service_unavailable.
+      Reconciling rd-inc-2026-08-09-0113-primary-1-b3f62d02fece.
+      Reconciling rd-inc-2026-08-09-0113-primary-1-b3f62d02fece failed with service_unavailable.
       A call may be live for this person.
 
 verdict unknown  call state could not be established
 Reconcile this call before running again. Do not re-run to find out.
 
-ledger 3 records  head sha256:cd82…  calls placed 0
+ledger 3 records  head sha256:ee3f…  calls placed 0
 exit 25
 POST requests sent 2, calls created 0, people woken 0
 ```
@@ -254,7 +254,7 @@ needs a different human to route the incident.
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-1ebde0bc3ec9
+      idempotency key rd-inc-2026-08-09-0113-primary-1-b3f62d02fece
       call call_fake1  status completed  confidence 0.94 high
       declined  Alice Okafor is not taking this incident
         disposition  "no, i am not on call this week, i am not taking this"
@@ -266,7 +266,7 @@ verdict declined by a.okafor  the ladder was not continued
 
 verified 1/1
 
-ledger 4 records  head sha256:9ccd…  calls placed 1
+ledger 4 records  head sha256:0e5d…  calls placed 1
 exit 10
 ```
 
@@ -284,7 +284,7 @@ call that an acknowledgement just because it wrote one down.
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-1ebde0bc3ec9
+      idempotency key rd-inc-2026-08-09-0113-primary-1-b3f62d02fece
       call call_fake1  status completed  confidence 0.94 high
       acknowledged  owner Alice Okafor  eta 15 minutes
         disposition  "yes, i am taking this incident right now"
@@ -310,7 +310,7 @@ verified 6/10
 The acknowledgement recorded on the placing channel is not supported by the second channel.
 Treat this incident as unowned.
 
-ledger 4 records  head sha256:fb1c…  calls placed 1
+ledger 4 records  head sha256:a61b…  calls placed 1
 exit 40
 ```
 

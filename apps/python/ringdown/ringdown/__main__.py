@@ -161,7 +161,8 @@ def run(args: argparse.Namespace) -> int:
         code = EXIT_USAGE
         emit(*report.NOTHING_PLACED)
     else:
-        mcp = McpClient(mcp_url, api_key, allowed_hosts=allowed)
+        mcp_key = os.environ.get("CALLE_MCP_TOKEN", "")
+        mcp = McpClient(mcp_url, mcp_key, allowed_hosts=allowed)
         checks = _verify(mcp, incident, result, start)
         append_record(args.ledger, verification_record(incident.id, checks))
         if not all_ok(checks):

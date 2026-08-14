@@ -73,12 +73,13 @@ def test_an_incident_without_a_runbook_does_not_promise_one(incident):
     assert "runbook" not in task.lower()
 
 
-def test_the_payload_carries_the_attempt_id_and_the_recipient_timezone(incident):
+def test_the_payload_carries_the_attempt_id_and_the_recipient_the_api_contract_expects(incident):
     payload = call_payload(incident, LADDER[0], 1)
 
     assert payload["metadata"]["ringdown_attempt_id"] == "inc-2026-08-09-0113/primary/1"
     assert payload["metadata"]["ringdown_contact_id"] == "a.okafor"
-    assert payload["recipient"] == {"phone": ALICE.phone, "timezone": ALICE.timezone}
+    assert payload["recipients"] == [{"phones": [ALICE.phone]}]
+    assert set(payload) == {"task", "recipients", "metadata"}
 
 
 def test_the_payload_never_carries_the_policy_or_the_rest_of_the_ladder(incident):

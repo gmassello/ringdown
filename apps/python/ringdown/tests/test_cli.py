@@ -26,6 +26,7 @@ PAYLOAD = str(EXAMPLES / "alertmanager.example.json")
 @pytest.fixture(autouse=True)
 def api_key(monkeypatch):
     monkeypatch.setenv("CALLE_API_KEY", "rd_test_key")
+    monkeypatch.setenv("CALLE_MCP_TOKEN", "rd_test_token")
 
 
 @pytest.fixture

@@ -23,6 +23,10 @@ MCP_TOOLS = [
 
 DEFAULT_TIMELINE = ("queued", "completed")
 
+CREATE_FIELDS = frozenset(
+    {"task", "recipients", "result_schema", "recipient_result_schema", "metadata", "webhook_url"}
+)
+
 
 def turn(speaker: str, text: str, offset_seconds: int) -> dict[str, Any]:
     return {"speaker": speaker, "text": text, "offset_seconds": offset_seconds}
@@ -83,7 +87,8 @@ class CallRecord:
 
 
 def recipient_of(payload: dict[str, Any]) -> str:
-    return str(payload.get("recipient", {}).get("phone", ""))
+    first = (payload.get("recipients") or [{}])[0]
+    return str((first.get("phones") or [""])[0])
 
 
 def stamp(moment: datetime) -> str:
@@ -141,6 +146,7 @@ class FakeCalle:
     def rest_view(self, record: CallRecord) -> dict[str, Any]:
         scenario = record.scenario
         settled = record.settled
+        phone = record.recipient_phone
         return {
             "id": record.id,
             "status": record.status,
@@ -156,9 +162,14 @@ class FakeCalle:
             "metadata": record.payload.get("metadata", {}),
             "recipients": [
                 {
-                    "phone": record.recipient_phone,
+                    "phones": [phone],
                     "structured_result": None,
-                    "attempts": [{"transcript_turns": scenario.turns if settled else []}],
+                    "attempts": [
+                        {
+                            "phone": phone,
+                            "transcript_turns": scenario.turns if settled else [],
+                        }
+                    ],
                 }
             ],
         }
@@ -255,6 +266,10 @@ class Handler(BaseHTTPRequestHandler):
     def _handle_create(self) -> None:
         self.fake.creates += 1
         payload = self._read_json()
+        unknown = sorted(set(payload) - CREATE_FIELDS)
+        if unknown:
+            self._fail(Fault(400, "invalid_request", {"unknown_fields": unknown}))
+            return
         key = self.headers.get("Idempotency-Key", "")
         if not key:
             self._send(
