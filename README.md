@@ -14,7 +14,7 @@
 <p align="center">
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="215 tests" src="https://img.shields.io/badge/tests-215-2f6f4e">
+  <img alt="218 tests" src="https://img.shields.io/badge/tests-218-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -126,8 +126,9 @@ setup are in the [operational manual](apps/python/ringdown/README.md).
 > `run` refuses to dial without `--confirm 'place real calls'`, exiting 30 having placed nothing.
 > `--base-url` and `--mcp-url` are a **trust boundary, not a convenience**: the API key travels on
 > every request, so a host that is neither loopback nor production is refused before any client is
-> built. The two channels live on different hosts and are named separately; neither is derived
-> from the other.
+> built. The two channels live on different hosts and are named separately, and that is enforced
+> rather than described: two flags resolving to one non-loopback host exit 30, on loopback the run
+> says so out loud, and the ledger records both hostnames either way.
 
 Seven exit codes — 0 acknowledged and verified, 10 declined, 20 ladder exhausted, 25 call state
 unknown, 30 usage, 40 the second channel disagrees, 45 the second channel could not be reached —
@@ -201,7 +202,9 @@ audits its own call over a second transport. Same technique, different product.
   the fake, and the fake is written to the published contract rather than observed from a real
   run. The live MCP surface indexes calls by a `run_id` that only its own placement tool hands
   out, so a call placed over REST may have no run to read — in which case the verification
-  renders `[?]` and every live verdict settles at exit 45 instead of 0.
+  renders `[?]` and every live verdict settles at exit 45 instead of 0. And that fake is one
+  server wearing two names, so nothing here proves the two channels are two: each run says so in
+  its first line and the ledger records both hostnames.
 - Grounding compares text, not meaning. It proves a span was spoken, not that it answered the
   question, so the ETA is read only from what follows the question asking for one and never from
   a number spoken past a negation. An engineer who paraphrases honestly costs a human review.
@@ -211,6 +214,6 @@ audits its own call over a second transport. Same technique, different product.
 - The ladder never re-calls, and retries would need another key and another record.
 - The provider does not dial every country, and Ringdown does not preflight the list.
 
-The [app README](apps/python/ringdown/README.md#known-ceilings) has all fourteen, unvarnished.
+The [app README](apps/python/ringdown/README.md#known-ceilings) has all fifteen, unvarnished.
 
 This is a demo app for a workflow pattern, not a CALL-E SDK and not a supported product API.

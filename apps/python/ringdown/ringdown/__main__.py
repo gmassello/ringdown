@@ -7,6 +7,7 @@ import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Sequence
+from urllib.parse import urlparse
 
 from ringdown import report
 from ringdown.adapter import adapt
@@ -19,7 +20,13 @@ from ringdown.audit import (
     verdict_record,
     verification_record,
 )
-from ringdown.calle import McpClient, RestClient, UntrustedHost, assert_trusted_base_url
+from ringdown.calle import (
+    LOOPBACK_HOSTS,
+    McpClient,
+    RestClient,
+    UntrustedHost,
+    assert_trusted_base_url,
+)
 from ringdown.escalate import Attempt, LadderResult, run_ladder
 from ringdown.incident import (
     Incident,
@@ -126,6 +133,13 @@ def run(args: argparse.Namespace) -> int:
     allowed = frozenset(args.allow_host)
     base_url = assert_trusted_base_url(args.base_url, allowed)
     mcp_url = assert_trusted_base_url(args.mcp_url, allowed)
+    rest_host = urlparse(base_url).hostname or ""
+    mcp_host = urlparse(mcp_url).hostname or ""
+    if rest_host == mcp_host:
+        if mcp_host not in LOOPBACK_HOSTS:
+            emit(f"refusing to verify {mcp_host} against itself: the second channel is the first one")
+            return EXIT_USAGE
+        emit(f"note: both channels are {mcp_host}, so this run cannot prove they are two")
     incident = load_incident(args.incident)
     start = datetime.now(UTC)
     rungs = _ladder(incident, args.rotation, start)
@@ -164,7 +178,10 @@ def run(args: argparse.Namespace) -> int:
         mcp_key = os.environ.get("CALLE_MCP_TOKEN", "")
         mcp = McpClient(mcp_url, mcp_key, allowed_hosts=allowed)
         checks = _verify(mcp, incident, result, start)
-        append_record(args.ledger, verification_record(incident.id, checks))
+        append_record(
+            args.ledger,
+            verification_record(incident.id, checks, rest_host=rest_host, mcp_host=mcp_host),
+        )
         if not all_ok(checks):
             denied = contradicted(checks) > 0
             code = EXIT_UNVERIFIED if denied else EXIT_UNRESOLVED

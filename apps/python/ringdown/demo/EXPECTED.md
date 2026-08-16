@@ -4,16 +4,18 @@ This file is written before the code that produces it. It is the contract the de
 satisfy, and the narration a reader gets when they run it with no account and no credentials.
 
 Every run below talks to a fake CALL-E on `127.0.0.1`. Nothing rings. The escalation ladder is
-the same three people every time.
+the same three people every time. Both channels are that one fake — same process, same port, one
+transcript in memory — so no run below proves the two channels are two. Each one says so in its
+first line, and the ledger records both hosts.
 
 Every line below is literal, including the twelve hex characters at the end of an idempotency
 key and the four at the front of a `sha256:` digest. Both are derived from content — the
 canonicalised call payload and the recorded ledger — so they are stable across runs and they
 move only if the example files change. When they move, the demo is supposed to break loudly.
 
-Each block starts at the first `[n/3]` line. `run` prints the incident header and the ladder
-table above it every time, exactly as shown once in scenario 1; the repetition is left out of
-scenarios 2 through 6.
+Each block starts at the first `[n/3]` line. `run` prints the one-channel note, the incident
+header and the ladder table above it every time, exactly as shown once in scenario 1; the
+repetition is left out of scenarios 2 through 6.
 
 | Rung | Scope | Person | Number |
 | --- | --- | --- | --- |
@@ -30,6 +32,7 @@ incident and gives a number of minutes. Every recorded field quotes the span tha
 and the second channel finds all three spans in turns the recipient spoke.
 
 ```text
+note: both channels are 127.0.0.1, so this run cannot prove they are two
 incident inc-2026-08-09-0113  sev2  checkout-api
   checkout p99 latency above 3s
 
@@ -64,7 +67,7 @@ verdict acknowledged  owner a.okafor  eta 15 minutes
 
 verified 10/10
 
-ledger 4 records  head sha256:ae37…  calls placed 1
+ledger 4 records  head sha256:fb41…  calls placed 1
 exit 0
 ```
 
@@ -120,7 +123,7 @@ verdict acknowledged  owner b.mensah  eta 20 minutes
 
 verified 11/11
 
-ledger 6 records  head sha256:36bb…  calls placed 2
+ledger 6 records  head sha256:8f42…  calls placed 2
 exit 0
 ```
 
@@ -168,7 +171,7 @@ verdict unacknowledged  the ladder is exhausted and this incident has no owner
 
 verified 3/3
 
-ledger 8 records  head sha256:2cb6…  calls placed 3
+ledger 8 records  head sha256:a718…  calls placed 3
 exit 20
 ```
 
@@ -217,7 +220,7 @@ verdict acknowledged  owner a.okafor  eta 15 minutes
 
 verified 10/10
 
-ledger 4 records  head sha256:ae37…  calls placed 1
+ledger 4 records  head sha256:fb41…  calls placed 1
 exit 0
 POST requests sent 2, calls created 1, people woken 1
 ```
@@ -272,7 +275,7 @@ verdict declined by a.okafor  the ladder was not continued
 
 verified 1/1
 
-ledger 4 records  head sha256:9bee…  calls placed 1
+ledger 4 records  head sha256:4afb…  calls placed 1
 exit 10
 ```
 
@@ -318,7 +321,7 @@ verified 6/10
 The acknowledgement recorded on the placing channel is not supported by the second channel.
 Treat this incident as unowned.
 
-ledger 4 records  head sha256:cee4…  calls placed 1
+ledger 4 records  head sha256:b9d5…  calls placed 1
 exit 40
 ```
 

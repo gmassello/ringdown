@@ -62,7 +62,7 @@ Python 3.11 or newer. No runtime dependencies — `dependencies = []`, standard 
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install pytest
-python -m pytest -q       # 215 tests, no credentials, no outbound calls
+python -m pytest -q       # 218 tests, no credentials, no outbound calls
 ```
 
 ## Preview, which is the default
@@ -91,7 +91,11 @@ python -m ringdown run --incident incident.json \
 nothing. `--base-url` selects the REST environment and defaults to `https://api.heycall-e.com`.
 `--mcp-url` selects the second channel separately and defaults to
 `https://seleven-mcp-sg.airudder.com/mcp/openagent_oauth` — the two surfaces do not live on the
-same host, so the second channel is never derived from the first. Any other host on either flag
+same host, and that is enforced rather than described: if both flags resolve to one host that is
+not loopback, Ringdown prints `refusing to verify <host> against itself` and exits 30 having
+placed nothing. On loopback it says so in a note and runs anyway, which is what the demo does.
+Either way the verification record names both hosts, so the artefact carries the answer instead
+of the reader having to trust the tool. Any other host on either flag
 needs `--allow-host`, which is repeatable. The API key is read from the environment only. Why
 that is a trust boundary and not a convenience is in [Threat model](#threat-model).
 
@@ -151,7 +155,7 @@ read at all.
 | 10 | a person explicitly declined; the ladder was not continued |
 | 20 | nobody acknowledged and the ladder is exhausted |
 | 25 | call state could not be established; a call may be live |
-| 30 | usage error: no confirmation phrase, no API key, untrusted host, bad incident or rotation file |
+| 30 | usage error: no confirmation phrase, no API key, untrusted host, both channels on one non-loopback host, bad incident or rotation file |
 | 40 | the recorded verdict does not reconcile on the second channel, or a ledger fails verification |
 | 45 | the second channel could not be reached or could not be read, so the verdict stands unconfirmed |
 
@@ -213,6 +217,10 @@ that wrote it. Four record types share the chain: `intent`, `attempt`, `verdict`
 so the ladder never rings a phone the ledger has no record of. Its `attempt` follows once the
 call settles. A crash between the two leaves an `intent` with no `attempt`: that is the shape
 that says a call may exist and names the key to reconcile it with.
+
+`verification` carries the counts, and it names the two channels the run used: `rest_host` and
+`mcp_host`, the hostnames only, never a token and never a path. A ledger that verified against a
+second channel and one that verified against itself no longer look the same on disk.
 
 ```bash
 python -m ringdown verify --ledger examples/ledger.example.jsonl
@@ -356,6 +364,13 @@ own call over a second transport. Same technique, different product.
     with `Region is not allowed for this channel`. A rotation that lists an on-call engineer in a
     refused region resolves cleanly, previews cleanly, and fails at the first call. Reading the
     supported set at load time is a preflight this app does not do.
+15. Every artefact in this repository was produced with one channel wearing two names. The demo
+    points both flags at a single `FakeCalleServer` — same process, same port, one transcript in
+    memory — so the seven scenarios, the committed ledger and the test suite all verify against
+    the server that placed the call. Ringdown now refuses that collision off loopback, announces
+    it on loopback and records both hostnames in the verification record, so the gap is visible
+    rather than hidden. Visible is not closed: closing it needs a live provider, which is
+    ceiling 12.
 
 This is a demo app for a workflow pattern, not a CALL-E SDK and not a supported
 product API.

@@ -48,7 +48,12 @@ def write_run(path, verdict="unacknowledged", attempt=None, checks=None):
     attempt = attempt or an_attempt()
     append_record(path, attempt_record(attempt, "inc-1"))
     append_record(path, verdict_record("inc-1", LadderResult(verdict, (attempt,))))
-    append_record(path, verification_record("inc-1", checks or SAW_IT))
+    append_record(
+        path,
+        verification_record(
+            "inc-1", checks or SAW_IT, rest_host="rest.example", mcp_host="mcp.example"
+        ),
+    )
 
 
 def read_lines(path) -> list[dict]:

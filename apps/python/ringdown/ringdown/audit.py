@@ -81,10 +81,14 @@ def verdict_record(incident_id: str, result: LadderResult) -> dict:
     }
 
 
-def verification_record(incident_id: str, checks: Sequence[Check]) -> dict:
+def verification_record(
+    incident_id: str, checks: Sequence[Check], *, rest_host: str, mcp_host: str
+) -> dict:
     return {
         "type": "verification",
         "incident": incident_id,
+        "rest_host": rest_host,
+        "mcp_host": mcp_host,
         "verified": all_ok(checks),
         "passed": passed(checks),
         "unresolved": unresolved(checks),

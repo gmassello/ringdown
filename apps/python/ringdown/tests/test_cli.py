@@ -95,6 +95,33 @@ def test_a_host_outside_the_allowlist_is_refused(incident_file, tmp_path):
     assert code == EXIT_USAGE
 
 
+def test_the_second_channel_may_not_be_the_first(incident_file, tmp_path, capsys):
+    ledger = tmp_path / "l.jsonl"
+    code = _run("https://api.heycall-e.com", incident_file, ledger, "--confirm", CONFIRMATION)
+    assert code == EXIT_USAGE
+    assert "refusing to verify api.heycall-e.com against itself" in capsys.readouterr().out
+    assert not ledger.exists()
+
+
+def test_two_channels_on_one_loopback_host_are_announced_not_refused(
+    serving, incident_file, tmp_path, capsys
+):
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    code = _run(server.base_url, incident_file, tmp_path / "l.jsonl", "--confirm", CONFIRMATION)
+    assert code == EXIT_ACKNOWLEDGED
+    assert "note: both channels are 127.0.0.1" in capsys.readouterr().out
+
+
+def test_the_ledger_names_the_channels_it_ran_against(serving, incident_file, tmp_path):
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+    assert _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION) == 0
+    written = ledger.read_text()
+    verification = json.loads(written.splitlines()[-1])
+    assert verification["rest_host"] == "127.0.0.1" and verification["mcp_host"] == "127.0.0.1"
+    assert "rd_test_token" not in written and "rd_test_key" not in written
+
+
 def test_an_acknowledged_and_verified_call_exits_zero(serving, incident_file, tmp_path):
     server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
     ledger = tmp_path / "l.jsonl"
