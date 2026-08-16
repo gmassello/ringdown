@@ -84,7 +84,7 @@ def reason_prose(attempt: Attempt, policy: Policy) -> tuple[str, ...]:
     if attempt.reason == "no_eta":
         return (
             "the call completed and the provider was confident,",
-            "and no number of minutes was ever spoken",
+            "and no number of minutes was committed to when asked",
         )
     return ()
 

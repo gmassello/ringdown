@@ -17,8 +17,8 @@ CALL_TASK = """You are placing an automated on-call page. Follow these steps in 
 5. Once {name} confirms, read exactly this: "There is a {severity} incident on {service}:
    {title}. {summary}"
 6. Ask, in these words: "Are you taking this incident right now?"
-7. If they say yes, ask how many minutes until they start working the incident, and wait for a
-   number.
+7. If they say yes, ask, in these words: "How many minutes until you are working the incident?"
+   and wait for a number.
 8. If they decline, or cannot take it, or are unsure, accept the answer and do not press.
 9. Before ending, state clearly whether the engineer acknowledged taking the incident.
 

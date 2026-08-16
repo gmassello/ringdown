@@ -59,7 +59,7 @@ def place_and_settle(
     try:
         created = rest.create_call(payload, key)
     except CalleError as error:
-        if not error.ambiguous:
+        if not error.may_have_landed:
             return Attempt(
                 rung=rung, key=key, attempt_id=aid, verdict="not_acknowledged", reason=error.code
             )

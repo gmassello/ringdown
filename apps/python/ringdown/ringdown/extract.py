@@ -66,6 +66,7 @@ UNITS = {
 TENS = {"twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60}
 
 MINUTES = r"(?:minutes?|mins?)"
+ETA_QUESTION = re.compile(rf"how many {MINUTES}\b")
 DIGIT_ETA = re.compile(rf"(\d{{1,3}})\s*{MINUTES}\b")
 WORD_ETA = re.compile(
     rf"\b({'|'.join([*TENS, *UNITS])})(?:[\s\-]+({'|'.join(UNITS)}))?\s*{MINUTES}\b"
@@ -135,9 +136,19 @@ def _minutes_in_normalised(lowered: str) -> int | None:
     return None
 
 
-def find_eta(spoken: Sequence[tuple[Turn, str]]) -> tuple[int | None, str]:
-    for turn, text in spoken:
-        minutes = _minutes_in_normalised(text)
+def find_eta(turns: Sequence[Turn]) -> tuple[int | None, str]:
+    asked = max(
+        (
+            index
+            for index, turn in enumerate(turns)
+            if turn.speaker == "bot" and ETA_QUESTION.search(normalise(turn.text))
+        ),
+        default=None,
+    )
+    if asked is None:
+        return None, ""
+    for turn, text in _spoken(turns[asked + 1 :]):
+        minutes = _minutes_in_normalised(NEGATION.split(text, 1)[0])
         if minutes is not None:
             return minutes, turn.text
     return None, ""
@@ -155,7 +166,7 @@ def find_owner(spoken: Sequence[tuple[Turn, str]]) -> tuple[str, str]:
 def extract(turns: Sequence[Turn]) -> Extraction:
     spoken = _spoken(turns)
     owner, owner_span = find_owner(spoken)
-    eta_minutes, eta_span = find_eta(spoken)
+    eta_minutes, eta_span = find_eta(turns)
 
     for phrases, disposition in (
         (VOICEMAIL, "unreachable"),

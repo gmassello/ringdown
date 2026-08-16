@@ -35,6 +35,22 @@ def test_an_ambiguous_yes_without_an_eta_does_not_acknowledge(serving, rest_clie
     assert result.attempts[1].extraction.eta_minutes == 20
 
 
+def test_a_number_of_minutes_that_is_not_a_commitment_escalates_instead_of_acknowledging(
+    serving, rest_client
+):
+    stalling = scenarios.answer_ack(
+        ALICE.name, "alice", "no idea, the alert has been firing for twenty minutes already"
+    )
+    server = serving({ALICE.phone: stalling, BEN.phone: scenarios.no_answer(),
+                      CARLA.phone: scenarios.no_answer()})
+
+    result = run_ladder(rest_client(server), an_incident(policy=FAST), LADDER)
+
+    assert result.verdict == "unacknowledged"
+    assert result.attempts[0].verdict == "not_acknowledged"
+    assert result.attempts[0].reason == "no_eta"
+
+
 def test_a_reconciled_attempt_places_exactly_one_call_and_never_wakes_the_backup(
     serving, rest_client
 ):

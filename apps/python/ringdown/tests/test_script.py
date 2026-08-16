@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from ringdown.extract import ETA_QUESTION, normalise
 from ringdown.script import call_payload, call_task, idempotency_key
 from tests.data import ALICE, BEN, LADDER, an_incident
 
@@ -50,6 +51,10 @@ def test_the_call_task_is_built_only_from_validated_incident_fields(incident):
         assert expected in task
     assert ALICE.name in task
     assert BEN.name not in task
+
+
+def test_the_call_task_asks_for_the_eta_in_the_words_the_extractor_looks_for(incident):
+    assert ETA_QUESTION.search(normalise(call_task(incident, LADDER[0])))
 
 
 def test_the_call_task_states_that_it_is_automated_and_recorded(incident):

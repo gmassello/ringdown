@@ -34,15 +34,15 @@ narrated output; this is scenario 2:
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-1ebde0bc3ec9
+      idempotency key rd-inc-2026-08-09-0113-primary-1-d1bf47925379
       call call_fake1  status completed  confidence 0.91 high
       not acknowledged (no_eta)  the call completed and the provider was confident,
-                                 and no number of minutes was ever spoken
+                                 and no number of minutes was committed to when asked
         disposition  unclear
         eta          absent
 
 [2/3] secondary  Ben Mensah  +1********01
-      idempotency key rd-inc-2026-08-09-0113-secondary-1-a516f959a35f
+      idempotency key rd-inc-2026-08-09-0113-secondary-1-89f28ae6b03a
       call call_fake2  status completed  confidence 0.94 high
       acknowledged  owner Ben Mensah  eta 20 minutes
         disposition  "yes, i am taking this incident right now"
@@ -62,7 +62,7 @@ Python 3.11 or newer. No runtime dependencies — `dependencies = []`, standard 
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install pytest
-python -m pytest -q       # 198 tests, no credentials, no outbound calls
+python -m pytest -q       # 205 tests, no credentials, no outbound calls
 ```
 
 ## Preview, which is the default
@@ -106,23 +106,37 @@ answers nothing and a verdict stands unconfirmed at exit 45.
 
 The two surfaces of the provider are not two views of one JSON document. REST reports lowercase
 statuses and exposes `task_completed` and `completion_confidence`; MCP reports uppercase statuses
-and accepts no extraction schema at all. Verifying over MCP therefore forces Ringdown to
-re-derive the acknowledgement from the raw transcript, over a different transport, using none of
-the fields it recorded.
+and accepts no extraction schema at all. Verifying over MCP re-reads the call from a different
+transport and re-derives the acknowledgement from the raw transcript it serves.
 
-Ten checks run against the attempt that acknowledged: the second channel returns a run for that
-call id, the run echoes the same call id and the attempt id, it reached the number that was
-dialled, its uppercase status maps to the recorded one, re-extracting its transcript gives
-`acknowledged`, the disposition, owner and ETA spans are each spoken by the recipient rather than
-by the agent, and the run finished inside the escalation window. One more check runs against
-every other attempt that reached a call, including on exit 10 and 20: the run for that person
-must not report a commitment. That one catches the opposite error — escalating past somebody who
-did say yes.
+Ten checks run against the attempt that acknowledged, in two blocks that are worth reading
+separately because they prove different things.
+
+*The second channel serves the same run* — six checks: a run comes back for that call id, the run
+reports that call id, it echoes the attempt id Ringdown sent, it reached the number that was
+dialled, its uppercase status maps to the recorded one, and it finished inside the escalation
+window. Three of these compare the provider's answer against values Ringdown itself wrote into
+the request, so what they establish is that both surfaces describe one call, not that the call
+went the way the ledger says.
+
+*The acknowledgement holds* — four checks: re-extracting the transcript the second channel serves
+gives `acknowledged`, and the disposition, owner and ETA spans are each spoken by the recipient
+rather than by the agent. These re-run Ringdown's own extractor over the second channel's text.
+They catch a transcript that differs between surfaces; they do not catch an extractor that read
+one transcript wrong, because the same extractor produced the verdict being checked. Buying that
+would take a second derivation the provider cannot supply: the live API rejects `result_schema`
+and `recipient_result_schema`, so there is no provider-side interpretation to compare against and
+all extraction is ours. That limit is real and it is stated here rather than papered over.
+
+One more check runs against every other attempt that reached a call, including on exit 10 and 20:
+the run for that person must not report a commitment. That one catches the opposite error —
+escalating past somebody who did say yes.
 
 Zero checks is not success. A ladder with no attempts is never reported as verified. Neither is a
-check the second channel never answered: a timeout, a dropped connection or a 5xx renders `[?]`
-rather than `[ ]`, because a channel that is down does not contradict anything. Only a channel
-that answered and disagreed produces a failure.
+check the second channel never answered: any error reading it — a timeout, a dropped connection,
+a 5xx, a refused token, a run it cannot find — renders `[?]` rather than `[ ]`, with the provider's
+error code beside the label. A channel that would not answer does not contradict anything. Only a
+channel that answered and disagreed produces a failure.
 
 All of it is proven against the fake and none of it against the live provider, which is the first
 thing to read in [Known ceilings](#known-ceilings). The live MCP surface indexes calls by a
@@ -273,10 +287,14 @@ own call over a second transport. Same technique, different product.
 
 ## Known ceilings
 
-1. Grounding compares text, not meaning. An engineer who paraphrases honestly produces an exit 40
-   over a real acknowledgement. That is the acceptable direction of error — it costs a human
-   review, not an unowned incident — but it is a real cost. The proper fix belongs to the
-   provider.
+1. Grounding compares text, not meaning: it proves a span was spoken by the recipient, not that
+   it answered the question that was asked. An ETA is therefore read only from what follows the
+   question asking for one, and a number spoken past a negation — *"no idea, it has been firing
+   for twenty minutes"* — is not read as a commitment. Both rules cost false negatives: an
+   engineer who paraphrases honestly, or who volunteers "no problem, ten minutes", produces an
+   exit 20 or 40 over a real acknowledgement. That is the acceptable direction of error — it
+   costs a human review, not an unowned incident — but it is a real cost. The proper fix belongs
+   to the provider.
 2. A verdict of `unknown` is never verified — see [Exit codes](#exit-codes).
 3. No webhooks, because they are unsigned.
 4. No cancellation of a call in flight.

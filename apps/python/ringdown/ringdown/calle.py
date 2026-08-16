@@ -24,12 +24,12 @@ class CalleError(Exception):
         self.details = details
 
     @property
-    def ambiguous(self) -> bool:
+    def may_have_landed(self) -> bool:
         return self.status is None or self.status in AMBIGUOUS_STATUSES or self.status >= 500
 
     @property
     def retriable(self) -> bool:
-        return self.ambiguous and self.status != 409
+        return self.may_have_landed and self.status != 409
 
 
 class UntrustedHost(ValueError):

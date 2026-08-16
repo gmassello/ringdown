@@ -123,8 +123,8 @@ def test_the_second_channel_is_read_from_the_url_it_was_given(
         CONFIRMATION,
         mcp_url=f"{server.base_url}/somewhere-else",
     )
-    assert code == EXIT_UNVERIFIED
-    assert "[ ] second channel returned a run" in capsys.readouterr().out
+    assert code == EXIT_UNRESOLVED
+    assert "[?] second channel returned a run" in capsys.readouterr().out
 
 
 def test_a_second_channel_that_cannot_be_reached_is_unresolved_not_a_mismatch(
@@ -145,6 +145,24 @@ def test_a_second_channel_that_cannot_be_reached_is_unresolved_not_a_mismatch(
     assert "Treat this incident as unowned." not in out
     verification = json.loads(ledger.read_text().splitlines()[-1])
     assert verification["unresolved"] == 1
+
+
+def test_a_second_channel_that_refuses_our_credentials_is_unresolved_not_a_mismatch(
+    serving, incident_file, tmp_path, capsys, monkeypatch
+):
+    monkeypatch.setenv("CALLE_MCP_TOKEN", "")
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+
+    code = _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION)
+
+    assert code == EXIT_UNRESOLVED
+    out = capsys.readouterr().out
+    assert "[?] second channel returned a run" in out
+    assert "unauthorized" in out
+    assert "Treat this incident as unowned." not in out
+    verification = json.loads(ledger.read_text().splitlines()[-1])
+    assert verification["unresolved"] == 1 and verification["verified"] is False
 
 
 def test_a_crash_mid_ladder_leaves_the_placed_attempt_and_the_pending_key_on_the_ledger(

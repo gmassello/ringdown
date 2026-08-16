@@ -14,7 +14,7 @@
 <p align="center">
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="198 tests" src="https://img.shields.io/badge/tests-198-2f6f4e">
+  <img alt="205 tests" src="https://img.shields.io/badge/tests-205-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -54,10 +54,10 @@ nothing rings — the demo supplies its own throwaway key. This is the second on
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-1ebde0bc3ec9
+      idempotency key rd-inc-2026-08-09-0113-primary-1-d1bf47925379
       call call_fake1  status completed  confidence 0.91 high
       not acknowledged (no_eta)  the call completed and the provider was confident,
-                                 and no number of minutes was ever spoken
+                                 and no number of minutes was committed to when asked
         disposition  unclear
         eta          absent
 ```
@@ -139,15 +139,22 @@ and 40 overrides 0, 10, 20 and 45 alike, so a decline the second channel does no
 
 The provider's two surfaces are not two views of one JSON document. REST reports lowercase statuses
 and exposes `task_completed` and `completion_confidence`. MCP reports uppercase statuses and accepts
-no extraction schema at all. So verifying over MCP forces Ringdown to re-derive the acknowledgement
-from the raw transcript, over a different transport, using none of the fields it recorded.
+no extraction schema at all. So verifying over MCP re-reads the call from a different transport and
+re-derives the acknowledgement from the raw transcript it serves.
 
-Ten checks run on the attempt that acknowledged; one more runs on every other attempt that reached
-a call, and that last one catches the opposite error — walking over somebody who did say yes. Zero
-checks is not success: a ladder with no attempts is never reported as verified.
+Ten checks run on the attempt that acknowledged, split into two blocks that prove different things:
+six establish that both surfaces describe one call, and four re-derive the acknowledgement from the
+second channel's transcript. The split is there because the second group re-runs Ringdown's own
+extractor — it catches a transcript that differs between surfaces, not an extractor that read one
+transcript wrong. One more check runs on every other attempt that reached a call, and that one
+catches the opposite error — walking over somebody who did say yes. Zero checks is not success: a
+ladder with no attempts is never reported as verified. Neither is a check the second channel would
+not answer: any error reading it renders `[?]`, never a contradiction.
 
-Every recorded field has to be quoted by a span the recipient actually spoke. A span that appears
-only in the agent's own turns is rejected: quoting the question is not evidence of the answer.
+Every recorded field has to be quoted by a span the recipient actually spoke, and the ETA has to
+answer the question that asked for it — a number spoken about something else is not a commitment.
+A span that appears only in the agent's own turns is rejected: quoting the question is not evidence
+of the answer.
 
 The verdict and its verification are appended to a hash-chained ledger, and `verify --ledger` does
 something a flat append-only log cannot: it **re-derives the verdict from the recorded attempts**.
@@ -194,8 +201,10 @@ audits its own call over a second transport. Same technique, different product.
   run. The live MCP surface indexes calls by a `run_id` that only its own placement tool hands
   out, so a call placed over REST may have no run to read — in which case the verification
   renders `[?]` and every live verdict settles at exit 45 instead of 0.
-- Grounding compares text, not meaning, so an engineer who paraphrases honestly costs a human
-  review. That is the acceptable direction of error, and still a real cost.
+- Grounding compares text, not meaning. It proves a span was spoken, not that it answered the
+  question, so the ETA is read only from what follows the question asking for one and never from
+  a number spoken past a negation. An engineer who paraphrases honestly costs a human review.
+  That is the acceptable direction of error, and still a real cost.
 - A verdict of `unknown` is never verified — there may be a live call.
 - A call already in flight cannot be cancelled. What is cancellable is the ladder.
 - The ladder never re-calls, and retries would need another key and another record.

@@ -39,7 +39,7 @@ ladder
   3. incident_commander  Carla Varga    +1********02
 
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-b3f62d02fece
+      idempotency key rd-inc-2026-08-09-0113-primary-1-d1bf47925379
       call call_fake1  status completed  confidence 0.94 high
       acknowledged  owner Alice Okafor  eta 15 minutes
         disposition  "yes, i am taking this incident right now"
@@ -48,21 +48,23 @@ ladder
 
 verdict acknowledged  owner a.okafor  eta 15 minutes
 
-# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel
+# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel: the second channel serves the same run
 - [x] second channel returned a run for call call_fake1
 - [x] run reports call id call_fake1
-- [x] run echoes attempt id inc-2026-08-09-0113/primary/1
+- [x] run echoes the attempt id inc-2026-08-09-0113/primary/1 we sent
 - [x] run reached Alice Okafor at +1********00
 - [x] run status COMPLETED maps to the recorded completed
+- [x] the run finished inside the escalation window
+
+# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel: the acknowledgement holds
 - [x] re-extracting the second channel transcript gives disposition acknowledged
 - [x] the recorded disposition span is spoken by the recipient
 - [x] the recorded owner Alice Okafor is spoken by the recipient
 - [x] the recorded ETA of 15 minutes is spoken by the recipient
-- [x] the run finished inside the escalation window
 
 verified 10/10
 
-ledger 4 records  head sha256:9180…  calls placed 1
+ledger 4 records  head sha256:ae37…  calls placed 1
 exit 0
 ```
 
@@ -76,21 +78,21 @@ those three signals reports this incident as escalated and goes back to sleep.
 
 Alice said "yeah, sure, I'll take a look at some point" and, asked for minutes, "hard to say
 right now". There is no commitment and no clock: nothing she said is a commitment phrase, so the
-disposition reads `unclear` with no span to quote, and no number of minutes was ever spoken.
+disposition reads `unclear` with no span to quote, and no number of minutes was committed to.
 Ringdown records it as `not_acknowledged` with the reason `no_eta` and moves down the ladder.
 Ben commits, and the run exits 0 on the second rung.
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-b3f62d02fece
+      idempotency key rd-inc-2026-08-09-0113-primary-1-d1bf47925379
       call call_fake1  status completed  confidence 0.91 high
       not acknowledged (no_eta)  the call completed and the provider was confident,
-                                 and no number of minutes was ever spoken
+                                 and no number of minutes was committed to when asked
         disposition  unclear
         eta          absent
 
 [2/3] secondary  Ben Mensah  +1********01
-      idempotency key rd-inc-2026-08-09-0113-secondary-1-fd80c533c252
+      idempotency key rd-inc-2026-08-09-0113-secondary-1-89f28ae6b03a
       call call_fake2  status completed  confidence 0.94 high
       acknowledged  owner Ben Mensah  eta 20 minutes
         disposition  "yes, i am taking this incident right now"
@@ -99,24 +101,26 @@ Ben commits, and the run exits 0 on the second rung.
 
 verdict acknowledged  owner b.mensah  eta 20 minutes
 
-# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel
+# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel: the run reports no acknowledgement
 - [x] run for Alice Okafor reports no acknowledgement
 
-# Verification of inc-2026-08-09-0113 attempt 2 (b.mensah) on the second channel
+# Verification of inc-2026-08-09-0113 attempt 2 (b.mensah) on the second channel: the second channel serves the same run
 - [x] second channel returned a run for call call_fake2
 - [x] run reports call id call_fake2
-- [x] run echoes attempt id inc-2026-08-09-0113/secondary/1
+- [x] run echoes the attempt id inc-2026-08-09-0113/secondary/1 we sent
 - [x] run reached Ben Mensah at +1********01
 - [x] run status COMPLETED maps to the recorded completed
+- [x] the run finished inside the escalation window
+
+# Verification of inc-2026-08-09-0113 attempt 2 (b.mensah) on the second channel: the acknowledgement holds
 - [x] re-extracting the second channel transcript gives disposition acknowledged
 - [x] the recorded disposition span is spoken by the recipient
 - [x] the recorded owner Ben Mensah is spoken by the recipient
 - [x] the recorded ETA of 20 minutes is spoken by the recipient
-- [x] the run finished inside the escalation window
 
 verified 11/11
 
-ledger 6 records  head sha256:1a12…  calls placed 2
+ledger 6 records  head sha256:36bb…  calls placed 2
 exit 0
 ```
 
@@ -135,36 +139,36 @@ round up to success.
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-b3f62d02fece
+      idempotency key rd-inc-2026-08-09-0113-primary-1-d1bf47925379
       call call_fake1  status failed  failure no_answer
       not acknowledged (no_answer)  nobody picked up
 
 [2/3] secondary  Ben Mensah  +1********01
-      idempotency key rd-inc-2026-08-09-0113-secondary-1-fd80c533c252
+      idempotency key rd-inc-2026-08-09-0113-secondary-1-89f28ae6b03a
       call call_fake2  status failed  failure voicemail
       not acknowledged (voicemail)  a recording is not a person
       note: the transcript contains an instruction addressed to this agent. It was recorded as
             evidence and not followed.
 
 [3/3] incident_commander  Carla Varga  +1********02
-      idempotency key rd-inc-2026-08-09-0113-incident-commander-1-5245ef024b79
+      idempotency key rd-inc-2026-08-09-0113-incident-commander-1-649726bf8f6b
       call call_fake3  status completed  confidence 0.05 high
       not acknowledged (low_confidence)  label high carried a score of 0.05, below the 0.7 floor
 
 verdict unacknowledged  the ladder is exhausted and this incident has no owner
 
-# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel
+# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel: the run reports no acknowledgement
 - [x] run for Alice Okafor reports no acknowledgement
 
-# Verification of inc-2026-08-09-0113 attempt 2 (b.mensah) on the second channel
+# Verification of inc-2026-08-09-0113 attempt 2 (b.mensah) on the second channel: the run reports no acknowledgement
 - [x] run for Ben Mensah reports no acknowledgement
 
-# Verification of inc-2026-08-09-0113 attempt 3 (c.varga) on the second channel
+# Verification of inc-2026-08-09-0113 attempt 3 (c.varga) on the second channel: the run reports no acknowledgement
 - [x] run for Carla Varga reports no acknowledgement
 
 verified 3/3
 
-ledger 8 records  head sha256:040d…  calls placed 3
+ledger 8 records  head sha256:2cb6…  calls placed 3
 exit 20
 ```
 
@@ -185,9 +189,9 @@ polls it, and Alice acknowledges. Two POSTs, one call, one phone rang.
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-b3f62d02fece
+      idempotency key rd-inc-2026-08-09-0113-primary-1-d1bf47925379
       CALL-E returned service_unavailable without saying whether the call exists.
-      Reconciling rd-inc-2026-08-09-0113-primary-1-b3f62d02fece.
+      Reconciling rd-inc-2026-08-09-0113-primary-1-d1bf47925379.
       Reconciled to call call_fake1.
       call call_fake1  status completed  confidence 0.94 high
       acknowledged  owner Alice Okafor  eta 15 minutes
@@ -197,21 +201,23 @@ polls it, and Alice acknowledges. Two POSTs, one call, one phone rang.
 
 verdict acknowledged  owner a.okafor  eta 15 minutes
 
-# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel
+# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel: the second channel serves the same run
 - [x] second channel returned a run for call call_fake1
 - [x] run reports call id call_fake1
-- [x] run echoes attempt id inc-2026-08-09-0113/primary/1
+- [x] run echoes the attempt id inc-2026-08-09-0113/primary/1 we sent
 - [x] run reached Alice Okafor at +1********00
 - [x] run status COMPLETED maps to the recorded completed
+- [x] the run finished inside the escalation window
+
+# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel: the acknowledgement holds
 - [x] re-extracting the second channel transcript gives disposition acknowledged
 - [x] the recorded disposition span is spoken by the recipient
 - [x] the recorded owner Alice Okafor is spoken by the recipient
 - [x] the recorded ETA of 15 minutes is spoken by the recipient
-- [x] the run finished inside the escalation window
 
 verified 10/10
 
-ledger 4 records  head sha256:9180…  calls placed 1
+ledger 4 records  head sha256:ae37…  calls placed 1
 exit 0
 POST requests sent 2, calls created 1, people woken 1
 ```
@@ -223,16 +229,16 @@ If the replay had also come back ambiguous, Ringdown stops instead of guessing:
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-b3f62d02fece
+      idempotency key rd-inc-2026-08-09-0113-primary-1-d1bf47925379
       CALL-E returned service_unavailable without saying whether the call exists.
-      Reconciling rd-inc-2026-08-09-0113-primary-1-b3f62d02fece.
-      Reconciling rd-inc-2026-08-09-0113-primary-1-b3f62d02fece failed with service_unavailable.
+      Reconciling rd-inc-2026-08-09-0113-primary-1-d1bf47925379.
+      Reconciling rd-inc-2026-08-09-0113-primary-1-d1bf47925379 failed with service_unavailable.
       A call may be live for this person.
 
 verdict unknown  call state could not be established
 Reconcile this call before running again. Do not re-run to find out.
 
-ledger 3 records  head sha256:ee3f…  calls placed 0
+ledger 3 records  head sha256:7902…  calls placed 0
 exit 25
 POST requests sent 2, calls created 0, people woken 0
 ```
@@ -254,19 +260,19 @@ needs a different human to route the incident.
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-b3f62d02fece
+      idempotency key rd-inc-2026-08-09-0113-primary-1-d1bf47925379
       call call_fake1  status completed  confidence 0.94 high
       declined  Alice Okafor is not taking this incident
         disposition  "no, i am not on call this week, i am not taking this"
 
 verdict declined by a.okafor  the ladder was not continued
 
-# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel
+# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel: the run reports no acknowledgement
 - [x] run for Alice Okafor reports no acknowledgement
 
 verified 1/1
 
-ledger 4 records  head sha256:0e5d…  calls placed 1
+ledger 4 records  head sha256:9bee…  calls placed 1
 exit 10
 ```
 
@@ -284,7 +290,7 @@ call that an acknowledgement just because it wrote one down.
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-b3f62d02fece
+      idempotency key rd-inc-2026-08-09-0113-primary-1-d1bf47925379
       call call_fake1  status completed  confidence 0.94 high
       acknowledged  owner Alice Okafor  eta 15 minutes
         disposition  "yes, i am taking this incident right now"
@@ -293,24 +299,26 @@ call that an acknowledgement just because it wrote one down.
 
 verdict acknowledged  owner a.okafor  eta 15 minutes
 
-# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel
+# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel: the second channel serves the same run
 - [x] second channel returned a run for call call_fake1
 - [x] run reports call id call_fake1
-- [x] run echoes attempt id inc-2026-08-09-0113/primary/1
+- [x] run echoes the attempt id inc-2026-08-09-0113/primary/1 we sent
 - [x] run reached Alice Okafor at +1********00
 - [x] run status COMPLETED maps to the recorded completed
+- [x] the run finished inside the escalation window
+
+# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel: the acknowledgement holds
 - [ ] re-extracting the second channel transcript gives disposition acknowledged
 - [ ] the recorded disposition span is spoken by the recipient
 - [ ] the recorded owner Alice Okafor is spoken by the recipient
 - [ ] the recorded ETA of 15 minutes is spoken by the recipient
-- [x] the run finished inside the escalation window
 
 verified 6/10
 
 The acknowledgement recorded on the placing channel is not supported by the second channel.
 Treat this incident as unowned.
 
-ledger 4 records  head sha256:a61b…  calls placed 1
+ledger 4 records  head sha256:cee4…  calls placed 1
 exit 40
 ```
 

@@ -109,7 +109,7 @@ def test_a_voicemail_keeps_its_own_word_on_the_verifying_channel(incident):
         assert mcp.get_call_run(created.id).status == "VOICEMAIL"
 
 
-def test_a_dropped_connection_is_ambiguous_and_can_be_replayed(incident):
+def test_a_dropped_connection_may_have_landed_and_can_be_replayed(incident):
     with serving(scenarios.dropped_connection(ALICE.name, "alice")) as server:
         rest, _ = clients(server)
 
@@ -117,11 +117,11 @@ def test_a_dropped_connection_is_ambiguous_and_can_be_replayed(incident):
             rest.create_call(payload(incident), KEY)
 
         assert raised.value.status is None
-        assert raised.value.ambiguous
+        assert raised.value.may_have_landed
         assert raised.value.retriable
 
 
-def test_a_lost_reply_after_the_call_was_created_is_ambiguous(incident):
+def test_a_lost_reply_after_the_call_was_created_may_have_landed(incident):
     with serving(scenarios.error_after_create(ALICE.name, "alice")) as server:
         rest, _ = clients(server)
 
@@ -129,11 +129,11 @@ def test_a_lost_reply_after_the_call_was_created_is_ambiguous(incident):
             rest.create_call(payload(incident), KEY)
 
         assert raised.value.status == 503
-        assert raised.value.ambiguous and raised.value.retriable
+        assert raised.value.may_have_landed and raised.value.retriable
         assert len(server.created) == 1
 
 
-def test_a_key_replayed_with_a_different_body_is_ambiguous_but_never_retried(incident):
+def test_a_key_replayed_with_a_different_body_may_have_landed_but_is_never_retried(incident):
     with serving(scenarios.answer_ack(ALICE.name, "alice")) as server:
         rest, _ = clients(server)
         rest.create_call(payload(incident), KEY)
@@ -143,11 +143,11 @@ def test_a_key_replayed_with_a_different_body_is_ambiguous_but_never_retried(inc
             rest.create_call(edited, KEY)
 
         assert raised.value.code == "idempotency_conflict"
-        assert raised.value.ambiguous
+        assert raised.value.may_have_landed
         assert not raised.value.retriable
 
 
-def test_a_provider_refusal_is_neither_ambiguous_nor_retriable(incident):
+def test_a_provider_refusal_neither_landed_nor_retries(incident):
     with serving(scenarios.refused()) as server:
         rest, _ = clients(server)
 
@@ -155,7 +155,7 @@ def test_a_provider_refusal_is_neither_ambiguous_nor_retriable(incident):
             rest.create_call(payload(incident), KEY)
 
         assert raised.value.code == "call_not_ready"
-        assert not raised.value.ambiguous
+        assert not raised.value.may_have_landed
         assert raised.value.details["questions"]
         assert len(server.created) == 0
 
@@ -169,7 +169,7 @@ def test_a_call_that_never_settles_times_out_instead_of_reporting_a_failure(inci
             rest.wait_for_result(created.id, timeout=0.05, interval=0)
 
         assert raised.value.code == "poll_timeout"
-        assert raised.value.ambiguous
+        assert raised.value.may_have_landed
         assert "queued" in raised.value.message
 
 
@@ -201,4 +201,4 @@ def test_a_bad_api_key_is_reported_as_unauthorized(incident):
             rest.create_call(payload(incident), KEY)
 
         assert raised.value.status == 401
-        assert not raised.value.ambiguous
+        assert not raised.value.may_have_landed
