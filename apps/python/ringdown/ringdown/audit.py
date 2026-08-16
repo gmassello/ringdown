@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from ringdown.escalate import Attempt, LadderResult
 
 GENESIS = "sha256:" + "0" * 64
+TAIL_BYTES = 8192
 
 
 def verdict_v1(verdicts: Sequence[str]) -> str:
@@ -98,18 +99,38 @@ def verification_record(
     }
 
 
+def tail_of(handle) -> str:
+    handle.seek(0, os.SEEK_END)
+    size = handle.tell()
+    handle.seek(size - min(size, TAIL_BYTES))
+    return handle.read()
+
+
+def records_in(text: str) -> list[str]:
+    return [line for line in text.splitlines() if line.strip()]
+
+
+def counted(handle) -> int:
+    handle.seek(0)
+    return len(records_in(handle.read()))
+
+
 def append_record(path: Path, record: dict) -> None:
     fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
     with os.fdopen(fd, "r+") as handle:
         fcntl.flock(handle, fcntl.LOCK_EX)
-        lines = handle.read().splitlines()
-        prev = json.loads(lines[-1])["hash"] if lines else GENESIS
-        stamped = {**record, "schema": SCHEMA, "seq": len(lines) + 1, "prev": prev}
-        handle.write(canonical_json(sealed(stamped)) + "\n")
+        tail = tail_of(handle)
+        written = records_in(tail)
+        last = json.loads(written[-1]) if written else {}
+        prev = last.get("hash", GENESIS)
+        seq = last["seq"] + 1 if "seq" in last else counted(handle) + 1
+        gap = "" if not tail or tail.endswith("\n") else "\n"
+        stamped = {**record, "schema": SCHEMA, "seq": seq, "prev": prev}
+        handle.write(gap + canonical_json(sealed(stamped)) + "\n")
 
 
 def head(path: Path) -> tuple[int, str]:
-    lines = path.read_text().splitlines() if path.exists() else []
+    lines = records_in(path.read_text()) if path.exists() else []
     return len(lines), json.loads(lines[-1])["hash"] if lines else GENESIS
 
 
@@ -152,6 +173,12 @@ def chain_checks(path: Path) -> list[Check]:
         (record.get("seq") == number, f"record {number} carries its position in the chain")
         for number, record in enumerate(records, 1)
         if "seq" in record
+    ]
+    placed = {record.get("attempt_id") for record in records if record.get("type") == "attempt"}
+    checks += [
+        (None, f"record {number} announced {record.get('key')} and has no attempt")
+        for number, record in enumerate(records, 1)
+        if record.get("type") == "intent" and record.get("attempt_id") not in placed
     ]
     checks += [
         corroboration_check(number, record)

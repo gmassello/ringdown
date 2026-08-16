@@ -233,10 +233,9 @@ def load_rotation(path: Path) -> tuple[Shift, ...]:
 
 
 def on_call_for(scope: str, shifts: Sequence[Shift], moment: datetime) -> Contact | None:
-    return next(
-        (shift.contact for shift in shifts if shift.scope == scope and shift.covers(moment)),
-        None,
-    )
+    covering = [shift for shift in shifts if shift.scope == scope and shift.covers(moment)]
+    bounded = [shift for shift in covering if shift.ends_at is not None]
+    return next((shift.contact for shift in bounded or covering), None)
 
 
 def resolve_ladder(

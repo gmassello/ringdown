@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Sequence
+from zoneinfo import ZoneInfo
 
 from ringdown.escalate import Attempt, LadderResult
 from ringdown.exits import EXIT_UNRESOLVED, EXIT_UNVERIFIED
@@ -42,22 +44,26 @@ LADDER_VERDICT_TAIL = {
 }
 
 
-def header_lines(incident: Incident, rungs: Sequence[Rung]) -> list[str]:
+def header_lines(incident: Incident, rungs: Sequence[Rung], moment: datetime) -> list[str]:
     return [
         f"incident {incident.id}  {incident.severity}  {incident.service}",
         f"  {incident.title}",
         "",
-        *ladder_lines(rungs),
+        *ladder_lines(rungs, moment),
         "",
     ]
 
 
-def ladder_lines(rungs: Sequence[Rung]) -> list[str]:
+def local_time(rung: Rung, moment: datetime) -> str:
+    return moment.astimezone(ZoneInfo(rung.contact.timezone)).strftime("%H:%M")
+
+
+def ladder_lines(rungs: Sequence[Rung], moment: datetime) -> list[str]:
     scope = max(len(rung.scope) for rung in rungs) + 2
     name = max(len(rung.contact.name) for rung in rungs) + 3
     return ["ladder"] + [
         f"  {position}. {rung.scope.ljust(scope)}{rung.contact.name.ljust(name)}"
-        f"{mask_phone(rung.contact.phone)}"
+        f"{mask_phone(rung.contact.phone)}  {local_time(rung, moment)} local"
         for position, rung in enumerate(rungs, 1)
     ]
 

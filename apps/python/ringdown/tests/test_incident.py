@@ -188,7 +188,7 @@ def test_the_same_person_on_two_rungs_is_only_dialled_once(now):
     assert [rung.contact.id for rung in rungs] == ["a.okafor", "b.mensah"]
 
 
-def test_the_first_shift_that_covers_the_moment_wins_for_a_scope(now):
+def test_a_shift_whose_window_closed_does_not_hold_the_scope(now):
     incident = an_incident(ladder=("primary",))
     shifts = (
         a_shift("primary", ALICE, ends=now - timedelta(minutes=1)),
@@ -229,3 +229,31 @@ def test_a_rotation_shift_that_ends_before_it_starts_is_rejected(tmp_path):
 def test_resolving_against_a_naive_moment_is_refused(now, example_incident, example_shifts):
     with pytest.raises(IncidentError, match="timezone aware"):
         resolve_ladder(example_incident, example_shifts, now.replace(tzinfo=None))
+
+
+def test_a_bounded_shift_relieves_the_open_one_it_overlaps(now):
+    incident = an_incident(ladder=("primary",))
+    shifts = (
+        a_shift("primary", ALICE),
+        a_shift("primary", BEN, starts=now - timedelta(days=1), ends=now + timedelta(days=1)),
+    )
+
+    assert resolve_ladder(incident, shifts, now)[0].contact == BEN
+
+
+def test_the_open_shift_holds_the_scope_once_the_cover_has_gone(now):
+    incident = an_incident(ladder=("primary",))
+    shifts = (
+        a_shift("primary", ALICE),
+        a_shift("primary", BEN, starts=now - timedelta(days=2), ends=now - timedelta(days=1)),
+    )
+
+    assert resolve_ladder(incident, shifts, now)[0].contact == ALICE
+
+
+def test_between_two_covers_the_rotation_file_still_decides(now):
+    incident = an_incident(ladder=("primary",))
+    window = {"starts": now - timedelta(days=1), "ends": now + timedelta(days=1)}
+    shifts = (a_shift("primary", ALICE, **window), a_shift("primary", BEN, **window))
+
+    assert resolve_ladder(incident, shifts, now)[0].contact == ALICE

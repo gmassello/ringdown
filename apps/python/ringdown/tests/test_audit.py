@@ -13,6 +13,8 @@ from ringdown.audit import (
     append_record,
     attempt_record,
     chain_checks,
+    head,
+    intent_record,
     sealed,
     verdict_record,
     verification_record,
@@ -285,3 +287,77 @@ def test_the_rule_the_ladder_runs_today_still_agrees_with_the_frozen_one():
 
 def test_every_schema_this_build_ever_wrote_can_still_be_re_derived():
     assert set(VERDICT_RULES) == set(range(1, SCHEMA + 1))
+
+
+def test_appending_to_an_empty_ledger_starts_the_chain_at_genesis(tmp_path):
+    ledger = tmp_path / "l.jsonl"
+    ledger.write_text("")
+
+    append_record(ledger, verdict_record("inc-1", LadderResult("unacknowledged", ())))
+
+    first = read_lines(ledger)[0]
+    assert first["prev"] == GENESIS and first["seq"] == 1
+
+
+def test_a_ledger_truncated_without_its_final_newline_does_not_swallow_the_next_record(tmp_path):
+    ledger = tmp_path / "l.jsonl"
+    write_run(ledger)
+    ledger.write_text(ledger.read_text().rstrip("\n"))
+
+    append_record(ledger, verdict_record("inc-2", LadderResult("unacknowledged", ())))
+
+    records = read_lines(ledger)
+    assert len(records) == 4 and records[3]["seq"] == 4
+    assert all_ok(chain_checks(ledger))
+
+
+def test_a_blank_line_at_the_end_does_not_break_the_next_append(tmp_path):
+    ledger = tmp_path / "l.jsonl"
+    write_run(ledger)
+    third = read_lines(ledger)[2]
+    ledger.write_text(ledger.read_text() + "\n")
+
+    append_record(ledger, verdict_record("inc-2", LadderResult("unacknowledged", ())))
+
+    appended = json.loads(ledger.read_text().splitlines()[-1])
+    assert appended["prev"] == third["hash"]
+    assert not all_ok(chain_checks(ledger))
+
+
+def test_appending_to_a_ledger_written_before_the_position_field_counts_instead_of_guessing(
+    tmp_path,
+):
+    ledger = tmp_path / "l.jsonl"
+    ledger.write_text((GOLDEN / "ledger-v0.jsonl").read_text())
+
+    append_record(ledger, verdict_record("inc-2", LadderResult("unacknowledged", ())))
+
+    assert read_lines(ledger)[-1]["seq"] == 4
+
+
+def test_an_intent_with_no_attempt_is_reported_as_a_call_left_to_reconcile(tmp_path):
+    ledger = tmp_path / "l.jsonl"
+    append_record(ledger, intent_record("inc-1", "inc-1/primary/1", "rd-key-abc", LADDER[0]))
+
+    orphan = [check for check in chain_checks(ledger) if "has no attempt" in check[1]]
+
+    assert orphan == [(None, "record 1 announced rd-key-abc and has no attempt")]
+    assert not contradicted(chain_checks(ledger))
+
+
+def test_an_intent_whose_attempt_landed_is_not_reported_as_pending(tmp_path):
+    ledger = tmp_path / "l.jsonl"
+    attempt = an_attempt()
+    append_record(ledger, intent_record("inc-1", attempt.attempt_id, attempt.key, LADDER[0]))
+    write_run(ledger, attempt=attempt)
+
+    assert not [check for check in chain_checks(ledger) if "has no attempt" in check[1]]
+
+
+def test_the_ledger_summary_reads_the_same_records_the_appender_counted(tmp_path):
+    ledger = tmp_path / "l.jsonl"
+    write_run(ledger)
+    third = read_lines(ledger)[2]
+    ledger.write_text(ledger.read_text() + "\n")
+
+    assert head(ledger) == (3, third["hash"])

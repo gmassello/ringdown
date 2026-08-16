@@ -62,7 +62,7 @@ Python 3.11 or newer. No runtime dependencies — `dependencies = []`, standard 
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install pytest
-python -m pytest -q       # 253 tests, no credentials, no outbound calls
+python -m pytest -q       # 264 tests, no credentials, no outbound calls
 ```
 
 ## Preview, which is the default
@@ -157,7 +157,7 @@ read at all.
 | 25 | call state could not be established; a call may be live |
 | 30 | usage error: no confirmation phrase, no API key, untrusted host, both channels on one non-loopback host, bad incident or rotation file |
 | 40 | the recorded verdict does not reconcile on the second channel, or a ledger fails verification |
-| 45 | the second channel could not be reached or could not be read, so the verdict stands unconfirmed |
+| 45 | the second channel could not be reached or could not be read, or a ledger holds an announced call with no attempt, so the verdict stands unconfirmed |
 
 Precedence: 25 wins and skips verification entirely, because checks against a call that has not
 finished produce failures that are not contradictions. Then 30 when a verdict exists but no call
@@ -186,9 +186,16 @@ A `shifts` list, each entry a `scope` plus a `contact` with `id`, `name`, `phone
 timestamp is refused rather than assumed to be local. Phone numbers must already be E.164 —
 Ringdown does not reformat or guess a country code.
 
-The first shift covering the current moment wins per scope. A scope with nobody on call is
-skipped with a note; every scope empty is an error, not a reason to dial. A person who appears in
-two scopes is called once.
+A shift covering the current moment holds its scope, and where two of them overlap the **bounded**
+one wins — a shift with an `ends_at` is cover for a specific stretch, so it relieves the open-ended
+shift it overlaps rather than losing to it on file order. Between two bounded shifts the file order
+still decides. A scope with nobody on call is skipped with a note; every scope empty is an error,
+not a reason to dial. A person who appears in two scopes is called once.
+
+Each contact's `timezone` is read for one thing: the ladder prints the local time of every person
+on it, so an operator can see they are about to wake somebody at 03:00. **It does not decide who
+gets called.** Availability is what `starts_at` and `ends_at` are for, and they say it to the
+minute; a quiet-hours rule derived from a timezone would only guess at what the file can state.
 
 See [`examples/rotation.example.json`](examples/rotation.example.json). All numbers are from the
 reserved `555-01xx` range.
@@ -216,7 +223,9 @@ that wrote it. Four record types share the chain: `intent`, `attempt`, `verdict`
 `intent` is written **before** the request that places the call and carries the idempotency key,
 so the ladder never rings a phone the ledger has no record of. Its `attempt` follows once the
 call settles. A crash between the two leaves an `intent` with no `attempt`: that is the shape
-that says a call may exist and names the key to reconcile it with.
+that says a call may exist and names the key to reconcile it with. `verify --ledger` reports that
+shape rather than passing over it — as `[?]` and exit 45, because a call still to be reconciled is
+unfinished business, not a tampered record.
 
 `verification` names the two channels the run used: `rest_host` and `mcp_host`, the hostnames only,
 never a token and never a path. A ledger that verified against a second channel and one that
@@ -236,11 +245,12 @@ which elsewhere appears only as an id.
 python -m ringdown verify --ledger examples/ledger.example.jsonl
 ```
 
-`verify` does five things: it relinks the chain, it recomputes every hash, it checks that each
-record still sits where it says it sits, it **re-derives the verdict from the recorded attempts**
-— using the rule of the schema version that record was written under, not the rule the ladder
-runs today — and it reads the verification record rather than only sealing it, so a ledger whose
-own verification did not hold cannot be replayed as a clean one. A rewritten verdict whose record
+`verify` does six things: it relinks the chain, it recomputes every hash, it checks that each
+record still sits where it says it sits, it names any call the ledger announced but never recorded
+an attempt for, it **re-derives the verdict from the recorded attempts** — using the rule of the
+schema version that record was written under, not the rule the ladder runs today — and it reads the
+verification record rather than only sealing it, so a ledger whose own verification did not hold
+cannot be replayed as a clean one. A rewritten verdict whose record
 was resealed and whose successors were relinked still fails. What none of them proves is
 completeness — see ceiling 11.
 

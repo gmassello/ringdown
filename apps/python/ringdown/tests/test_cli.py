@@ -219,7 +219,7 @@ def test_the_ledger_records_which_checks_did_not_pass(serving, incident_file, tm
 
 
 def test_a_crash_mid_ladder_leaves_the_placed_attempt_and_the_pending_key_on_the_ledger(
-    serving, incident_file, tmp_path, monkeypatch
+    serving, incident_file, tmp_path, monkeypatch, capsys
 ):
     server = serving(
         {
@@ -245,6 +245,11 @@ def test_a_crash_mid_ladder_leaves_the_placed_attempt_and_the_pending_key_on_the
     assert [record["type"] for record in records] == ["intent", "attempt", "intent"]
     assert records[2]["key"] == keys[1]
     assert records[1]["call_id"] is not None
+
+    capsys.readouterr()
+    assert main(["verify", "--ledger", str(ledger)]) == EXIT_UNRESOLVED
+    out = capsys.readouterr().out
+    assert f"[?] record 3 announced {keys[1]} and has no attempt" in out
 
 
 def test_an_unknown_call_state_is_not_verified(serving, incident_file, tmp_path, capsys):

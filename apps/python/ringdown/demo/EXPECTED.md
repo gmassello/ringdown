@@ -13,6 +13,9 @@ key and the four at the front of a `sha256:` digest. Both are derived from conte
 canonicalised call payload and the recorded ledger — so they are stable across runs and they
 move only if the example files change. When they move, the demo is supposed to break loudly.
 
+The one exception is the `local` column in the ladder, which reads the wall clock and therefore
+differs on every run. It is the only thing here that is allowed to move on its own.
+
 Each block starts at the first `[n/3]` line. `run` prints the one-channel note, the incident
 header and the ladder table above it every time, exactly as shown once in scenario 1; the
 repetition is left out of scenarios 2 through 6.
@@ -37,9 +40,9 @@ incident inc-2026-08-09-0113  sev2  checkout-api
   checkout p99 latency above 3s
 
 ladder
-  1. primary             Alice Okafor   +1********00
-  2. secondary           Ben Mensah     +1********01
-  3. incident_commander  Carla Varga    +1********02
+  1. primary             Alice Okafor   +1********00  19:18 local
+  2. secondary           Ben Mensah     +1********01  00:18 local
+  3. incident_commander  Carla Varga    +1********02  01:18 local
 
 [1/3] primary  Alice Okafor  +1********00
       idempotency key rd-inc-2026-08-09-0113-primary-1-d1bf47925379

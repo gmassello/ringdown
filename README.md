@@ -14,7 +14,7 @@
 <p align="center">
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="253 tests" src="https://img.shields.io/badge/tests-253-2f6f4e">
+  <img alt="264 tests" src="https://img.shields.io/badge/tests-264-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -93,7 +93,7 @@ produces it.
 
 ```mermaid
 flowchart TD
-    INC["incident.json + rotation.json<br/>scopes · shifts · policy"] --> LADDER["resolve_ladder<br/>first shift covering now, per scope"]
+    INC["incident.json + rotation.json<br/>scopes · shifts · policy"] --> LADDER["resolve_ladder<br/>cover relieves the open shift, per scope"]
     LADDER --> CALL["one call per rung<br/>content-derived idempotency key"]
     CALL -->|"REST · lowercase status · task_completed"| CALLE["CALL-E"]
     CALL --> EXTRACT["extract<br/>disposition · owner · ETA, each quoted by a spoken span"]
@@ -105,9 +105,11 @@ flowchart TD
     CALLE -.->|"MCP · second transport"| AUDIT
 ```
 
-- **The ladder is resolved before anything dials.** The first shift covering the current moment
-  wins per scope; a scope with nobody on call is skipped with a note, every scope empty is an
-  error and not a reason to dial, and a person in two scopes is called once.
+- **The ladder is resolved before anything dials.** A shift covering the current moment holds its
+  scope, and where two overlap the bounded one relieves the open-ended one; a scope with nobody on
+  call is skipped with a note, every scope empty is an error and not a reason to dial, and a person
+  in two scopes is called once. The ladder prints each person's local time — and never uses it to
+  decide who gets called.
 - **One call per rung, ever.** The idempotency key is derived from the call payload, so a lost
   reply replays the same key instead of waking a second person. The ladder never re-calls.
 - **The transcript is data, never instruction.** A recording that says "ignore your previous

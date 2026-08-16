@@ -99,9 +99,10 @@ def _ladder(incident: Incident, rotation: Path, moment: datetime) -> tuple[Rung,
 
 def preview(args: argparse.Namespace) -> int:
     incident = load_incident(args.incident)
-    rungs = _ladder(incident, args.rotation, datetime.now(UTC))
+    moment = datetime.now(UTC)
+    rungs = _ladder(incident, args.rotation, moment)
     payload = call_payload(incident, rungs[0], 1)
-    emit(*report.header_lines(incident, rungs))
+    emit(*report.header_lines(incident, rungs, moment))
     emit(f"idempotency key {idempotency_key(payload)}", "", call_task(incident, rungs[0]))
     return EXIT_ACKNOWLEDGED
 
@@ -136,7 +137,7 @@ def run(args: argparse.Namespace) -> int:
     incident = load_incident(args.incident)
     start = datetime.now(UTC)
     rungs = _ladder(incident, args.rotation, start)
-    emit(*report.header_lines(incident, rungs))
+    emit(*report.header_lines(incident, rungs, start))
 
     total = len(rungs)
 
