@@ -173,6 +173,7 @@ stored: an attempt keeps only the spans quoted as evidence.
 | [`apps/python/ringdown/`](apps/python/ringdown/) | The app, and its [README](apps/python/ringdown/README.md): setup, exit codes, file formats, threat model, all the ceilings |
 | [`apps/python/ringdown/demo/EXPECTED.md`](apps/python/ringdown/demo/EXPECTED.md) | The demo scenarios, narrated, written before the code that produces them |
 | [`apps/python/ringdown/examples/`](apps/python/ringdown/examples/) | The incident, rotation and mapping files, and a ledger committed exactly as the demo wrote it |
+| [`apps/python/calle-receiver/`](apps/python/calle-receiver/) | Demo infrastructure, not the product: CALL-E's recipient regions don't include Argentina, so this FastAPI service receives the agent's call on a US Twilio number and bridges it to an Argentine phone, with recording, live transcription and a [dashboard](https://calle-receiver.onrender.com/calls). Design and build log in [`docs/plan-twilio-calle.md`](docs/plan-twilio-calle.md) |
 
 Only the app and its skill are meant to travel to
 [`CALLE-AI/awesome-phone-call-agents`](https://github.com/CALLE-AI/awesome-phone-call-agents).

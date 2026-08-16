@@ -57,7 +57,20 @@ SHAKEN/STIR, Voice Integrity, Branded Calling and CNAM only improve the
 reputation of **outbound calls to US numbers** (avoiding "Spam Likely"). For
 receiving and forwarding to Argentina, skip them all.
 
-## Public tunnel
+## Production deploy (Render)
+
+- Live at **https://calle-receiver.onrender.com** (free tier, Blueprint from
+  `render.yaml` at the repo root, Docker build from
+  `apps/python/calle-receiver/Dockerfile`). The number's webhooks point there.
+- `calls.db` is **ephemeral**: wiped on every deploy/restart (no persistent
+  disk on free tier). Fine for the demo; the dashboard fills live.
+- Free tier sleeps after 15 min idle → first call times out. `curl` the URL to
+  wake it before any demo.
+- The number's webhooks can be updated via REST API without the console:
+  `client.incoming_phone_numbers('PN939da01ace5684ac0edbff0d70deb11e').update(voice_url=..., status_callback=...)`
+  — useful because Twilio console sessions expire.
+
+## Local tunnel (dev only)
 
 - ngrok v3 **will not start without an account authtoken** and none is
   configured on this machine. cloudflared is used instead (no account needed):

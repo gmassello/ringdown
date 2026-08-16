@@ -111,3 +111,12 @@ morning".
 `completion_confidence` returning both a score and a label, rather than a label alone, is the
 other one. The labels are coarse enough that we treat the score as the primary check — a `high`
 carrying `0.05` is a real shape — and having both meant we could fail closed without guessing.
+
+One more, discovered while working around the region restriction above: **CALL-E dials VoIP
+numbers**. Since Argentina is not an accepted recipient region, we bridged through a Twilio US
+local number that forwards to an Argentine cell (`apps/python/calle-receiver/`), assuming a real
+risk that the agent would refuse VoIP destinations for fraud prevention, as several voice
+platforms do. It did not: the call to the Twilio number completed normally, `task_completed:
+true`, full conversation both ways. This is worth a line in the docs — "are VoIP/virtual numbers
+dialable?" decides whether a bridge like ours is even viable, and today the only way to find out
+is to spend a call trying.
