@@ -1,12 +1,22 @@
+import secrets
 from urllib.parse import urljoin
 
-from fastapi import HTTPException, Request
+from fastapi import Depends, HTTPException, Request
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from starlette.datastructures import FormData
 from twilio.request_validator import RequestValidator
 
 from app.config import settings
 
 _validator = RequestValidator(settings.twilio_auth_token)
+_basic = HTTPBasic()
+
+
+def dashboard_auth(credentials: HTTPBasicCredentials = Depends(_basic)) -> None:
+    if not secrets.compare_digest(
+        credentials.password.encode(), settings.dashboard_password.encode()
+    ):
+        raise HTTPException(status_code=401, headers={"WWW-Authenticate": "Basic"})
 
 
 async def twilio_form(request: Request) -> FormData:

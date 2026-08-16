@@ -25,33 +25,36 @@ def test_incoming_call_returns_twiml_and_persists():
         assert call.status == "ringing"
 
 
-def test_status_callback_closes_call():
+def test_status_callback_closes_call(create_call):
+    create_call("CAstatus")
     client.post(
         "/voice/status",
-        data={"CallSid": "CA123", "DialCallStatus": "completed", "DialCallDuration": "42"},
+        data={"CallSid": "CAstatus", "DialCallStatus": "completed", "DialCallDuration": "42"},
     )
     with Session(engine) as session:
-        call = session.get(Call, "CA123")
+        call = session.get(Call, "CAstatus")
         assert call.status == "completed"
         assert call.duration_seconds == 42
         assert call.ended_at is not None
 
 
-def test_recording_callback_saves_url():
+def test_recording_callback_saves_url(create_call):
+    create_call("CArec")
     client.post(
         "/voice/recording",
-        data={"CallSid": "CA123", "RecordingUrl": "https://api.twilio.com/rec/RE1"},
+        data={"CallSid": "CArec", "RecordingUrl": "https://api.twilio.com/rec/RE1"},
     )
     with Session(engine) as session:
-        call = session.get(Call, "CA123")
+        call = session.get(Call, "CArec")
         assert call.recording_url == "https://api.twilio.com/rec/RE1"
 
 
-def test_transcription_content_saves_segment():
+def test_transcription_content_saves_segment(create_call):
+    create_call("CAtrans")
     client.post(
         "/voice/transcription",
         data={
-            "CallSid": "CA123",
+            "CallSid": "CAtrans",
             "TranscriptionEvent": "transcription-content",
             "Track": "inbound_track",
             "TranscriptionData": '{"transcript": "hello there", "confidence": 0.93}',
@@ -59,11 +62,11 @@ def test_transcription_content_saves_segment():
     )
     client.post(
         "/voice/transcription",
-        data={"CallSid": "CA123", "TranscriptionEvent": "transcription-stopped"},
+        data={"CallSid": "CAtrans", "TranscriptionEvent": "transcription-stopped"},
     )
     with Session(engine) as session:
         segments = session.exec(
-            select(TranscriptSegment).where(TranscriptSegment.call_sid == "CA123")
+            select(TranscriptSegment).where(TranscriptSegment.call_sid == "CAtrans")
         ).all()
         assert len(segments) == 1
         assert segments[0].text == "hello there"

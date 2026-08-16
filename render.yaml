@@ -6,9 +6,11 @@ services:
     plan: free
     envVars:
       - key: TWILIO_NUMBER
-        value: "+13643658544"
+        sync: false
       - key: FORWARD_TO
-        value: "+5493516003729"
+        sync: false
+      - key: DASHBOARD_PASSWORD
+        sync: false
       - key: TWILIO_ACCOUNT_SID
         sync: false
       - key: TWILIO_AUTH_TOKEN

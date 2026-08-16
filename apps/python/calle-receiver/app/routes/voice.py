@@ -6,7 +6,7 @@ from sqlmodel import Session
 from starlette.datastructures import FormData
 from twilio.twiml.voice_response import Dial, Start, VoiceResponse
 
-from app.config import settings
+from app.config import TWILIO_API_BASE, settings
 from app.db import engine
 from app.models import Call, TranscriptSegment
 from app.security import twilio_form
@@ -80,10 +80,11 @@ async def call_status(form: FormData = Depends(twilio_form)) -> Response:
 
 @router.post("/voice/recording")
 async def recording_completed(form: FormData = Depends(twilio_form)) -> Response:
+    url = form.get("RecordingUrl", "")
     with Session(engine) as session:
         call = session.get(Call, form.get("CallSid", ""))
-        if call is not None:
-            call.recording_url = form.get("RecordingUrl", "")
+        if call is not None and url.startswith(TWILIO_API_BASE):
+            call.recording_url = url
             session.commit()
     return Response(status_code=204)
 

@@ -1,15 +1,16 @@
 import html
 
 import requests
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse, Response
 from sqlmodel import Session, col, select
 
-from app.config import settings
+from app.config import TWILIO_API_BASE, settings
 from app.db import engine
 from app.models import Call, TranscriptSegment
+from app.security import dashboard_auth
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(dashboard_auth)])
 
 HEADER = """<!doctype html>
 <html lang="en">
@@ -95,7 +96,7 @@ def dashboard() -> str:
 def recording(call_sid: str) -> Response:
     with Session(engine) as session:
         call = session.get(Call, call_sid)
-    if call is None or not call.recording_url:
+    if call is None or not (call.recording_url or "").startswith(TWILIO_API_BASE):
         raise HTTPException(status_code=404, detail="No recording for this call")
     upstream = requests.get(
         f"{call.recording_url}.mp3",

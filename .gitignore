@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+results/
+*.jsonl
+!**/examples/*.jsonl
+!**/tests/golden/*.jsonl
+**/demo/out/
+.env
+calls.db
+/.idea/
