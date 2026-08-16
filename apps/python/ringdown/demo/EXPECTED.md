@@ -364,9 +364,10 @@ $ python -m ringdown verify --ledger examples/ledger.example.jsonl
 - [x] record 6 carries its position in the chain
 - [x] record 7 carries its position in the chain
 - [x] record 8 carries its position in the chain
+- [x] record 8 reports the verdict was corroborated on the second channel
 - [x] record 7 verdict unacknowledged follows from the recorded attempts
 
-verified 25/25
+verified 26/26
 exit 0
 
 $ python -m ringdown verify --ledger demo/out/tampered.jsonl
@@ -395,8 +396,9 @@ $ python -m ringdown verify --ledger demo/out/tampered.jsonl
 - [x] record 6 carries its position in the chain
 - [x] record 7 carries its position in the chain
 - [x] record 8 carries its position in the chain
+- [x] record 8 reports the verdict was corroborated on the second channel
 - [ ] record 7 verdict acknowledged does not follow from the recorded attempts (unacknowledged)
 
-verified 24/25
+verified 25/26
 exit 40
 ```

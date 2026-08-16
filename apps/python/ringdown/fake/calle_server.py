@@ -19,9 +19,12 @@ MCP_TOOLS = [
     {"name": "plan_call", "description": "Create or refine a call plan. Does not place a call."},
     {"name": "run_call", "description": "Execute a plan. Places a real call."},
     {"name": "get_call_run", "description": "Read status, activity and transcript for a call run."},
+    {"name": "track_ui_events", "description": "Report interface events. Ringdown never calls it."},
 ]
 
 DEFAULT_TIMELINE = ("queued", "completed")
+
+REVOKED = frozenset({"", "expired"})
 
 CREATE_FIELDS = frozenset(
     {"task", "recipients", "result_schema", "recipient_result_schema", "metadata", "webhook_url"}
@@ -218,9 +221,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def _authorized(self) -> bool:
         header = self.headers.get("Authorization", "")
-        if header.startswith("Bearer ") and header[7:].strip():
+        if header.startswith("Bearer ") and header[7:].strip() not in REVOKED:
             return True
-        self._send(401, {"error": {"code": "unauthorized", "message": "missing credentials"}})
+        self._send(401, {"error": {"code": "invalid_token", "message": "the token was refused"}})
         return False
 
     def _read_json(self) -> dict[str, Any]:

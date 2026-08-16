@@ -150,7 +150,7 @@ def test_a_second_channel_that_cannot_be_reached_is_unresolved_not_a_mismatch(
 def test_a_second_channel_that_refuses_our_credentials_is_unresolved_not_a_mismatch(
     serving, incident_file, tmp_path, capsys, monkeypatch
 ):
-    monkeypatch.setenv("CALLE_MCP_TOKEN", "")
+    monkeypatch.setenv("CALLE_MCP_TOKEN", "expired")
     server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
     ledger = tmp_path / "l.jsonl"
 
@@ -159,7 +159,7 @@ def test_a_second_channel_that_refuses_our_credentials_is_unresolved_not_a_misma
     assert code == EXIT_UNRESOLVED
     out = capsys.readouterr().out
     assert "[?] second channel returned a run" in out
-    assert "unauthorized" in out
+    assert "invalid_token" in out
     assert "Treat this incident as unowned." not in out
     verification = json.loads(ledger.read_text().splitlines()[-1])
     assert verification["unresolved"] == 1 and verification["verified"] is False
@@ -249,6 +249,48 @@ def test_adapt_writes_nothing_when_the_mapped_incident_is_invalid(tmp_path):
     out = tmp_path / "incident.json"
     assert _adapt(tmp_path, mapping, "--out", str(out)) == EXIT_USAGE
     assert not out.exists()
+
+
+def test_a_second_channel_answering_in_a_shape_we_cannot_read_is_unresolved_not_a_mismatch(
+    serving, incident_file, tmp_path, capsys, monkeypatch
+):
+    monkeypatch.setattr("ringdown.calle.MCP_RETRY_DELAY", 0)
+    server = serving(
+        {ALICE.phone: scenarios.second_channel_speaks_another_dialect("Alice Okafor", "alice")}
+    )
+
+    code = _run(server.base_url, incident_file, tmp_path / "l.jsonl", "--confirm", CONFIRMATION)
+
+    assert code == EXIT_UNRESOLVED
+    out = capsys.readouterr().out
+    assert "[?] second channel returned a run" in out
+    assert "unreadable_run" in out
+    assert "Treat this incident as unowned." not in out
+
+
+def test_a_ledger_the_second_channel_contradicted_does_not_pass_verify_ledger(
+    serving, incident_file, tmp_path, capsys
+):
+    server = serving({ALICE.phone: scenarios.channel_mismatch("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+    assert _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION) == EXIT_UNVERIFIED
+
+    capsys.readouterr()
+    assert main(["verify", "--ledger", str(ledger)]) == EXIT_UNVERIFIED
+    assert "contradicted on the second channel" in capsys.readouterr().out
+
+
+def test_a_ledger_the_second_channel_never_answered_is_unresolved_not_unverified(
+    serving, incident_file, tmp_path, capsys, monkeypatch
+):
+    monkeypatch.setenv("CALLE_MCP_TOKEN", "")
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+    assert _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION) == EXIT_UNRESOLVED
+
+    capsys.readouterr()
+    assert main(["verify", "--ledger", str(ledger)]) == EXIT_UNRESOLVED
+    assert "never confirmed on the second channel" in capsys.readouterr().out
 
 
 def test_a_rewritten_verdict_with_a_relinked_chain_still_fails_verify_ledger(

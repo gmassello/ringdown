@@ -62,7 +62,7 @@ Python 3.11 or newer. No runtime dependencies — `dependencies = []`, standard 
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install pytest
-python -m pytest -q       # 205 tests, no credentials, no outbound calls
+python -m pytest -q       # 215 tests, no credentials, no outbound calls
 ```
 
 ## Preview, which is the default
@@ -153,7 +153,7 @@ read at all.
 | 25 | call state could not be established; a call may be live |
 | 30 | usage error: no confirmation phrase, no API key, untrusted host, bad incident or rotation file |
 | 40 | the recorded verdict does not reconcile on the second channel, or a ledger fails verification |
-| 45 | the second channel could not be reached, so the verdict stands unconfirmed |
+| 45 | the second channel could not be reached or could not be read, so the verdict stands unconfirmed |
 
 Precedence: 25 wins and skips verification entirely, because checks against a call that has not
 finished produce failures that are not contradictions. Then 30 when a verdict exists but no call
@@ -218,11 +218,18 @@ that says a call may exist and names the key to reconcile it with.
 python -m ringdown verify --ledger examples/ledger.example.jsonl
 ```
 
-`verify` does four things: it relinks the chain, it recomputes every hash, it checks that each
-record still sits where it says it sits, and it **re-derives the verdict from the recorded
-attempts** — using the rule of the schema version that record was written under, not the rule the
-ladder runs today. A rewritten verdict whose record was resealed and whose successors were
-relinked still fails the last check. What none of them proves is completeness — see ceiling 11.
+`verify` does five things: it relinks the chain, it recomputes every hash, it checks that each
+record still sits where it says it sits, it **re-derives the verdict from the recorded attempts**
+— using the rule of the schema version that record was written under, not the rule the ladder
+runs today — and it reads the verification record rather than only sealing it, so a ledger whose
+own verification did not hold cannot be replayed as a clean one. A rewritten verdict whose record
+was resealed and whose successors were relinked still fails. What none of them proves is
+completeness — see ceiling 11.
+
+The last two carry the same 40/45 distinction the ladder uses. A verdict that does not follow, or
+a verification the second channel contradicted, exits 40. A verification that went unanswered, or
+a record written by a schema this build cannot read, exits 45: unproven is not the same as
+tampered with, and an auditor is owed the difference.
 
 Phone numbers are masked everywhere they are written or printed. The raw transcript is never
 stored: an attempt record keeps only the spans that were actually quoted as evidence, and only
@@ -322,15 +329,21 @@ own call over a second transport. Same technique, different product.
     prints when it finishes, compared by hand. A keyed HMAC, and a `verify` that takes the expected
     head, are the real fix and a different product.
 
-12. No call has ever been placed against the live provider. Every claim above is proven against
-    the fake in `fake/`, and the fake is written to the published contract, not observed from a
-    real run. Two things are known to differ and are not modelled: the live MCP surface indexes
-    calls by a `run_id` that its `get_call_run` describes as "returned by `run_call`", and a run
-    carries `result.call_id` inside it — the mapping runs from run to call, and no tool resolves a
-    call id back to a run. A call placed over REST may therefore have no run to read, which would
-    render every check `[?]` and settle every live verdict at exit 45. The untested candidate is
-    the attempt's `provider_call_id`; if that is the run id, the fix is one line in `McpClient`.
-    Deciding it needs a real call, and this app has not made one.
+12. No call has ever been placed against the live provider, so no successful response from it has
+    ever been seen — not from `get_call_run`, not from REST. The happy path every claim above
+    rests on is a reading of the published contract, reproduced by a fake written from that same
+    reading and confirmed by neither. What is committed instead is
+    [`tests/fixtures/`](tests/fixtures/): the responses that *were* observed, each carrying what
+    it does not prove, parsed by tests that never touch the fake. Two divergences are known and
+    not modelled: the live MCP surface indexes calls by a `run_id` that its `get_call_run`
+    describes as "returned by `run_call`", and a run carries `result.call_id` inside it — the
+    mapping runs from run to call, and no tool resolves a call id back to a run. A call placed
+    over REST may therefore have no run to read. The untested candidate is the attempt's
+    `provider_call_id`; deciding it needs a real call, and guessing it here would be three
+    conjectures stacked on each other. What is defended is the degradation rather than the
+    contract: a response the parser cannot read — an embedded failure, a renamed field, a body
+    nested somewhere unexpected — yields `[?]` and exit 45, never a contradiction. A run that
+    arrives without a call id is not a run that went wrong; it is a reply we could not read.
 13. The two channels do not share credentials, and only one of them can be automated. REST takes
     the API key; MCP is an OAuth protected resource whose authorization server offers
     `authorization_code` with PKCE and no machine grant at all, so the token behind

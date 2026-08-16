@@ -75,7 +75,7 @@ def test_a_request_without_bearer_credentials_is_refused(server):
     status, body = request(f"{server.base_url}/v1/calls/call_fake1", token=None)
 
     assert status == 401
-    assert body["error"]["code"] == "unauthorized"
+    assert body["error"]["code"] == "invalid_token"
 
 
 def test_a_payload_with_a_field_the_contract_does_not_define_is_rejected(server):
@@ -213,11 +213,11 @@ def test_a_call_the_second_channel_never_saw_returns_no_run():
         assert "error" in get_call_run(server, created["id"])
 
 
-def test_the_mcp_surface_lists_the_three_call_tools(server):
+def test_the_mcp_surface_lists_the_tools_the_live_endpoint_exposes(server):
     _, body = request(server.mcp_url, {"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
     names = [tool["name"] for tool in body["result"]["tools"]]
 
-    assert names == ["plan_call", "run_call", "get_call_run"]
+    assert names == ["plan_call", "run_call", "get_call_run", "track_ui_events"]
 
 
 def test_a_refusal_carries_the_question_the_provider_needs_answered():

@@ -14,7 +14,7 @@
 <p align="center">
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="205 tests" src="https://img.shields.io/badge/tests-205-2f6f4e">
+  <img alt="215 tests" src="https://img.shields.io/badge/tests-215-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -157,9 +157,10 @@ A span that appears only in the agent's own turns is rejected: quoting the quest
 of the answer.
 
 The verdict and its verification are appended to a hash-chained ledger, and `verify --ledger` does
-something a flat append-only log cannot: it **re-derives the verdict from the recorded attempts**.
-Rewrite the verdict, reseal the record and relink every record after it, and the chain closes
-cleanly — and the check still fails.
+something a flat append-only log cannot: it **re-derives the verdict from the recorded attempts**
+and reads back the verification rather than only sealing it. Rewrite the verdict, reseal the
+record and relink every record after it, and the chain closes cleanly — and the check still
+fails. A ledger whose own verification did not hold cannot be replayed as a clean one either.
 
 Phone numbers are masked everywhere they are written or printed, and the raw transcript is never
 stored: an attempt keeps only the spans quoted as evidence.

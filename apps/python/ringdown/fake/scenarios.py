@@ -155,3 +155,13 @@ def unseen_on_second_channel(name: str, first_name: str) -> FakeScenario:
 
 def unreachable_second_channel(name: str, first_name: str) -> FakeScenario:
     return replace(answer_ack(name, first_name), faults={"mcp": [UNAVAILABLE, UNAVAILABLE]})
+
+
+def second_channel_speaks_another_dialect(name: str, first_name: str) -> FakeScenario:
+    documented = {
+        "call_id": None,
+        "status": "FAILED",
+        "message": "run_id not found.",
+        "result": {"call_id": None, "call_ids": [], "transcript": None},
+    }
+    return replace(answer_ack(name, first_name), mcp_overrides=documented)

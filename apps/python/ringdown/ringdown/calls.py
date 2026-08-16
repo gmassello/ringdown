@@ -51,6 +51,10 @@ class CallRun:
     metadata: dict[str, str]
     turns: tuple[Turn, ...]
 
+    @property
+    def readable(self) -> bool:
+        return bool(self.call_id)
+
 
 def parse_turns(raw: Any) -> tuple[Turn, ...]:
     if not isinstance(raw, list):
@@ -93,8 +97,8 @@ def snapshot_from(body: Mapping[str, Any]) -> CallSnapshot:
 
 def run_from(body: Mapping[str, Any]) -> CallRun:
     return CallRun(
-        call_id=str(body.get("call_id", "")),
-        status=str(body.get("status", "")),
+        call_id=str(body.get("call_id") or ""),
+        status=str(body.get("status") or ""),
         recipient_phone=body.get("recipient_phone"),
         completed_at=body.get("completed_at"),
         metadata=dict(body.get("metadata") or {}),

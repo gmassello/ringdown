@@ -155,7 +155,10 @@ class McpClient(_Client):
             raise CalleError(
                 "no_call_run", 404, str(envelope.get("message") or "the run is not readable")
             )
-        return run_from(_unwrap_content(body.get("result")))
+        run = run_from(_unwrap_content(body.get("result")))
+        if not run.readable:
+            raise CalleError("unreadable_run", None, "the run carries no call id")
+        return run
 
 
 def _unwrap_content(result: Any) -> dict[str, Any]:

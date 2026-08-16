@@ -179,7 +179,9 @@ def verify(args: argparse.Namespace) -> int:
         raise IncidentError(f"no ledger file at {args.ledger}")
     checks = chain_checks(args.ledger)
     emit(render_blocks([(f"Ledger {args.ledger}", checks)]))
-    return EXIT_ACKNOWLEDGED if all_ok(checks) else EXIT_UNVERIFIED
+    if all_ok(checks):
+        return EXIT_ACKNOWLEDGED
+    return EXIT_UNVERIFIED if contradicted(checks) else EXIT_UNRESOLVED
 
 
 def adapt_command(args: argparse.Namespace) -> int:

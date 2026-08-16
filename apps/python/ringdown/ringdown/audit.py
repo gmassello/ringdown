@@ -114,6 +114,16 @@ def incident_of(record: dict) -> str:
     return str(record.get("attempt_id", "")).rsplit("/", 2)[0]
 
 
+def corroboration_check(number: int, record: dict) -> Check:
+    where = f"record {number} reports the verdict was"
+    if record.get("verified") is True:
+        return (True, f"{where} corroborated on the second channel")
+    contradicted = record.get("total", 0) - record.get("passed", 0) - record.get("unresolved", 0)
+    if contradicted > 0:
+        return (False, f"{where} contradicted on the second channel")
+    return (None, f"{where} never confirmed on the second channel")
+
+
 def chain_checks(path: Path) -> list[Check]:
     records: list[dict] = []
     for number, line in enumerate(path.read_text().splitlines(), 1):
@@ -136,6 +146,11 @@ def chain_checks(path: Path) -> list[Check]:
         (record.get("seq") == number, f"record {number} carries its position in the chain")
         for number, record in enumerate(records, 1)
         if "seq" in record
+    ]
+    checks += [
+        corroboration_check(number, record)
+        for number, record in enumerate(records, 1)
+        if record.get("type") == "verification"
     ]
     verdicts: dict[str, list[str]] = {}
     for number, record in enumerate(records, 1):

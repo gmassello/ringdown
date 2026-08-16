@@ -41,14 +41,14 @@ def an_attempt(**overrides) -> Attempt:
     return Attempt(**{**fields, **overrides})
 
 
-def write_run(path, verdict="unacknowledged", attempt=None):
+SAW_IT = [(True, "run for Alice Okafor reports no acknowledgement")]
+
+
+def write_run(path, verdict="unacknowledged", attempt=None, checks=None):
     attempt = attempt or an_attempt()
     append_record(path, attempt_record(attempt, "inc-1"))
     append_record(path, verdict_record("inc-1", LadderResult(verdict, (attempt,))))
-    append_record(
-        path,
-        verification_record("inc-1", [(True, "run for Alice Okafor reports no acknowledgement")]),
-    )
+    append_record(path, verification_record("inc-1", checks or SAW_IT))
 
 
 def read_lines(path) -> list[dict]:
@@ -76,7 +76,7 @@ def test_the_ledger_chain_verifies_end_to_end(tmp_path):
 
     checks = chain_checks(ledger)
 
-    assert len(checks) == 10
+    assert len(checks) == 11
     assert all_ok(checks)
     assert checks[0][1] == "record 1 links to the genesis hash"
     assert checks[-1][1] == "record 2 verdict unacknowledged follows from the recorded attempts"
@@ -184,6 +184,26 @@ def test_an_unreadable_ledger_line_is_a_failed_check_not_a_crash(tmp_path):
     checks = chain_checks(ledger)
 
     assert checks == [(False, "record 4 is not readable JSON")]
+
+
+def test_a_ledger_whose_verification_was_contradicted_does_not_pass(tmp_path):
+    ledger = tmp_path / "ledger.jsonl"
+    write_run(ledger, checks=[(True, "one held"), (False, "the second channel said otherwise")])
+
+    checks = chain_checks(ledger)
+
+    assert (False, "record 3 reports the verdict was contradicted on the second channel") in checks
+    assert not all_ok(checks)
+
+
+def test_a_ledger_whose_verification_went_unanswered_is_unresolved_not_tampered(tmp_path):
+    ledger = tmp_path / "ledger.jsonl"
+    write_run(ledger, checks=[(True, "one held"), (None, "the second channel never answered")])
+
+    checks = chain_checks(ledger)
+
+    assert (None, "record 3 reports the verdict was never confirmed on the second channel") in checks
+    assert not all_ok(checks) and not contradicted(checks)
 
 
 def test_a_golden_ledger_from_an_earlier_build_still_verifies():
