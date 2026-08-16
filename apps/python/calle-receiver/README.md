@@ -62,6 +62,10 @@ Tests unitarios: `uv run pytest`.
 | `POST /voice/status` | Fin del `<Dial>`: guarda estado final y duración |
 | `POST /voice/recording` | Guarda la `RecordingUrl` (descargarla con `.mp3` + auth básica SID:TOKEN) |
 | `POST /voice/transcription` | Guarda un `TranscriptSegment` por evento `transcription-content` |
+| `GET /calls` | Dashboard HTML: llamadas con player de audio y transcripción (auto-refresh 5s) |
+| `GET /calls/{sid}/recording.mp3` | Proxy de la grabación (agrega auth de Twilio para el `<audio>`) |
 
-Todos validan la firma `X-Twilio-Signature` (desactivable con
-`VALIDATE_TWILIO_SIGNATURE=false` para desarrollo local).
+Los webhooks `POST /voice*` validan la firma `X-Twilio-Signature` (desactivable
+con `VALIDATE_TWILIO_SIGNATURE=false` para desarrollo local). El dashboard y el
+proxy de grabaciones son GET de solo lectura **sin auth**: cualquiera con la URL
+del túnel puede verlos — aceptable para la demo, no para producción.
