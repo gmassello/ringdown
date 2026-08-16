@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: calle-receiver
+    runtime: docker
+    rootDir: apps/python/calle-receiver
+    plan: free
+    envVars:
+      - key: TWILIO_NUMBER
+        value: "+13643658544"
+      - key: FORWARD_TO
+        value: "+5493516003729"
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false
