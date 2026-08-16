@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 from ringdown.calls import CallRun, CallSnapshot, run_from, snapshot_from
 
+CODE_LIMIT = 40
 TRUSTED_HOSTS = frozenset({"api.heycall-e.com", "seleven-mcp-sg.airudder.com"})
 LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 AMBIGUOUS_STATUSES = frozenset({408, 409, 425, 429})
@@ -98,7 +99,7 @@ def _http_error(error: urllib.error.HTTPError) -> CalleError:
     except (json.JSONDecodeError, OSError):
         envelope = {}
     return CalleError(
-        code=str(envelope.get("code") or f"http_{error.code}"),
+        code=str(envelope.get("code") or f"http_{error.code}")[:CODE_LIMIT],
         status=error.code,
         message=str(envelope.get("message") or error.reason),
         details=envelope.get("details"),

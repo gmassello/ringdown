@@ -7,14 +7,14 @@ import pytest
 
 from demo.run_local import tamper
 from fake import scenarios
-from ringdown.__main__ import (
-    CONFIRMATION,
+from ringdown.__main__ import CONFIRMATION, main
+from ringdown.exits import (
     EXIT_ACKNOWLEDGED,
+    EXIT_DECLINED,
     EXIT_UNKNOWN,
     EXIT_UNRESOLVED,
     EXIT_UNVERIFIED,
     EXIT_USAGE,
-    main,
 )
 from ringdown.calle import RestClient
 from tests.data import ALICE, BEN, CARLA, EXAMPLES, example_body, write_json
@@ -190,6 +190,32 @@ def test_a_second_channel_that_refuses_our_credentials_is_unresolved_not_a_misma
     assert "Treat this incident as unowned." not in out
     verification = json.loads(ledger.read_text().splitlines()[-1])
     assert verification["unresolved"] == 1 and verification["verified"] is False
+    unanswered = "second channel returned a run for call call_fake1 (invalid_token)"
+    assert verification["unanswered"] == [unanswered]
+    assert verification["contradicted"] == []
+
+
+def test_a_person_who_declines_is_an_answer_and_exits_ten(serving, incident_file, tmp_path):
+    server = serving({ALICE.phone: scenarios.declined("Alice Okafor", "alice")})
+    code = _run(server.base_url, incident_file, tmp_path / "l.jsonl", "--confirm", CONFIRMATION)
+    assert code == EXIT_DECLINED
+    assert len(server.created) == 1
+
+
+def test_the_ledger_records_which_checks_did_not_pass(serving, incident_file, tmp_path):
+    server = serving({ALICE.phone: scenarios.channel_mismatch("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+    assert _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION) == EXIT_UNVERIFIED
+    written = ledger.read_text()
+    verification = json.loads(written.splitlines()[-1])
+    assert verification["contradicted"] == [
+        "re-extracting the second channel transcript gives disposition acknowledged",
+        "the recorded disposition span is spoken by the recipient",
+        "the recorded owner Alice Okafor is spoken by the recipient",
+        "the recorded ETA of 15 minutes is spoken by the recipient",
+    ]
+    assert verification["unanswered"] == []
+    assert ALICE.phone not in written
 
 
 def test_a_crash_mid_ladder_leaves_the_placed_attempt_and_the_pending_key_on_the_ledger(

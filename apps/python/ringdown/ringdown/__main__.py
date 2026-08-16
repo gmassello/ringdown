@@ -28,6 +28,14 @@ from ringdown.calle import (
     assert_trusted_base_url,
 )
 from ringdown.escalate import Attempt, LadderResult, run_ladder
+from ringdown.exits import (
+    EXIT_ACKNOWLEDGED,
+    EXIT_UNKNOWN,
+    EXIT_USAGE,
+    reconcile,
+    settle,
+    verifiable,
+)
 from ringdown.incident import (
     Incident,
     IncidentError,
@@ -40,28 +48,13 @@ from ringdown.incident import (
     unstaffed_scopes,
 )
 from ringdown.script import call_payload, call_task, idempotency_key
-from ringdown.checks import Check, all_checks, all_ok, contradicted, render_blocks
+from ringdown.checks import Check, all_checks, render_blocks
 from ringdown.verify import verify_ladder
-
-EXIT_ACKNOWLEDGED = 0
-EXIT_DECLINED = 10
-EXIT_UNACKNOWLEDGED = 20
-EXIT_UNKNOWN = 25
-EXIT_USAGE = 30
-EXIT_UNVERIFIED = 40
-EXIT_UNRESOLVED = 45
 
 CONFIRMATION = "place real calls"
 DEFAULT_BASE_URL = "https://api.heycall-e.com"
 DEFAULT_MCP_URL = "https://seleven-mcp-sg.airudder.com/mcp/openagent_oauth"
 WINDOW_SLACK = timedelta(seconds=60)
-
-BY_VERDICT = {
-    "acknowledged": EXIT_ACKNOWLEDGED,
-    "declined": EXIT_DECLINED,
-    "unacknowledged": EXIT_UNACKNOWLEDGED,
-    "unknown": EXIT_UNKNOWN,
-}
 
 
 def emit(*lines: str) -> None:
@@ -168,13 +161,8 @@ def run(args: argparse.Namespace) -> int:
     append_record(args.ledger, verdict_record(incident.id, result))
     emit(*report.verdict_lines(result))
 
-    code = BY_VERDICT[result.verdict]
-    if result.verdict == "unknown":
-        emit(*report.unknown_lines(result))
-    elif not result.placed:
-        code = EXIT_USAGE
-        emit(*report.NOTHING_PLACED)
-    else:
+    checks: list[Check] = []
+    if verifiable(result.verdict, result.placed):
         mcp_key = os.environ.get("CALLE_MCP_TOKEN", "")
         mcp = McpClient(mcp_url, mcp_key, allowed_hosts=allowed)
         checks = _verify(mcp, incident, result, start)
@@ -182,11 +170,14 @@ def run(args: argparse.Namespace) -> int:
             args.ledger,
             verification_record(incident.id, checks, rest_host=rest_host, mcp_host=mcp_host),
         )
-        if not all_ok(checks):
-            denied = contradicted(checks) > 0
-            code = EXIT_UNVERIFIED if denied else EXIT_UNRESOLVED
-            if result.verdict == "acknowledged":
-                emit("", *(report.MISMATCH_ADVICE if denied else report.UNRESOLVED_ADVICE))
+
+    code = settle(result.verdict, result.placed, checks)
+    if code == EXIT_UNKNOWN:
+        emit(*report.unknown_lines(result))
+    elif code == EXIT_USAGE:
+        emit(*report.NOTHING_PLACED)
+    elif code in report.ADVICE and result.verdict == "acknowledged":
+        emit("", *report.ADVICE[code])
     emit("", *report.ledger_lines(*head(args.ledger), result))
     return code
 
@@ -196,9 +187,7 @@ def verify(args: argparse.Namespace) -> int:
         raise IncidentError(f"no ledger file at {args.ledger}")
     checks = chain_checks(args.ledger)
     emit(render_blocks([(f"Ledger {args.ledger}", checks)]))
-    if all_ok(checks):
-        return EXIT_ACKNOWLEDGED
-    return EXIT_UNVERIFIED if contradicted(checks) else EXIT_UNRESOLVED
+    return reconcile(EXIT_ACKNOWLEDGED, checks)
 
 
 def adapt_command(args: argparse.Namespace) -> int:

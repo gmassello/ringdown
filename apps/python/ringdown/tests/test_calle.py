@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import pytest
 
+from dataclasses import replace
+
 from fake import scenarios
-from fake.calle_server import FakeCalleServer
+from fake.calle_server import FakeCalleServer, Fault
 from ringdown.calle import (
+    CODE_LIMIT,
     CalleError,
     McpClient,
     RestClient,
@@ -202,3 +205,16 @@ def test_a_bad_api_key_is_reported_as_unauthorized(incident):
 
         assert raised.value.status == 401
         assert not raised.value.may_have_landed
+
+
+def test_an_error_code_the_provider_invents_cannot_grow_without_bound(incident):
+    sprawling = replace(
+        scenarios.answer_ack(ALICE.name, "alice"), faults={"create": [Fault(503, "x" * 500)]}
+    )
+    with serving(sprawling) as server:
+        rest, _ = clients(server)
+
+        with pytest.raises(CalleError) as raised:
+            rest.create_call(payload(incident), KEY)
+
+    assert raised.value.code == "x" * CODE_LIMIT

@@ -62,7 +62,7 @@ Python 3.11 or newer. No runtime dependencies — `dependencies = []`, standard 
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install pytest
-python -m pytest -q       # 218 tests, no credentials, no outbound calls
+python -m pytest -q       # 253 tests, no credentials, no outbound calls
 ```
 
 ## Preview, which is the default
@@ -218,9 +218,19 @@ so the ladder never rings a phone the ledger has no record of. Its `attempt` fol
 call settles. A crash between the two leaves an `intent` with no `attempt`: that is the shape
 that says a call may exist and names the key to reconcile it with.
 
-`verification` carries the counts, and it names the two channels the run used: `rest_host` and
-`mcp_host`, the hostnames only, never a token and never a path. A ledger that verified against a
-second channel and one that verified against itself no longer look the same on disk.
+`verification` names the two channels the run used: `rest_host` and `mcp_host`, the hostnames only,
+never a token and never a path. A ledger that verified against a second channel and one that
+verified against itself no longer look the same on disk.
+
+It also carries the checks themselves, not just how many of them there were. `contradicted` holds
+the labels the second channel disagreed with, `unanswered` the ones it would not answer — the same
+40/45 split the exit codes use, kept apart on disk so an operator reading the file at 03:00 knows
+whether the second channel said otherwise or said nothing. It is the difference between *the run
+reached somebody else* and *the run finished outside the window*, and the two call for different
+work. The labels are the ones printed during the run: phone numbers already masked, provider error
+codes truncated, and never a line of transcript — the spans live in the boolean that produced each
+check, not in its text. What they do add over the rest of the ledger is the contact's full name,
+which elsewhere appears only as an id.
 
 ```bash
 python -m ringdown verify --ledger examples/ledger.example.jsonl

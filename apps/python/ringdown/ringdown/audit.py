@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Sequence
 
 from ringdown.canonical import canonical_json, digest
-from ringdown.checks import Check, all_ok, passed, unresolved
+from ringdown.checks import Check, all_ok, labels, passed, unresolved
 from ringdown.incident import Rung, mask_phone
 
 if TYPE_CHECKING:
@@ -93,6 +93,8 @@ def verification_record(
         "passed": passed(checks),
         "unresolved": unresolved(checks),
         "total": len(checks),
+        "contradicted": labels(checks, False),
+        "unanswered": labels(checks, None),
     }
 
 

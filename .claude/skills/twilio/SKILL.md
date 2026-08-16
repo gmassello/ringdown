@@ -111,8 +111,13 @@ without auth. To download it: append `.mp3` and use basic auth
    to cover both tracks. Verified end-to-end: 16s call, 3 segments,
    downloadable recording.
 
-## Known open item
+## CALL-E ↔ Twilio, confirmed
 
-Still unconfirmed: whether **CALL-E dials VoIP numbers** (some voice platforms
-block them for fraud prevention) — this is the risk that could invalidate the
-approach; plan B is a real US eSIM. See §0.1 of `docs/plan-twilio-calle.md`.
+**CALL-E does dial VoIP/Twilio numbers** (verified 2026-08-16: call to the
+Twilio number `completed` with `task_completed=True`; CALL-E's caller ID was
+`+18325903283`). The full loop CALL-E → Twilio → AR cell works end-to-end with
+recording and both-track transcription. To place a CALL-E call, reuse
+`RestClient` from `apps/python/ringdown/ringdown/calle.py`
+(`POST https://api.heycall-e.com/v1/calls`, Bearer `CALLE_API_KEY` from
+`apps/python/ringdown/.env`, payload `{task, recipients: [{phones: [...]}],
+metadata}` plus an `Idempotency-Key` header; poll with `wait_for_result`).

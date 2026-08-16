@@ -12,16 +12,20 @@ def all_checks(blocks: Sequence[Block]) -> list[Check]:
     return [check for _, checks in blocks for check in checks]
 
 
+def labels(checks: Sequence[Check], state: bool | None) -> list[str]:
+    return [label for ok, label in checks if ok is state]
+
+
 def passed(checks: Sequence[Check]) -> int:
-    return sum(1 for ok, _ in checks if ok is True)
+    return len(labels(checks, True))
 
 
 def unresolved(checks: Sequence[Check]) -> int:
-    return sum(1 for ok, _ in checks if ok is None)
+    return len(labels(checks, None))
 
 
 def contradicted(checks: Sequence[Check]) -> int:
-    return sum(1 for ok, _ in checks if ok is False)
+    return len(labels(checks, False))
 
 
 def all_ok(checks: Sequence[Check]) -> bool:

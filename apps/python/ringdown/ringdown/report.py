@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Sequence
 
 from ringdown.escalate import Attempt, LadderResult
+from ringdown.exits import EXIT_UNRESOLVED, EXIT_UNVERIFIED
 from ringdown.incident import Incident, Policy, Rung, mask_phone
 
 ATTEMPT_INDENT = " " * 6
@@ -31,6 +32,8 @@ NOTHING_PLACED = (
     "CALL-E accepted no call on this ladder, so there is nothing to verify and nobody was asked.",
     "Fix the refusal reported above and run again. No phone rang.",
 )
+
+ADVICE = {EXIT_UNVERIFIED: MISMATCH_ADVICE, EXIT_UNRESOLVED: UNRESOLVED_ADVICE}
 
 LADDER_VERDICT_TAIL = {
     "unacknowledged": "the ladder is exhausted and this incident has no owner",

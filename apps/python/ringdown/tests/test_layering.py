@@ -9,7 +9,8 @@ import pytest
 
 PACKAGE = Path(__file__).resolve().parent.parent / "ringdown"
 
-PURE = ("extract", "dispositions", "calls", "checks", "canonical", "incident", "script", "adapter")
+PURE = ("extract", "dispositions", "calls", "checks", "canonical", "incident", "script",
+        "adapter", "exits")
 
 FORBIDDEN = [
     ("extract", "ringdown.calle"),

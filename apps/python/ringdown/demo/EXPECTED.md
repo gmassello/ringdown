@@ -67,7 +67,7 @@ verdict acknowledged  owner a.okafor  eta 15 minutes
 
 verified 10/10
 
-ledger 4 records  head sha256:fb41…  calls placed 1
+ledger 4 records  head sha256:72cc…  calls placed 1
 exit 0
 ```
 
@@ -123,7 +123,7 @@ verdict acknowledged  owner b.mensah  eta 20 minutes
 
 verified 11/11
 
-ledger 6 records  head sha256:8f42…  calls placed 2
+ledger 6 records  head sha256:e863…  calls placed 2
 exit 0
 ```
 
@@ -171,7 +171,7 @@ verdict unacknowledged  the ladder is exhausted and this incident has no owner
 
 verified 3/3
 
-ledger 8 records  head sha256:a718…  calls placed 3
+ledger 8 records  head sha256:da86…  calls placed 3
 exit 20
 ```
 
@@ -220,7 +220,7 @@ verdict acknowledged  owner a.okafor  eta 15 minutes
 
 verified 10/10
 
-ledger 4 records  head sha256:fb41…  calls placed 1
+ledger 4 records  head sha256:72cc…  calls placed 1
 exit 0
 POST requests sent 2, calls created 1, people woken 1
 ```
@@ -275,7 +275,7 @@ verdict declined by a.okafor  the ladder was not continued
 
 verified 1/1
 
-ledger 4 records  head sha256:4afb…  calls placed 1
+ledger 4 records  head sha256:9c23…  calls placed 1
 exit 10
 ```
 
@@ -321,7 +321,7 @@ verified 6/10
 The acknowledgement recorded on the placing channel is not supported by the second channel.
 Treat this incident as unowned.
 
-ledger 4 records  head sha256:b9d5…  calls placed 1
+ledger 4 records  head sha256:f5d6…  calls placed 1
 exit 40
 ```
 
