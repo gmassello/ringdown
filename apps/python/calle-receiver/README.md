@@ -33,9 +33,11 @@ Agente CALL-E → Número Twilio (+1) → POST /voice → TwiML <Dial> → celul
 ### 2. Producción (Render)
 
 Deployado en **`https://calle-receiver.onrender.com`** (free tier) vía Blueprint:
-`render.yaml` en la raíz del repo + `Dockerfile` en este directorio. Los secretos
-(`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `PUBLIC_BASE_URL`) se cargan en el
-dashboard de Render; el resto de las env vars viven en el `render.yaml`.
+`render.yaml` en la raíz del repo + `Dockerfile` en este directorio. Todas las
+env vars con valores reales (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`,
+`PUBLIC_BASE_URL`, `TWILIO_NUMBER`, `FORWARD_TO`, `DASHBOARD_PASSWORD`) se
+cargan en el dashboard de Render (`sync: false` en el `render.yaml`); el repo no
+contiene secretos ni números de teléfono.
 
 - **`calls.db` es efímero**: se limpia en cada deploy/restart (sin disco
   persistente en free tier). Para la demo alcanza.
@@ -94,6 +96,8 @@ Tests unitarios: `uv run pytest`.
 | `GET /calls/{sid}/recording.mp3` | Proxy de la grabación (agrega auth de Twilio para el `<audio>`) |
 
 Los webhooks `POST /voice*` validan la firma `X-Twilio-Signature` (desactivable
-con `VALIDATE_TWILIO_SIGNATURE=false` para desarrollo local). El dashboard y el
-proxy de grabaciones son GET de solo lectura **sin auth**: cualquiera con la URL
-del túnel puede verlos — aceptable para la demo, no para producción.
+con `VALIDATE_TWILIO_SIGNATURE=false` para desarrollo local); `/voice/recording`
+solo persiste `RecordingUrl` si apunta a `https://api.twilio.com/`. El dashboard
+y el proxy de grabaciones piden **Basic Auth**: el password es la env var
+`DASHBOARD_PASSWORD` (requerida — la app no arranca sin ella), el usuario es
+indistinto.

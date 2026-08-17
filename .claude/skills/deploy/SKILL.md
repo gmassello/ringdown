@@ -26,12 +26,15 @@ costs", so review plan/instance changes before pushing.
 
 ## Env vars and secrets
 
-- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `PUBLIC_BASE_URL` are
-  `sync: false` in `render.yaml`: their values live **only in the Render
-  dashboard** (service → Environment), never in the repo. Never paste the auth
-  token anywhere — the user enters it in the dashboard themselves.
-- `TWILIO_NUMBER` and `FORWARD_TO` are plain values in `render.yaml` — edit
-  there and push.
+- ALL env vars (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `PUBLIC_BASE_URL`,
+  `TWILIO_NUMBER`, `FORWARD_TO`, `DASHBOARD_PASSWORD`) are `sync: false` in
+  `render.yaml`: their values live **only in the Render dashboard**
+  (service → Environment), never in the repo. Never paste the auth token
+  anywhere — the user enters it in the dashboard themselves.
+- `DASHBOARD_PASSWORD` protects `GET /calls` and the recording proxy (Basic
+  Auth, any username) and is **required at startup** — a deploy that can't
+  find it crashes in seconds with a pydantic validation error. If a deploy
+  fails right after changing env vars, check this one first.
 - `PUBLIC_BASE_URL` is currently `https://calle-receiver.onrender.com`.
 
 ## Free-tier gotchas
@@ -42,7 +45,8 @@ costs", so review plan/instance changes before pushing.
 - **The service sleeps after 15 min idle.** Cold start is ~30s; Twilio times
   out webhooks at 15s, so a call that arrives while asleep fails. **Before any
   demo or expected call**: `curl -s https://calle-receiver.onrender.com/calls`
-  to wake it, then wait for the 200.
+  to wake it, then wait for the response (401 without credentials is fine —
+  the service is awake).
 
 ## If the public URL ever changes
 
@@ -59,10 +63,11 @@ client.incoming_phone_numbers("PN939da01ace5684ac0edbff0d70deb11e").update(
 
 ## Post-deploy verification
 
-1. `curl <url>/calls` → 200 (service up).
-2. `curl -X POST <url>/voice -d "CallSid=x"` → **403** — proves the Twilio
+1. `curl <url>/calls` → **401** (service up, dashboard auth active).
+2. `curl -u "x:$DASHBOARD_PASSWORD" <url>/calls` → 200 (password loaded).
+3. `curl -X POST <url>/voice -d "CallSid=x"` → **403** — proves the Twilio
    credentials loaded and signature validation is active.
-3. A real call to +1 364 365 8544 appears in `/calls` with recording and
+4. A real call to +1 364 365 8544 appears in `/calls` with recording and
    transcript.
 
 ## Local notes
