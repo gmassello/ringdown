@@ -20,11 +20,12 @@ def _twiml(vr: VoiceResponse) -> Response:
 
 @router.post("/voice")
 async def incoming_call(form: FormData = Depends(twilio_form)) -> Response:
+    sid = form.get("CallSid", "")
     with Session(engine) as session:
-        if session.get(Call, form["CallSid"]) is None:
+        if sid and session.get(Call, sid) is None:
             session.add(
                 Call(
-                    call_sid=form["CallSid"],
+                    call_sid=sid,
                     from_number=form.get("From", ""),
                     to_number=form.get("To", ""),
                     status=form.get("CallStatus", "ringing"),
@@ -72,7 +73,7 @@ async def call_status(form: FormData = Depends(twilio_form)) -> Response:
             call.status = form.get("DialCallStatus") or form.get("CallStatus") or call.status
             call.ended_at = datetime.now(UTC)
             duration = form.get("DialCallDuration") or form.get("CallDuration")
-            if duration is not None:
+            if duration and duration.isdigit():
                 call.duration_seconds = int(duration)
             session.commit()
     return _twiml(VoiceResponse())
@@ -93,14 +94,21 @@ async def recording_completed(form: FormData = Depends(twilio_form)) -> Response
 async def transcription_event(form: FormData = Depends(twilio_form)) -> Response:
     if form.get("TranscriptionEvent") != "transcription-content":
         return Response(status_code=204)
-    data = json.loads(form.get("TranscriptionData", "{}"))
+    try:
+        data = json.loads(form.get("TranscriptionData", "{}"))
+    except json.JSONDecodeError:
+        data = None
+    if not isinstance(data, dict):
+        return Response(status_code=204)
+    text = data.get("transcript")
+    confidence = data.get("confidence")
     with Session(engine) as session:
         session.add(
             TranscriptSegment(
                 call_sid=form.get("CallSid", ""),
                 track=form.get("Track", ""),
-                text=data.get("transcript", ""),
-                confidence=data.get("confidence"),
+                text=text if isinstance(text, str) else "",
+                confidence=confidence if isinstance(confidence, (int, float)) else None,
             )
         )
         session.commit()

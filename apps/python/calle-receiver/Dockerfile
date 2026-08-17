@@ -6,6 +6,10 @@ ENV UV_COMPILE_BYTECODE=1
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
+RUN useradd --create-home appuser && chown appuser /app
+
 COPY app ./app
 
-CMD ["sh", "-c", "uv run --no-sync uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+USER appuser
+
+CMD ["sh", "-c", "exec uv run --no-sync uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

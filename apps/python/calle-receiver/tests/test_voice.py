@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
@@ -25,16 +26,19 @@ def test_incoming_call_returns_twiml_and_persists():
         assert call.status == "ringing"
 
 
-def test_status_callback_closes_call(create_call):
-    create_call("CAstatus")
-    client.post(
+@pytest.mark.parametrize(("duration", "expected"), [("42", 42), ("unknown", None)])
+def test_status_callback_closes_call(create_call, duration, expected):
+    sid = f"CAstatus{duration}"
+    create_call(sid)
+    resp = client.post(
         "/voice/status",
-        data={"CallSid": "CAstatus", "DialCallStatus": "completed", "DialCallDuration": "42"},
+        data={"CallSid": sid, "DialCallStatus": "completed", "DialCallDuration": duration},
     )
+    assert resp.status_code == 200
     with Session(engine) as session:
-        call = session.get(Call, "CAstatus")
+        call = session.get(Call, sid)
         assert call.status == "completed"
-        assert call.duration_seconds == 42
+        assert call.duration_seconds == expected
         assert call.ended_at is not None
 
 
@@ -79,3 +83,37 @@ def test_signature_rejected_when_enabled(monkeypatch):
     monkeypatch.setattr(settings, "validate_twilio_signature", True)
     resp = client.post("/voice", data={"CallSid": "CA999"})
     assert resp.status_code == 403
+
+
+def test_signature_accepted_when_valid(monkeypatch):
+    from twilio.request_validator import RequestValidator
+
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "validate_twilio_signature", True)
+    params = {"CallSid": "CAsigned", "From": "+15550000001", "To": "+15550000002"}
+    signature = RequestValidator(settings.twilio_auth_token).compute_signature(
+        f"{settings.public_base_url}/voice", params
+    )
+    resp = client.post("/voice", data=params, headers={"X-Twilio-Signature": signature})
+    assert resp.status_code == 200
+
+
+def test_transcription_malformed_data_is_ignored(create_call):
+    create_call("CAbadjson")
+    for payload in ("not json", "42"):
+        resp = client.post(
+            "/voice/transcription",
+            data={
+                "CallSid": "CAbadjson",
+                "TranscriptionEvent": "transcription-content",
+                "Track": "inbound_track",
+                "TranscriptionData": payload,
+            },
+        )
+        assert resp.status_code == 204
+    with Session(engine) as session:
+        segments = session.exec(
+            select(TranscriptSegment).where(TranscriptSegment.call_sid == "CAbadjson")
+        ).all()
+        assert segments == []
