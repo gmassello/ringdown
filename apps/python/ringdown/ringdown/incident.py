@@ -155,11 +155,20 @@ def parse_policy(raw: Any) -> Policy:
     labels = raw.get("accepted_confidence_labels", Policy.accepted_confidence_labels)
     if not isinstance(labels, (list, tuple)) or not labels:
         raise IncidentError("accepted_confidence_labels must be a non-empty list")
+    for name, value in raw.items():
+        if name == "accepted_confidence_labels":
+            continue
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise IncidentError(f"{name} must be a number, got {value!r}")
     policy = Policy(**{**raw, "accepted_confidence_labels": tuple(str(x).lower() for x in labels)})
     if not 0.0 <= policy.min_confidence <= 1.0:
         raise IncidentError(f"min_confidence must be between 0 and 1, got {policy.min_confidence}")
     if policy.max_eta_minutes < 1:
         raise IncidentError("max_eta_minutes must be at least 1")
+    if policy.per_call_timeout_seconds <= 0:
+        raise IncidentError("per_call_timeout_seconds must be positive")
+    if policy.poll_interval_seconds <= 0:
+        raise IncidentError("poll_interval_seconds must be positive")
     if policy.per_call_timeout_seconds > policy.ladder_timeout_seconds:
         raise IncidentError(
             "per_call_timeout_seconds cannot exceed ladder_timeout_seconds: "

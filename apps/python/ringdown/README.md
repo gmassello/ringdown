@@ -345,8 +345,9 @@ own call over a second transport. Same technique, different product.
    host scheduler.
 8. The confidence label allowlist can start failing if the provider adds a new label. It fails
    closed, which is why the score is the primary check.
-9. `ladder_timeout_seconds` is validated but never enforced. The real bound is
-   `per_call_timeout_seconds`, per call.
+9. `ladder_timeout_seconds` is a global deadline checked between rungs: once it expires no new
+   rung is started, but a call already in flight is never cut short — its real bound stays
+   `per_call_timeout_seconds`.
 10. Disposition and ETA extraction are English-only phrase lists and regexes.
 11. The chain proves internal consistency, not completeness, and it proves nothing against an
     adversary. It is unkeyed and anchored to nothing outside the file: cutting records off the end

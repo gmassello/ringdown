@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from fake import scenarios
 from ringdown.escalate import place_and_settle, run_ladder
 from ringdown.report import unknown_lines
@@ -16,6 +18,17 @@ def test_the_on_call_engineer_picks_up_and_the_ladder_stops_at_the_first_rung(
     assert result.verdict == "acknowledged"
     assert len(result.attempts) == 1
     assert result.attempts[0].extraction.eta_minutes == 15
+    assert len(server.created) == 1
+
+
+def test_an_expired_ladder_timeout_stops_before_the_next_rung(serving, rest_client):
+    server = serving({ALICE.phone: scenarios.no_answer()})
+    policy = replace(FAST, ladder_timeout_seconds=0)
+
+    result = run_ladder(rest_client(server), an_incident(policy=policy), LADDER)
+
+    assert result.verdict == "unacknowledged"
+    assert len(result.attempts) == 1
     assert len(server.created) == 1
 
 

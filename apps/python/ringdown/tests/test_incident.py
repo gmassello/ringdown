@@ -17,7 +17,7 @@ from ringdown.incident import (
     unstaffed_scopes,
     validate_e164,
 )
-from tests.data import ALICE, BEN, EXAMPLES, an_incident
+from tests.data import ALICE, BEN, EXAMPLES, an_incident, example_body
 
 FOREVER = datetime(2026, 1, 1, tzinfo=UTC)
 
@@ -129,6 +129,22 @@ def test_a_per_call_timeout_longer_than_the_whole_ladder_is_rejected(tmp_path):
     body["policy"]["per_call_timeout_seconds"] = 2000
 
     with pytest.raises(IncidentError, match="ladder_timeout_seconds"):
+        load_incident(write(tmp_path, "incident.json", body))
+
+
+def test_a_policy_field_that_is_not_a_number_is_rejected(tmp_path):
+    body = example_body("incident")
+    body["policy"]["min_confidence"] = "0.9"
+
+    with pytest.raises(IncidentError, match="min_confidence must be a number"):
+        load_incident(write(tmp_path, "incident.json", body))
+
+
+def test_a_non_positive_timeout_is_rejected(tmp_path):
+    body = example_body("incident")
+    body["policy"]["per_call_timeout_seconds"] = -5
+
+    with pytest.raises(IncidentError, match="per_call_timeout_seconds must be positive"):
         load_incident(write(tmp_path, "incident.json", body))
 
 

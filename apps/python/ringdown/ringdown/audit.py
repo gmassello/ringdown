@@ -14,7 +14,6 @@ if TYPE_CHECKING:
     from ringdown.escalate import Attempt, LadderResult
 
 GENESIS = "sha256:" + "0" * 64
-TAIL_BYTES = 8192
 
 
 def verdict_v1(verdicts: Sequence[str]) -> str:
@@ -99,32 +98,20 @@ def verification_record(
     }
 
 
-def tail_of(handle) -> str:
-    handle.seek(0, os.SEEK_END)
-    size = handle.tell()
-    handle.seek(size - min(size, TAIL_BYTES))
-    return handle.read()
-
-
 def records_in(text: str) -> list[str]:
     return [line for line in text.splitlines() if line.strip()]
-
-
-def counted(handle) -> int:
-    handle.seek(0)
-    return len(records_in(handle.read()))
 
 
 def append_record(path: Path, record: dict) -> None:
     fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
     with os.fdopen(fd, "r+") as handle:
         fcntl.flock(handle, fcntl.LOCK_EX)
-        tail = tail_of(handle)
-        written = records_in(tail)
+        text = handle.read()
+        written = records_in(text)
         last = json.loads(written[-1]) if written else {}
         prev = last.get("hash", GENESIS)
-        seq = last["seq"] + 1 if "seq" in last else counted(handle) + 1
-        gap = "" if not tail or tail.endswith("\n") else "\n"
+        seq = last["seq"] + 1 if "seq" in last else len(written) + 1
+        gap = "" if not text or text.endswith("\n") else "\n"
         stamped = {**record, "schema": SCHEMA, "seq": seq, "prev": prev}
         handle.write(gap + canonical_json(sealed(stamped)) + "\n")
 
@@ -155,9 +142,12 @@ def chain_checks(path: Path) -> list[Check]:
     records: list[dict] = []
     for number, line in enumerate(path.read_text().splitlines(), 1):
         try:
-            records.append(json.loads(line))
+            record = json.loads(line)
         except json.JSONDecodeError:
             return [(False, f"record {number} is not readable JSON")]
+        if not isinstance(record, dict):
+            return [(False, f"record {number} is not a JSON object")]
+        records.append(record)
 
     checks: list[Check] = []
     prev = GENESIS

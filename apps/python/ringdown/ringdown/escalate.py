@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from typing import Callable, Literal, Sequence
 
@@ -120,8 +121,12 @@ def run_ladder(
     watch: Callable[[int, Rung, Attempt | None], None] = lambda *_: None,
     announce: Callable[[str, str, Rung], None] = lambda *_: None,
 ) -> LadderResult:
+    deadline = time.monotonic() + incident.policy.ladder_timeout_seconds
     attempts: list[Attempt] = []
     for position, rung in enumerate(rungs, 1):
+        if attempts and time.monotonic() >= deadline:
+            log(f"ladder timeout after {len(attempts)} attempt(s)")
+            break
         watch(position, rung, None)
         placed = place_and_settle(rest, incident, rung, log=log, announce=announce)
         watch(position, rung, placed)

@@ -193,6 +193,28 @@ def test_an_unreadable_ledger_line_is_a_failed_check_not_a_crash(tmp_path):
     assert checks == [(False, "record 4 is not readable JSON")]
 
 
+def test_a_valid_json_line_that_is_not_an_object_is_a_failed_check_not_a_crash(tmp_path):
+    ledger = tmp_path / "ledger.jsonl"
+    write_run(ledger)
+    with ledger.open("a") as handle:
+        handle.write("42\n")
+
+    checks = chain_checks(ledger)
+
+    assert checks == [(False, "record 4 is not a JSON object")]
+
+
+def test_appending_after_an_oversized_record_does_not_break_the_chain(tmp_path):
+    ledger = tmp_path / "ledger.jsonl"
+    write_run(ledger)
+    append_record(ledger, {"type": "note", "note": "x" * 9000})
+    append_record(ledger, {"type": "note", "note": "after"})
+
+    records = read_lines(ledger)
+    assert [record["seq"] for record in records] == [1, 2, 3, 4, 5]
+    assert records[4]["prev"] == records[3]["hash"]
+
+
 def test_a_ledger_whose_verification_was_contradicted_does_not_pass(tmp_path):
     ledger = tmp_path / "ledger.jsonl"
     write_run(ledger, checks=[(True, "one held"), (False, "the second channel said otherwise")])
