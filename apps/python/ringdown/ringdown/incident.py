@@ -48,9 +48,9 @@ class Policy:
     min_confidence: float = 0.7
     accepted_confidence_labels: tuple[str, ...] = ("medium", "high")
     max_eta_minutes: int = 120
-    per_call_timeout_seconds: int = 180
+    per_call_timeout_seconds: float = 180.0
     poll_interval_seconds: float = 3.0
-    ladder_timeout_seconds: int = 900
+    ladder_timeout_seconds: float = 900.0
 
 
 @dataclass(frozen=True)

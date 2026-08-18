@@ -16,6 +16,7 @@ ROOT = HERE.parent
 EXAMPLES = ROOT / "examples"
 OUT = HERE / "out"
 EXAMPLE_LEDGER = EXAMPLES / "ledger.example.jsonl"
+COMMITTED_EXAMPLE_SCENARIO = 3
 
 ALICE, BEN, CARLA = "+14155550100", "+14155550101", "+14155550102"
 FAST_POLICY = {"per_call_timeout_seconds": 5, "poll_interval_seconds": 0.01}
@@ -129,7 +130,7 @@ def demo() -> None:
     EXAMPLE_LEDGER.unlink(missing_ok=True)
     incident = _incident_file()
     for number, (title, blurb, by_phone) in enumerate(SCENARIOS, 1):
-        ledger = EXAMPLE_LEDGER if number == 3 else OUT / f"run-{number}.jsonl"
+        ledger = EXAMPLE_LEDGER if number == COMMITTED_EXAMPLE_SCENARIO else OUT / f"run-{number}.jsonl"
         _run(title, blurb, by_phone, ledger, incident)
     print(f"\n{'=' * 96}\nThe ledger check the demo runs last\n{'=' * 96}")
     _ledger_check(EXAMPLE_LEDGER)

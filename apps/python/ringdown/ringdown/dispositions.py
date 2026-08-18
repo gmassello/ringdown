@@ -11,16 +11,10 @@ Verdict = Literal["acknowledged", "declined", "not_acknowledged", "unknown"]
 
 
 @dataclass(frozen=True)
-class Grounding:
-    grounded: bool
-    reason: str
-
-
-@dataclass(frozen=True)
 class Grounded:
-    disposition: Grounding
-    owner: Grounding
-    eta: Grounding
+    disposition: bool
+    owner: bool
+    eta: bool
 
 
 @dataclass(frozen=True)
@@ -29,15 +23,11 @@ class Assessment:
     reason: str
 
 
-def ground_span(span: str, turns: Sequence[Turn]) -> Grounding:
+def ground_span(span: str, turns: Sequence[Turn]) -> bool:
     if not span:
-        return Grounding(False, "no span was recorded")
+        return False
     spoken = normalise(span)
-    if any(spoken in normalise(turn.text) for turn in recipient_turns(turns)):
-        return Grounding(True, "")
-    if any(spoken in normalise(turn.text) for turn in turns if turn.speaker == "bot"):
-        return Grounding(False, "the span quotes the agent's own words, not the recipient's")
-    return Grounding(False, "the span does not appear in the transcript")
+    return any(spoken in normalise(turn.text) for turn in recipient_turns(turns))
 
 
 def ground(extraction: Extraction, turns: Sequence[Turn]) -> Grounded:
@@ -67,7 +57,7 @@ def classify(
         return Assessment("not_acknowledged", snapshot.failure_code or snapshot.status)
     if not confident(snapshot, policy):
         return Assessment("not_acknowledged", "low_confidence")
-    if extraction.disposition == "declined" and grounded.disposition.grounded:
+    if extraction.disposition == "declined" and grounded.disposition:
         return Assessment("declined", "")
     if snapshot.task_completed is not True:
         return Assessment("not_acknowledged", "task_not_completed")
@@ -77,14 +67,14 @@ def classify(
         return Assessment("not_acknowledged", "no_eta")
     if not 1 <= extraction.eta_minutes <= policy.max_eta_minutes:
         return Assessment("not_acknowledged", "eta_out_of_range")
-    if not grounded.eta.grounded:
+    if not grounded.eta:
         return Assessment("not_acknowledged", "ungrounded_eta")
     if extraction.disposition != "acknowledged":
         return Assessment("not_acknowledged", "unclear")
-    if not grounded.disposition.grounded:
+    if not grounded.disposition:
         return Assessment("not_acknowledged", "ungrounded_disposition")
     if extraction.owner_confirmed != first_name(contact):
         return Assessment("not_acknowledged", "owner_not_confirmed")
-    if not grounded.owner.grounded:
+    if not grounded.owner:
         return Assessment("not_acknowledged", "ungrounded_owner")
     return Assessment("acknowledged", "")

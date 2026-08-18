@@ -52,9 +52,9 @@ def place_and_settle(
     log: Callable[[str], None] = lambda _: None,
     announce: Callable[[str, str, Rung], None] = lambda *_: None,
 ) -> Attempt:
-    payload = call_payload(incident, rung, attempt=1)
+    payload = call_payload(incident, rung)
     key = idempotency_key(payload)
-    aid = attempt_id(incident, rung, attempt=1)
+    aid = attempt_id(incident, rung)
     log(f"idempotency key {key}")
     announce(aid, key, rung)
     try:

@@ -24,6 +24,7 @@ from ringdown.calls import parse_turns
 from ringdown.canonical import canonical_json
 from ringdown.checks import all_ok, contradicted
 from ringdown.escalate import Attempt, LadderResult
+from ringdown.incident import IncidentError
 from ringdown.extract import extract
 from tests.data import ALICE, LADDER
 
@@ -191,6 +192,11 @@ def test_an_unreadable_ledger_line_is_a_failed_check_not_a_crash(tmp_path):
     checks = chain_checks(ledger)
 
     assert checks == [(False, "record 4 is not readable JSON")]
+
+
+def test_a_ledger_path_in_a_missing_directory_is_a_usage_error_not_a_traceback(tmp_path):
+    with pytest.raises(IncidentError, match="cannot open the ledger"):
+        append_record(tmp_path / "missing" / "ledger.jsonl", {"type": "note"})
 
 
 def test_a_valid_json_line_that_is_not_an_object_is_a_failed_check_not_a_crash(tmp_path):

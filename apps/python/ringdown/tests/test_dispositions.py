@@ -97,17 +97,11 @@ def test_a_span_that_matches_only_the_agents_own_turns_is_not_evidence():
     turns = parse_turns(scenarios.answer_ack(ALICE.name, "alice").turns)
     bot_only = tuple(turn for turn in turns if turn.speaker == "bot")
 
-    grounding = ground_span("are you taking this incident right now?", bot_only)
-
-    assert not grounding.grounded
-    assert "agent's own words" in grounding.reason
+    assert not ground_span("are you taking this incident right now?", bot_only)
 
 
 def test_a_missing_span_is_never_grounded():
-    grounding = ground_span("", parse_turns(scenarios.answer_ack(ALICE.name, "alice").turns))
-
-    assert not grounding.grounded
-    assert grounding.reason == "no span was recorded"
+    assert not ground_span("", parse_turns(scenarios.answer_ack(ALICE.name, "alice").turns))
 
 
 def test_a_provider_confidence_without_a_score_fails_closed():
@@ -120,8 +114,6 @@ def test_a_provider_confidence_without_a_score_fails_closed():
     assert judged.reason == "low_confidence"
 
 
-UNGROUNDED = ground_span("never spoken", ())
-
 BREAKERS = {
     "status": lambda s, e, g: (replace(s, status="failed"), e, g),
     "confidence_score": lambda s, e, g: (replace(s, confidence_score=0.05), e, g),
@@ -133,9 +125,9 @@ BREAKERS = {
     "eta_missing": lambda s, e, g: (s, replace(e, eta_minutes=None), g),
     "eta_out_of_range": lambda s, e, g: (s, replace(e, eta_minutes=999), g),
     "owner_confirmed": lambda s, e, g: (s, replace(e, owner_confirmed="sam"), g),
-    "grounded_disposition": lambda s, e, g: (s, e, replace(g, disposition=UNGROUNDED)),
-    "grounded_eta": lambda s, e, g: (s, e, replace(g, eta=UNGROUNDED)),
-    "grounded_owner": lambda s, e, g: (s, e, replace(g, owner=UNGROUNDED)),
+    "grounded_disposition": lambda s, e, g: (s, e, replace(g, disposition=False)),
+    "grounded_eta": lambda s, e, g: (s, e, replace(g, eta=False)),
+    "grounded_owner": lambda s, e, g: (s, e, replace(g, owner=False)),
 }
 
 BASELINE = parts(snapshot_for(scenarios.answer_ack(ALICE.name, "alice")))

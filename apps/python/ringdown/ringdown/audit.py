@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Sequence
 
 from ringdown.canonical import canonical_json, digest
 from ringdown.checks import Check, all_ok, labels, passed, unresolved
-from ringdown.incident import Rung, mask_phone
+from ringdown.incident import IncidentError, Rung, mask_phone
 
 if TYPE_CHECKING:
     from ringdown.escalate import Attempt, LadderResult
@@ -103,7 +103,10 @@ def records_in(text: str) -> list[str]:
 
 
 def append_record(path: Path, record: dict) -> None:
-    fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
+    except OSError as exc:
+        raise IncidentError(f"cannot open the ledger at {path}: {exc.strerror}") from exc
     with os.fdopen(fd, "r+") as handle:
         fcntl.flock(handle, fcntl.LOCK_EX)
         text = handle.read()

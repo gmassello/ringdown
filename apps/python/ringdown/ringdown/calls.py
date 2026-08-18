@@ -21,7 +21,6 @@ STATUS_MAP = {
 class Turn:
     speaker: Literal["bot", "user"]
     text: str
-    offset_seconds: int
 
 
 @dataclass(frozen=True)
@@ -64,13 +63,7 @@ def parse_turns(raw: Any) -> tuple[Turn, ...]:
         if not isinstance(entry, dict):
             continue
         speaker = "user" if entry.get("speaker") == "user" else "bot"
-        turns.append(
-            Turn(
-                speaker=speaker,
-                text=str(entry.get("text", "")),
-                offset_seconds=int(entry.get("offset_seconds", 0) or 0),
-            )
-        )
+        turns.append(Turn(speaker=speaker, text=str(entry.get("text", ""))))
     return tuple(turns)
 
 

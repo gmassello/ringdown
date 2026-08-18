@@ -7,8 +7,8 @@ from ringdown.script import call_payload, call_task, idempotency_key
 from tests.data import ALICE, BEN, LADDER, an_incident
 
 
-def key_for(incident, rung, attempt=1) -> str:
-    return idempotency_key(call_payload(incident, rung, attempt))
+def key_for(incident, rung) -> str:
+    return idempotency_key(call_payload(incident, rung))
 
 
 def test_the_idempotency_key_is_stable_across_two_runs_of_the_same_attempt(incident):
@@ -25,10 +25,6 @@ def test_the_idempotency_key_is_different_for_every_person_on_the_ladder(inciden
     keys = {key_for(incident, rung) for rung in LADDER}
 
     assert len(keys) == len(LADDER)
-
-
-def test_the_idempotency_key_is_different_for_a_second_attempt(incident):
-    assert key_for(incident, LADDER[0], 1) != key_for(incident, LADDER[0], 2)
 
 
 def test_the_idempotency_key_carries_the_attempt_it_belongs_to(incident):
@@ -79,7 +75,7 @@ def test_an_incident_without_a_runbook_does_not_promise_one(incident):
 
 
 def test_the_payload_carries_the_attempt_id_and_the_recipient_the_api_contract_expects(incident):
-    payload = call_payload(incident, LADDER[0], 1)
+    payload = call_payload(incident, LADDER[0])
 
     assert payload["metadata"]["ringdown_attempt_id"] == "inc-2026-08-09-0113/primary/1"
     assert payload["metadata"]["ringdown_contact_id"] == "a.okafor"
@@ -88,7 +84,7 @@ def test_the_payload_carries_the_attempt_id_and_the_recipient_the_api_contract_e
 
 
 def test_the_payload_never_carries_the_policy_or_the_rest_of_the_ladder(incident):
-    payload = call_payload(incident, LADDER[0], 1)
+    payload = call_payload(incident, LADDER[0])
     flattened = str(payload)
 
     assert BEN.phone not in flattened

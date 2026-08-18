@@ -341,7 +341,7 @@ def test_a_ledger_the_second_channel_contradicted_does_not_pass_verify_ledger(
 def test_a_ledger_the_second_channel_never_answered_is_unresolved_not_unverified(
     serving, incident_file, tmp_path, capsys, monkeypatch
 ):
-    monkeypatch.setenv("CALLE_MCP_TOKEN", "")
+    monkeypatch.setenv("CALLE_MCP_TOKEN", "expired")
     server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
     ledger = tmp_path / "l.jsonl"
     assert _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION) == EXIT_UNRESOLVED
@@ -349,6 +349,21 @@ def test_a_ledger_the_second_channel_never_answered_is_unresolved_not_unverified
     capsys.readouterr()
     assert main(["verify", "--ledger", str(ledger)]) == EXIT_UNRESOLVED
     assert "never confirmed on the second channel" in capsys.readouterr().out
+
+
+def test_a_missing_mcp_token_stops_the_run_before_any_call_is_placed(
+    serving, incident_file, tmp_path, capsys, monkeypatch
+):
+    monkeypatch.delenv("CALLE_MCP_TOKEN")
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+
+    code = _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION)
+
+    assert code == EXIT_USAGE
+    assert "CALLE_MCP_TOKEN is not set" in capsys.readouterr().out
+    assert len(server.created) == 0
+    assert not ledger.exists()
 
 
 def test_a_rewritten_verdict_with_a_relinked_chain_still_fails_verify_ledger(

@@ -101,7 +101,7 @@ def preview(args: argparse.Namespace) -> int:
     incident = load_incident(args.incident)
     moment = datetime.now(UTC)
     rungs = _ladder(incident, args.rotation, moment)
-    payload = call_payload(incident, rungs[0], 1)
+    payload = call_payload(incident, rungs[0])
     emit(*report.header_lines(incident, rungs, moment))
     emit(f"idempotency key {idempotency_key(payload)}", "", call_task(incident, rungs[0]))
     return EXIT_ACKNOWLEDGED
@@ -123,6 +123,10 @@ def run(args: argparse.Namespace) -> int:
     api_key = os.environ.get("CALLE_API_KEY", "")
     if not api_key:
         emit("CALLE_API_KEY is not set in the environment")
+        return EXIT_USAGE
+    mcp_key = os.environ.get("CALLE_MCP_TOKEN", "")
+    if not mcp_key:
+        emit("CALLE_MCP_TOKEN is not set in the environment")
         return EXIT_USAGE
     allowed = frozenset(args.allow_host)
     base_url = assert_trusted_base_url(args.base_url, allowed)
@@ -164,7 +168,6 @@ def run(args: argparse.Namespace) -> int:
 
     checks: list[Check] = []
     if verifiable(result.verdict, result.placed):
-        mcp_key = os.environ.get("CALLE_MCP_TOKEN", "")
         mcp = McpClient(mcp_url, mcp_key, allowed_hosts=allowed)
         checks = _verify(mcp, incident, result, start)
         append_record(

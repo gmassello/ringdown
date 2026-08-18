@@ -61,13 +61,13 @@ def ack_checks(
             extract(run.turns).disposition == "acknowledged",
             "re-extracting the second channel transcript gives disposition acknowledged",
         ),
-        (grounded.disposition.grounded, "the recorded disposition span is spoken by the recipient"),
+        (grounded.disposition, "the recorded disposition span is spoken by the recipient"),
         (
-            grounded.owner.grounded and first_name(contact) in normalise(extraction.owner_span),
+            grounded.owner and first_name(contact) in normalise(extraction.owner_span),
             f"the recorded owner {contact.name} is spoken by the recipient",
         ),
         (
-            grounded.eta.grounded and minutes_in(extraction.eta_span) == extraction.eta_minutes,
+            grounded.eta and minutes_in(extraction.eta_span) == extraction.eta_minutes,
             f"the recorded ETA of {extraction.eta_minutes} minutes is spoken by the recipient",
         ),
     ]

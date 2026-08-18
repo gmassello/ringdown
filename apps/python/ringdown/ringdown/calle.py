@@ -108,26 +108,26 @@ def _http_error(error: urllib.error.HTTPError) -> CalleError:
 
 class RestClient(_Client):
     def create_call(self, payload: Mapping[str, Any], key: str) -> CallSnapshot:
-        return snapshot_from(
-            self._send(f"{self._url}/v1/calls", payload, {"Idempotency-Key": key})
-        )
+        return _snapshot(self._send(f"{self._url}/v1/calls", payload, {"Idempotency-Key": key}))
 
     def get_call(self, call_id: str, timeout: float | None = None) -> CallSnapshot:
-        return snapshot_from(self._send(f"{self._url}/v1/calls/{call_id}", timeout=timeout))
+        return _snapshot(self._send(f"{self._url}/v1/calls/{call_id}", timeout=timeout))
 
     def wait_for_result(self, call_id: str, timeout: float, interval: float) -> CallSnapshot:
         deadline = time.monotonic() + timeout
+        status = "unpolled"
         while True:
             remaining = deadline - time.monotonic()
-            snapshot = self.get_call(call_id, timeout=max(0.001, min(self._timeout, remaining)))
-            if snapshot.terminal:
-                return snapshot
-            if time.monotonic() >= deadline:
+            if remaining <= 0:
                 raise CalleError(
                     "poll_timeout",
                     None,
-                    f"call {call_id} was still {snapshot.status} after {timeout:.0f}s",
+                    f"call {call_id} was still {status} after {timeout:.0f}s",
                 )
+            snapshot = self.get_call(call_id, timeout=max(0.001, min(self._timeout, remaining)))
+            if snapshot.terminal:
+                return snapshot
+            status = snapshot.status
             time.sleep(min(interval, max(0.0, deadline - time.monotonic())))
 
 
@@ -156,10 +156,32 @@ class McpClient(_Client):
             raise CalleError(
                 "no_call_run", 404, str(envelope.get("message") or "the run is not readable")
             )
-        run = run_from(_unwrap_content(body.get("result")))
+        run = _call_run(body.get("result"))
         if not run.readable:
             raise CalleError("unreadable_run", None, "the run carries no call id")
         return run
+
+
+def _call_run(result: Any) -> CallRun:
+    try:
+        return run_from(_unwrap_content(result))
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError) as error:
+        raise CalleError(
+            "unreadable_run",
+            None,
+            f"the run payload does not have the expected shape: {error}",
+        ) from error
+
+
+def _snapshot(body: Any) -> CallSnapshot:
+    try:
+        return snapshot_from(body)
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError) as error:
+        raise CalleError(
+            "unreadable_response",
+            None,
+            f"the call payload does not have the expected shape: {error}",
+        ) from error
 
 
 def _unwrap_content(result: Any) -> dict[str, Any]:

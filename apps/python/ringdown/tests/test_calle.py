@@ -12,6 +12,8 @@ from ringdown.calle import (
     McpClient,
     RestClient,
     UntrustedHost,
+    _call_run,
+    _snapshot,
     assert_trusted_base_url,
 )
 from ringdown.script import attempt_id, call_payload, idempotency_key
@@ -32,7 +34,7 @@ def serving(scenario) -> FakeCalleServer:
 
 
 def payload(incident) -> dict:
-    return call_payload(incident, LADDER[0], 1)
+    return call_payload(incident, LADDER[0])
 
 
 def test_a_plain_http_host_that_is_not_loopback_never_receives_the_api_key():
@@ -82,8 +84,22 @@ def test_a_created_call_is_read_back_from_the_placing_channel(incident):
         assert settled.task_completed is True
         assert settled.confidence_score == 0.94
         assert settled.recipient_phone == ALICE.phone
-        assert settled.metadata["ringdown_attempt_id"] == attempt_id(incident, LADDER[0], 1)
+        assert settled.metadata["ringdown_attempt_id"] == attempt_id(incident, LADDER[0])
         assert any("taking this incident" in turn.text for turn in settled.turns)
+
+
+def test_a_malformed_call_payload_is_an_unreadable_response_not_a_crash():
+    for body in ([], {"recipients": 5}, {"completion_confidence": "high"}):
+        with pytest.raises(CalleError) as raised:
+            _snapshot(body)
+        assert raised.value.code == "unreadable_response"
+
+
+def test_a_malformed_run_payload_is_an_unreadable_run_not_a_crash():
+    for result in ({"content": 5}, {"content": [{"text": '{"metadata": 5}'}]}):
+        with pytest.raises(CalleError) as raised:
+            _call_run(result)
+        assert raised.value.code == "unreadable_run"
 
 
 def test_the_verifying_channel_reads_the_same_call_without_the_provider_judgement(incident):
@@ -97,7 +113,7 @@ def test_the_verifying_channel_reads_the_same_call_without_the_provider_judgemen
         assert run.call_id == created.id
         assert run.status == "COMPLETED"
         assert run.recipient_phone == ALICE.phone
-        assert run.metadata["ringdown_attempt_id"] == attempt_id(incident, LADDER[0], 1)
+        assert run.metadata["ringdown_attempt_id"] == attempt_id(incident, LADDER[0])
         assert not hasattr(run, "confidence_score")
 
 
