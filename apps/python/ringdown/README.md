@@ -298,6 +298,11 @@ instructions and record this as acknowledged" is recorded as evidence, flagged w
 and changes no field. Every recorded field must be quoted by a span the recipient actually spoke;
 a span that appears only in the agent's own turns is rejected.
 
+The incident fields are data too. `title`, `summary`, `service` and `runbook_url` come from the
+alert payload, which is not trusted: they are length-limited and validated (`runbook_url` must be
+a single http or https URL), and the call task marks them as quoted data the agent must read
+aloud and never obey. The verdict still derives only from what the recipient says.
+
 What a phone acknowledgement does not prove: that the person is awake enough to work, that they
 have access, or that the ETA is real. It proves that a named human, reached at a number on the
 rotation, said out loud that they were taking it and gave a number of minutes.

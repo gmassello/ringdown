@@ -19,7 +19,7 @@ def _twiml(vr: VoiceResponse) -> Response:
 
 
 @router.post("/voice")
-async def incoming_call(form: FormData = Depends(twilio_form)) -> Response:
+def incoming_call(form: FormData = Depends(twilio_form)) -> Response:
     sid = form.get("CallSid", "")
     with Session(engine) as session:
         if sid and session.get(Call, sid) is None:
@@ -66,7 +66,7 @@ async def incoming_call(form: FormData = Depends(twilio_form)) -> Response:
 
 
 @router.post("/voice/status")
-async def call_status(form: FormData = Depends(twilio_form)) -> Response:
+def call_status(form: FormData = Depends(twilio_form)) -> Response:
     with Session(engine) as session:
         call = session.get(Call, form.get("CallSid", ""))
         if call is not None:
@@ -80,7 +80,7 @@ async def call_status(form: FormData = Depends(twilio_form)) -> Response:
 
 
 @router.post("/voice/recording")
-async def recording_completed(form: FormData = Depends(twilio_form)) -> Response:
+def recording_completed(form: FormData = Depends(twilio_form)) -> Response:
     url = form.get("RecordingUrl", "")
     with Session(engine) as session:
         call = session.get(Call, form.get("CallSid", ""))
@@ -91,7 +91,7 @@ async def recording_completed(form: FormData = Depends(twilio_form)) -> Response
 
 
 @router.post("/voice/transcription")
-async def transcription_event(form: FormData = Depends(twilio_form)) -> Response:
+def transcription_event(form: FormData = Depends(twilio_form)) -> Response:
     if form.get("TranscriptionEvent") != "transcription-content":
         return Response(status_code=204)
     try:

@@ -3,8 +3,10 @@ from __future__ import annotations
 from dataclasses import replace
 
 from fake import scenarios
+from ringdown.calls import snapshot_from
 from ringdown.escalate import place_and_settle, run_ladder
 from ringdown.report import unknown_lines
+from ringdown.script import attempt_id
 from tests.data import ALICE, BEN, CARLA, FAST, LADDER, an_incident
 
 
@@ -220,3 +222,41 @@ def test_the_idempotency_key_is_printed_before_the_request_is_sent(serving, rest
     assert attempt.verdict == "unknown"
     assert messages[0] == f"idempotency key {attempt.key}"
     assert server.requests == 2
+
+
+def test_a_call_that_reports_the_wrong_identity_settles_unknown_not_acknowledged():
+    incident = an_incident(policy=FAST)
+    aid = attempt_id(incident, LADDER[0])
+
+    def settled(phone: str, metadata: dict) -> object:
+        return snapshot_from(
+            {
+                "id": "c1",
+                "status": "completed",
+                "task_completed": True,
+                "metadata": metadata,
+                "recipients": [
+                    {"phones": [phone], "attempts": [{"phone": phone, "transcript_turns": []}]}
+                ],
+            }
+        )
+
+    class MixedUpRest:
+        def __init__(self, snapshot):
+            self._snapshot = snapshot
+
+        def create_call(self, payload, key):
+            return self._snapshot
+
+        def wait_for_result(self, call_id, timeout, interval):
+            return self._snapshot
+
+    wrong_phone = settled(BEN.phone, {"ringdown_attempt_id": aid})
+    wrong_attempt = settled(ALICE.phone, {"ringdown_attempt_id": "other-incident/primary/1"})
+
+    for snapshot in (wrong_phone, wrong_attempt):
+        attempt = place_and_settle(MixedUpRest(snapshot), incident, LADDER[0])
+
+        assert attempt.verdict == "unknown"
+        assert attempt.reason == "call_identity_mismatch"
+        assert attempt.call_id == "c1"

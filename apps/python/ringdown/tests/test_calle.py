@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import http.server
+import threading
+
 import pytest
 
 from dataclasses import replace
@@ -221,6 +224,42 @@ def test_a_bad_api_key_is_reported_as_unauthorized(incident):
 
         assert raised.value.status == 401
         assert not raised.value.may_have_landed
+
+
+def test_a_redirecting_host_is_refused_and_the_api_key_never_follows(incident):
+    seen: list[str] = []
+
+    class Redirecting(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            seen.append(self.path)
+            self.send_response(302)
+            self.send_header("Location", "/leaked")
+            self.end_headers()
+
+        do_GET = do_POST
+
+        def log_message(self, *_):
+            pass
+
+    with http.server.ThreadingHTTPServer(("127.0.0.1", 0), Redirecting) as server:
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        rest = RestClient(f"http://127.0.0.1:{server.server_address[1]}", "rd_test_key", timeout=5)
+        with pytest.raises(CalleError) as raised:
+            rest.create_call(payload(incident), KEY)
+        server.shutdown()
+
+    assert raised.value.code == "unexpected_redirect"
+    assert raised.value.status == 302
+    assert not raised.value.may_have_landed
+    assert seen == ["/v1/calls"]
+
+
+def test_a_creation_response_without_an_id_is_unreadable_not_accepted():
+    with pytest.raises(CalleError) as raised:
+        _snapshot({"status": "queued"})
+
+    assert raised.value.code == "unreadable_response"
+    assert "no id" in raised.value.message
 
 
 def test_an_error_code_the_provider_invents_cannot_grow_without_bound(incident):

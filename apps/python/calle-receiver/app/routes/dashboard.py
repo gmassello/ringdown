@@ -2,7 +2,7 @@ import html
 
 import requests
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, Response, StreamingResponse
 from sqlmodel import Session, col, select
 
 from app.config import TWILIO_API_BASE, settings
@@ -98,14 +98,25 @@ def recording(call_sid: str) -> Response:
         call = session.get(Call, call_sid)
     if call is None or not (call.recording_url or "").startswith(TWILIO_API_BASE):
         raise HTTPException(status_code=404, detail="No recording for this call")
-    upstream = requests.get(
-        f"{call.recording_url}.mp3",
-        auth=(settings.twilio_account_sid, settings.twilio_auth_token),
-        timeout=30,
-    )
-    upstream.raise_for_status()
-    return Response(
-        upstream.content,
+    try:
+        upstream = requests.get(
+            f"{call.recording_url}.mp3",
+            auth=(settings.twilio_account_sid, settings.twilio_auth_token),
+            timeout=10,
+            stream=True,
+        )
+        upstream.raise_for_status()
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail="Twilio recording fetch failed") from exc
+    return StreamingResponse(
+        _stream(upstream),
         media_type="audio/mpeg",
         headers={"Cache-Control": "private, max-age=3600"},
     )
+
+
+def _stream(upstream: requests.Response):
+    try:
+        yield from upstream.iter_content(chunk_size=65536)
+    finally:
+        upstream.close()

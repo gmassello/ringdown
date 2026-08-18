@@ -37,6 +37,18 @@ class UntrustedHost(ValueError):
     pass
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise CalleError(
+            "unexpected_redirect",
+            code,
+            f"{req.full_url} answered with a redirect to {newurl}; refusing to follow it",
+        )
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect)
+
+
 def assert_trusted_base_url(url: str, allowed: frozenset[str] = frozenset()) -> str:
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.hostname:
@@ -82,7 +94,7 @@ class _Client:
         for name, value in (headers or {}).items():
             request.add_header(name, value)
         try:
-            with urllib.request.urlopen(request, timeout=timeout or self._timeout) as response:
+            with _OPENER.open(request, timeout=timeout or self._timeout) as response:
                 return json.loads(response.read() or b"{}")
         except urllib.error.HTTPError as error:
             raise _http_error(error) from error
@@ -175,13 +187,16 @@ def _call_run(result: Any) -> CallRun:
 
 def _snapshot(body: Any) -> CallSnapshot:
     try:
-        return snapshot_from(body)
+        snapshot = snapshot_from(body)
     except (AttributeError, IndexError, KeyError, TypeError, ValueError) as error:
         raise CalleError(
             "unreadable_response",
             None,
             f"the call payload does not have the expected shape: {error}",
         ) from error
+    if not snapshot.id:
+        raise CalleError("unreadable_response", None, "the call payload carries no id")
+    return snapshot
 
 
 def _unwrap_content(result: Any) -> dict[str, Any]:

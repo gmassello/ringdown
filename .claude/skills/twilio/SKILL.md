@@ -6,16 +6,16 @@ description: Verified Twilio operational knowledge for this project (calle-recei
 # Twilio — CALL-E receiver (calle-receiver)
 
 Everything below was verified hands-on on 2026-08-16. The receiver app lives in
-`apps/python/calle-receiver/` and the full plan with status markers in
-`docs/plan-twilio-calle.md`.
+`apps/python/calle-receiver/`.
 
 ## Account and resources
 
-- Account SID: `AC5fd6d7239974b2e29fc83160efb62091`. Credentials (auth token,
-  API keys) live in `apps/python/calle-receiver/.env` and
-  `apps/python/ringdown/.env` — reference them by path, never paste them into
-  versioned files.
-- Number: **+1 364 365 8544** (US local, Voice channel). Account already
+- Account SID: `<ACCOUNT_SID>` — read it as `TWILIO_ACCOUNT_SID` from
+  `apps/python/calle-receiver/.env`. Credentials (auth token, API keys) live in
+  `apps/python/calle-receiver/.env` and `apps/python/ringdown/.env` — reference
+  them by path, never paste them into versioned files.
+- Number: `<TWILIO_NUMBER>` (US local, Voice channel) — read it as
+  `TWILIO_NUMBER` from `apps/python/calle-receiver/.env`. Account already
   upgraded (Active) — no trial message plays.
 - Flow: CALL-E / any caller → Twilio number → `POST /voice` → TwiML `<Dial>`
   to the Argentine cell (`FORWARD_TO`), with dual-channel recording and live
@@ -116,9 +116,9 @@ without auth. To download it: append `.mp3` and use basic auth
    `completed`).
 2. Manual inbound call: **never call from the phone that is `FORWARD_TO`**
    (Twilio tries to forward the call to the same phone that is busy calling →
-   voicemail). Use another phone. From an Argentine landline dial
-   `00 1 364 365 8544` (requires international dialing enabled; international
-   rates apply).
+   voicemail). Use another phone. From an Argentine landline dial `00` followed
+   by the Twilio number without the `+` (requires international dialing
+   enabled; international rates apply).
 3. Speak **English** during the test: transcription is set to `en-US` and
    Spanish produces garbage, so you cannot validate it. Both sides should talk
    to cover both tracks. Verified end-to-end: 16s call, 3 segments,
@@ -128,7 +128,7 @@ without auth. To download it: append `.mp3` and use basic auth
 
 **CALL-E does dial VoIP/Twilio numbers** (verified 2026-08-16: call to the
 Twilio number `completed` with `task_completed=True`; CALL-E's caller ID was
-`+18325903283`). The full loop CALL-E → Twilio → AR cell works end-to-end with
+`+1832***3283`). The full loop CALL-E → Twilio → AR cell works end-to-end with
 recording and both-track transcription. To place a CALL-E call, reuse
 `RestClient` from `apps/python/ringdown/ringdown/calle.py`
 (`POST https://api.heycall-e.com/v1/calls`, Bearer `CALLE_API_KEY` from

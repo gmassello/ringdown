@@ -92,6 +92,18 @@ def place_and_settle(
             reason=error.code,
             call_id=created.id,
         )
+    if (
+        snapshot.recipient_phone != rung.contact.phone
+        or snapshot.metadata.get("ringdown_attempt_id") != aid
+    ):
+        return Attempt(
+            rung=rung,
+            key=key,
+            attempt_id=aid,
+            verdict="unknown",
+            reason="call_identity_mismatch",
+            call_id=created.id,
+        )
     extraction = extract(snapshot.turns)
     judged = classify(
         snapshot, extraction, ground(extraction, snapshot.turns), rung.contact, policy

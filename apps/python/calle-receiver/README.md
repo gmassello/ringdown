@@ -6,7 +6,6 @@ número de EE.UU. y la reenvía a un celular argentino, guardando grabación y
 transcripción en SQLite.
 
 > Infraestructura de demo. El producto es [Ringdown](../ringdown/README.md).
-> Diseño completo y bitácora en [`docs/plan-twilio-calle.md`](../../../docs/plan-twilio-calle.md).
 >
 > **En producción:** [`https://calle-receiver.onrender.com/calls`](https://calle-receiver.onrender.com/calls)
 > — flujo completo CALL-E → Twilio → celular AR validado end-to-end el 16/08/2026.

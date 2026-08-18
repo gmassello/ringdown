@@ -67,7 +67,8 @@ client.incoming_phone_numbers("PN939da01ace5684ac0edbff0d70deb11e").update(
 2. `curl -u "x:$DASHBOARD_PASSWORD" <url>/calls` → 200 (password loaded).
 3. `curl -X POST <url>/voice -d "CallSid=x"` → **403** — proves the Twilio
    credentials loaded and signature validation is active.
-4. A real call to +1 364 365 8544 appears in `/calls` with recording and
+4. A real call to `<TWILIO_NUMBER>` (see `TWILIO_NUMBER` in
+   `apps/python/calle-receiver/.env`) appears in `/calls` with recording and
    transcript.
 
 ## Local notes

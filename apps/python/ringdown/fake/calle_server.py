@@ -31,8 +31,8 @@ CREATE_FIELDS = frozenset(
 )
 
 
-def turn(speaker: str, text: str, offset_seconds: int) -> dict[str, Any]:
-    return {"speaker": speaker, "text": text, "offset_seconds": offset_seconds}
+def turn(speaker: str, text: str) -> dict[str, Any]:
+    return {"speaker": speaker, "text": text}
 
 
 @dataclass(frozen=True)

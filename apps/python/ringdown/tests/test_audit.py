@@ -389,3 +389,27 @@ def test_the_ledger_summary_reads_the_same_records_the_appender_counted(tmp_path
     ledger.write_text(ledger.read_text() + "\n")
 
     assert head(ledger) == (3, third["hash"])
+
+
+def test_a_corrupt_last_line_makes_appending_a_usage_error_not_a_traceback(tmp_path):
+    ledger = tmp_path / "ledger.jsonl"
+    write_run(ledger)
+    with ledger.open("a") as handle:
+        handle.write("{not json\n")
+
+    with pytest.raises(IncidentError, match="not readable JSON"):
+        append_record(ledger, {"type": "note"})
+    with pytest.raises(IncidentError, match="not readable JSON"):
+        head(ledger)
+
+
+def test_a_last_line_that_is_not_an_object_is_a_usage_error_not_a_traceback(tmp_path):
+    ledger = tmp_path / "ledger.jsonl"
+    write_run(ledger)
+    with ledger.open("a") as handle:
+        handle.write("42\n")
+
+    with pytest.raises(IncidentError, match="not a JSON object"):
+        append_record(ledger, {"type": "note"})
+    with pytest.raises(IncidentError, match="not a JSON object"):
+        head(ledger)

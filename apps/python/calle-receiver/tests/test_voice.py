@@ -117,3 +117,17 @@ def test_transcription_malformed_data_is_ignored(create_call):
             select(TranscriptSegment).where(TranscriptSegment.call_sid == "CAbadjson")
         ).all()
         assert segments == []
+
+
+def test_no_handler_runs_on_the_event_loop():
+    import inspect
+
+    from app.routes import dashboard, voice
+
+    handlers = [
+        route.endpoint
+        for router in (voice.router, dashboard.router)
+        for route in router.routes
+    ]
+    assert handlers
+    assert not any(inspect.iscoroutinefunction(handler) for handler in handlers)

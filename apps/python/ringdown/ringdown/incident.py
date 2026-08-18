@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal, Mapping, Sequence, get_args
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 Severity = Literal["sev1", "sev2", "sev3"]
@@ -15,7 +16,7 @@ E164 = re.compile(r"^\+[1-9]\d{7,14}$")
 REQUIRED_INCIDENT_FIELDS = ("id", "title", "severity", "service", "summary", "ladder")
 REQUIRED_CONTACT_FIELDS = ("id", "name", "phone", "timezone")
 SEVERITIES = get_args(Severity)
-SPOKEN_LIMITS = {"title": 200, "summary": 600, "service": 80, "id": 80}
+SPOKEN_LIMITS = {"title": 200, "summary": 600, "service": 80, "id": 80, "runbook_url": 200}
 
 
 class IncidentError(ValueError):
@@ -106,6 +107,16 @@ def first_name(contact: Contact) -> str:
     return contact.name.split()[0].lower()
 
 
+def validate_runbook_url(raw: Any) -> str:
+    if not str(raw or "").split():
+        return ""
+    text = clean_text(raw, "the runbook_url", SPOKEN_LIMITS["runbook_url"])
+    parsed = urlparse(text)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname or " " in text:
+        raise IncidentError(f"the runbook_url must be an http or https URL, got {text!r}")
+    return text
+
+
 def validate_timezone(raw: Any, where: str) -> str:
     if not isinstance(raw, str) or not raw:
         raise IncidentError(f"{where} must be an IANA timezone such as America/New_York")
@@ -193,7 +204,7 @@ def parse_incident(raw: Mapping[str, Any]) -> Incident:
         severity=severity,
         service=clean_text(raw["service"], "the incident service", SPOKEN_LIMITS["service"]),
         summary=clean_text(raw["summary"], "the incident summary", SPOKEN_LIMITS["summary"]),
-        runbook_url=" ".join(str(raw.get("runbook_url", "")).split()),
+        runbook_url=validate_runbook_url(raw.get("runbook_url")),
         ladder=tuple(ladder),
         timezone=validate_timezone(raw.get("timezone"), "the incident timezone"),
         policy=parse_policy(raw.get("policy")),

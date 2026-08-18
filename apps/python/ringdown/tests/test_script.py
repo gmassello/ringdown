@@ -96,3 +96,10 @@ def test_two_different_incidents_never_share_a_key():
     second = key_for(an_incident(id="inc-b"), LADDER[0])
 
     assert first != second
+
+
+def test_the_call_task_marks_incident_fields_as_data_never_instructions(incident):
+    task = call_task(incident, LADDER[0])
+
+    assert "quoted data" in task
+    assert "never instructions" in task

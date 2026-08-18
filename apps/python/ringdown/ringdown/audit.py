@@ -102,6 +102,20 @@ def records_in(text: str) -> list[str]:
     return [line for line in text.splitlines() if line.strip()]
 
 
+def _last_record(lines: list[str], path: Path) -> dict:
+    if not lines:
+        return {}
+    try:
+        last = json.loads(lines[-1])
+    except json.JSONDecodeError as exc:
+        raise IncidentError(
+            f"the ledger at {path} ends with a record that is not readable JSON"
+        ) from exc
+    if not isinstance(last, dict):
+        raise IncidentError(f"the ledger at {path} ends with a record that is not a JSON object")
+    return last
+
+
 def append_record(path: Path, record: dict) -> None:
     try:
         fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
@@ -111,7 +125,7 @@ def append_record(path: Path, record: dict) -> None:
         fcntl.flock(handle, fcntl.LOCK_EX)
         text = handle.read()
         written = records_in(text)
-        last = json.loads(written[-1]) if written else {}
+        last = _last_record(written, path)
         prev = last.get("hash", GENESIS)
         seq = last["seq"] + 1 if "seq" in last else len(written) + 1
         gap = "" if not text or text.endswith("\n") else "\n"
@@ -121,7 +135,7 @@ def append_record(path: Path, record: dict) -> None:
 
 def head(path: Path) -> tuple[int, str]:
     lines = records_in(path.read_text()) if path.exists() else []
-    return len(lines), json.loads(lines[-1])["hash"] if lines else GENESIS
+    return len(lines), _last_record(lines, path).get("hash", GENESIS)
 
 
 def incident_of(record: dict) -> str:
