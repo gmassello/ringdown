@@ -34,7 +34,7 @@ narrated output; this is scenario 2:
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-d1bf47925379
+      idempotency key rd-inc-2026-08-09-0113-primary-1-fa4c8e3b3de0
       call call_fake1  status completed  confidence 0.91 high
       not acknowledged (no_eta)  the call completed and the provider was confident,
                                  and no number of minutes was committed to when asked
@@ -42,7 +42,7 @@ narrated output; this is scenario 2:
         eta          absent
 
 [2/3] secondary  Ben Mensah  +1********01
-      idempotency key rd-inc-2026-08-09-0113-secondary-1-89f28ae6b03a
+      idempotency key rd-inc-2026-08-09-0113-secondary-1-fcff0fabef7e
       call call_fake2  status completed  confidence 0.94 high
       acknowledged  owner Ben Mensah  eta 20 minutes
         disposition  "yes, i am taking this incident right now"

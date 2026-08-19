@@ -1,0 +1,42 @@
+beat	gap	caption	speak
+0:00	0.6	Every on-call system reports "notification sent"	Every on call system reports notification sent.
+0:00	0.4	That proves nothing	
+0:00	0.5	The push landed on a silenced phone	
+0:00	0.3	The page was read at 3am and forgotten	The page was read at three a m, and forgotten.
+0:00	0.7	Ringdown phones the pager holder and proves the answer	
+0:18	1.2	preview resolves the ladder before anything dials	Preview resolves the ladder before anything dials.
+0:18	0.4	Three people, each shown in their own local time	
+0:18	0.5	It opens no socket and reads no credential	
+0:18	0.4	The idempotency key comes from the call's own content	The idempotency key comes from the call's own content.
+0:18	0.5	And this is the exact script the engineer will hear	
+0:40	1.2	Alice picks up and commits	
+0:40	0.4	Owner Alice Okafor, ETA 15 minutes	Owner, Alice Okafor. E T A, fifteen minutes.
+0:40	0.4	Every field is quoted by a span she actually spoke	
+0:40	0.5	Ten of ten checks pass on the second channel	
+1:00	1.4	Now the same call, one sentence shorter	
+1:00	0.4	The provider is satisfied	
+1:00	0.3	task_completed true, confidence high at 0.91	Task completed, true. Confidence, high, at zero point nine one.
+1:00	0.3	disposition acknowledged	Disposition, acknowledged.
+1:00	0.6	And no ETA	And no E T A.
+1:00	0.6	A system that branches on those three goes back to sleep	
+1:00	0.5	Ringdown does not. No clock, no acknowledgement	
+1:00	0.5	It drops a rung, and Ben commits to 20 minutes	It drops a rung, and Ben commits to twenty minutes.
+1:00	0.7	That one case is the whole product	
+1:35	1.3	The provider answers 503 after the call already exists	The provider answers five oh three, after the call already exists.
+1:35	0.4	Ringdown replays the same content-derived key	
+1:35	0.5	Two POSTs, one call, one phone rang	Two posts. One call. One phone rang.
+1:53	1.3	Here the placing channel reports a clean acknowledgement	
+1:53	0.4	The second channel serves the same call over MCP	The second channel serves the same call over M C P.
+1:53	0.4	Uppercase statuses, raw transcript, no extraction schema	
+1:53	0.5	Re-derived from that transcript, the acknowledgement fails	
+1:53	0.6	Six of ten. Exit 40. Treat this incident as unowned	Six of ten. Exit forty. Treat this incident as unowned.
+2:18	1.3	Every verdict is sealed into a hash-chained ledger	
+2:18	0.4	Twenty-six checks pass	
+2:18	0.6	Now rewrite the verdict and reseal the entire chain	
+2:18	0.4	The chain closes cleanly	
+2:18	0.5	And verify still fails	
+2:18	0.4	The verdict does not follow from the recorded attempts	
+2:45	1.3	CALL-E does not dial Argentina	Call E does not dial Argentina.
+2:45	0.4	So the agent's call lands on a US Twilio number	So the agent's call lands on a U S Twilio number.
+2:45	0.4	and is bridged to a real phone, recorded and transcribed	
+2:45	0.7	Ringdown. It proves the acknowledgement happened	

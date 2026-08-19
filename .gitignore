@@ -8,5 +8,8 @@ results/
 !**/tests/golden/*.jsonl
 **/demo/out/
 .env
-calls.db
+calls.db*
 /.idea/
+video/out/
+video/*.mov
+video/*.log
