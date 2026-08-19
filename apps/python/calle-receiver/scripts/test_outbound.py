@@ -16,7 +16,7 @@ def main() -> None:
         from_=settings.twilio_number,
         twiml="<Response><Say>Geographic permissions are working. This is the CALL-E receiver test.</Say></Response>",
     )
-    print(f"Llamada creada: {call.sid} -> {settings.forward_to}")
+    print(f"Call created: {call.sid} -> {settings.forward_to}")
 
 
 if __name__ == "__main__":

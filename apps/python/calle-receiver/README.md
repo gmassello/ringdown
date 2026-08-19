@@ -1,48 +1,52 @@
 # calle-receiver
 
-Receptor de llamadas Twilio para la demo de Ringdown. CALL-E no soporta Argentina
-como región destinataria, así que este servicio recibe la llamada del agente en un
-número de EE.UU. y la reenvía a un celular argentino, guardando grabación y
-transcripción en SQLite.
+Twilio call receiver for the Ringdown demo. CALL-E does not support Argentina
+as a destination region, so this service receives the agent's call on a US
+number and forwards it to an Argentine cell phone, storing the recording and
+transcription in SQLite.
 
-> Infraestructura de demo. El producto es [Ringdown](../ringdown/README.md).
+> Demo infrastructure. The product is [Ringdown](../ringdown/README.md).
 >
-> **En producción:** [`https://calle-receiver.onrender.com/calls`](https://calle-receiver.onrender.com/calls)
-> — flujo completo CALL-E → Twilio → celular AR validado end-to-end el 16/08/2026.
+> **In production:** [`https://calle-receiver.onrender.com/calls`](https://calle-receiver.onrender.com/calls)
+> — full CALL-E → Twilio → AR cell phone flow validated end-to-end on 2026-08-16.
 
-## Flujo
+## Flow
 
 ```
-Agente CALL-E → Número Twilio (+1) → POST /voice → TwiML <Dial> → celular AR (+54)
+CALL-E agent → Twilio number (+1) → POST /voice → TwiML <Dial> → AR cell phone (+54)
                                         ├─ <Start><Transcription> → POST /voice/transcription
                                         └─ record dual-channel     → POST /voice/recording
 ```
 
 ## Setup
 
-### 1. Consola de Twilio (una sola vez)
+### 1. Twilio console (one time)
 
-1. Comprar un número de EE.UU. con Voice (`Phone Numbers → Buy a number`).
-2. **Habilitar Argentina** en `Voice → Settings → Geographic Permissions`
-   (sin esto el `<Dial>` falla con error `21215`).
-3. Upgradear la cuenta (~US$20): las cuentas trial anteponen un mensaje
-   pregrabado que arruina el video de demo.
-4. Copiar `TWILIO_ACCOUNT_SID` y `TWILIO_AUTH_TOKEN` desde `Account Info`.
+1. Buy a US number with Voice (`Phone Numbers → Buy a number`).
+2. **Enable Argentina** in `Voice → Settings → Geographic Permissions`
+   (without this the `<Dial>` fails with error `21215`).
+3. Upgrade the account (~US$20): trial accounts prepend a pre-recorded
+   message that ruins the demo video.
+4. Copy `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` from `Account Info`.
 
-### 2. Producción (Render)
+### 2. Production (Render)
 
-Deployado en **`https://calle-receiver.onrender.com`** (free tier) vía Blueprint:
-`render.yaml` en la raíz del repo + `Dockerfile` en este directorio. Todas las
-env vars con valores reales (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`,
-`PUBLIC_BASE_URL`, `TWILIO_NUMBER`, `FORWARD_TO`, `DASHBOARD_PASSWORD`) se
-cargan en el dashboard de Render (`sync: false` en el `render.yaml`); el repo no
-contiene secretos ni números de teléfono.
+Deployed at **`https://calle-receiver.onrender.com`** (free tier) via Blueprint:
+`render.yaml` at the repo root + `Dockerfile` in this directory. All env vars
+with real values (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`,
+`PUBLIC_BASE_URL`, `TWILIO_NUMBER`, `FORWARD_TO`, `DASHBOARD_PASSWORD`) are
+set in the Render dashboard (`sync: false` in `render.yaml`); the repo
+contains no secrets and no phone numbers.
 
-- **`calls.db` es efímero**: se limpia en cada deploy/restart (sin disco
-  persistente en free tier). Para la demo alcanza.
-- **El servicio se duerme a los 15 min de inactividad**: hacer `curl` a la URL
-  antes de una demo o la primera llamada da timeout.
-- Los webhooks del número se pueden apuntar sin pasar por la consola:
+- **`calls.db` is ephemeral**: it is wiped on every deploy/restart (no
+  persistent disk on the free tier). Good enough for the demo.
+- **No schema migrations**: `DATABASE_URL` accepts Postgres and the engine
+  starts, but the schema is created with `create_all`, which only adds
+  missing tables — it never alters existing columns. Deliberate decision for
+  the demo; if the schema changes with data in production, bring in Alembic.
+- **The service sleeps after 15 min of inactivity**: `curl` the URL before a
+  demo, or the first call times out.
+- The number's webhooks can be pointed without going through the console:
 
 ```python
 client.incoming_phone_numbers("PNxxxx").update(
@@ -53,50 +57,51 @@ client.incoming_phone_numbers("PNxxxx").update(
 )
 ```
 
-### 3. Local (desarrollo)
+### 3. Local (development)
 
 ```bash
 cd apps/python/calle-receiver
 uv sync
-cp .env.example .env   # completar credenciales, número y FORWARD_TO
+cp .env.example .env   # fill in credentials, number and FORWARD_TO
 uv run uvicorn app.main:app --reload --port 8000
 cloudflared tunnel --url http://localhost:8000
 ```
 
-Se usa cloudflared y no ngrok porque ngrok v3 no arranca sin el authtoken de una
-cuenta. Copiar la URL `*.trycloudflare.com` a `PUBLIC_BASE_URL` en `.env` **y**
-apuntar los webhooks del número ahí (snippet de arriba, o la consola). La URL
-cambia en cada reinicio del túnel: actualizar los dos lados y reiniciar uvicorn.
+cloudflared is used instead of ngrok because ngrok v3 does not start without
+an account's authtoken. Copy the `*.trycloudflare.com` URL to
+`PUBLIC_BASE_URL` in `.env` **and** point the number's webhooks there (snippet
+above, or the console). The URL changes on every tunnel restart: update both
+sides and restart uvicorn.
 
-## Pruebas (en orden, sin quemar créditos de CALL-E)
+## Testing (in order, without burning CALL-E credits)
 
-1. `uv run python scripts/test_outbound.py` — llama a tu celular desde el número
-   Twilio; valida los geo permissions.
-2. Llamar al número Twilio — **no desde el teléfono que es `FORWARD_TO`** (se
-   reenviaría a sí mismo y termina en buzón). Hablar en inglés: la transcripción
-   está en `en-US`.
-3. Recién ahí, la primera llamada de CALL-E.
+1. `uv run python scripts/test_outbound.py` — calls your cell phone from the
+   Twilio number; validates the geo permissions.
+2. Call the Twilio number — **not from the phone that is `FORWARD_TO`** (it
+   would forward to itself and end up in voicemail). Speak in English: the
+   transcription is in `en-US`.
+3. Only then, the first CALL-E call.
 
-Los tres pasos están validados (16/08/2026): CALL-E disca a números VoIP de
-Twilio sin bloqueo antifraude — llamada `completed` con grabación dual-channel
-y transcripción de ambos tracks.
+All three steps are validated (2026-08-16): CALL-E dials Twilio VoIP numbers
+without anti-fraud blocking — `completed` call with dual-channel recording
+and transcription of both tracks.
 
-Tests unitarios: `uv run pytest`.
+Unit tests: `uv run pytest`.
 
 ## Endpoints
 
-| Endpoint | Qué hace |
+| Endpoint | What it does |
 |---|---|
-| `POST /voice` | Webhook de llamada entrante: persiste la llamada y devuelve el TwiML de reenvío |
-| `POST /voice/status` | Fin del `<Dial>`: guarda estado final y duración |
-| `POST /voice/recording` | Guarda la `RecordingUrl` (descargarla con `.mp3` + auth básica SID:TOKEN) |
-| `POST /voice/transcription` | Guarda un `TranscriptSegment` por evento `transcription-content` |
-| `GET /calls` | Dashboard HTML: llamadas con player de audio y transcripción (auto-refresh 5s) |
-| `GET /calls/{sid}/recording.mp3` | Proxy de la grabación (agrega auth de Twilio para el `<audio>`) |
+| `POST /voice` | Incoming call webhook: persists the call and returns the forwarding TwiML |
+| `POST /voice/status` | End of the `<Dial>`: stores final status and duration |
+| `POST /voice/recording` | Stores the `RecordingUrl` (download it with `.mp3` + basic auth SID:TOKEN) |
+| `POST /voice/transcription` | Stores one `TranscriptSegment` per `transcription-content` event |
+| `GET /calls` | HTML dashboard: calls with audio player and transcript (5s auto-refresh) |
+| `GET /calls/{sid}/recording.mp3` | Recording proxy (adds Twilio auth for the `<audio>` element) |
 
-Los webhooks `POST /voice*` validan la firma `X-Twilio-Signature` (desactivable
-con `VALIDATE_TWILIO_SIGNATURE=false` para desarrollo local); `/voice/recording`
-solo persiste `RecordingUrl` si apunta a `https://api.twilio.com/`. El dashboard
-y el proxy de grabaciones piden **Basic Auth**: el password es la env var
-`DASHBOARD_PASSWORD` (requerida — la app no arranca sin ella), el usuario es
-indistinto.
+The `POST /voice*` webhooks validate the `X-Twilio-Signature` header (can be
+disabled with `VALIDATE_TWILIO_SIGNATURE=false` for local development);
+`/voice/recording` only persists a `RecordingUrl` that points to
+`https://api.twilio.com/`. The dashboard and the recording proxy require
+**Basic Auth**: the password is the `DASHBOARD_PASSWORD` env var (required —
+the app does not start without it), the username does not matter.
