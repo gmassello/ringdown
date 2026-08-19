@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,4 +23,10 @@ class Settings(BaseSettings):
     validate_twilio_signature: bool = True
 
 
-settings = Settings()
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+def is_twilio_recording(url: str) -> bool:
+    return url.startswith(TWILIO_API_BASE)

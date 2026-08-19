@@ -6,8 +6,8 @@ from sqlmodel import Session
 from starlette.datastructures import FormData
 from twilio.twiml.voice_response import Dial, Start, VoiceResponse
 
-from app.config import TWILIO_API_BASE, settings
-from app.db import engine
+from app.config import get_settings, is_twilio_recording
+from app.db import get_engine
 from app.models import Call, TranscriptSegment
 from app.security import twilio_form
 
@@ -20,8 +20,9 @@ def _twiml(vr: VoiceResponse) -> Response:
 
 @router.post("/voice")
 def incoming_call(form: FormData = Depends(twilio_form)) -> Response:
+    settings = get_settings()
     sid = form.get("CallSid", "")
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         if sid and session.get(Call, sid) is None:
             session.add(
                 Call(
@@ -67,7 +68,7 @@ def incoming_call(form: FormData = Depends(twilio_form)) -> Response:
 
 @router.post("/voice/status")
 def call_status(form: FormData = Depends(twilio_form)) -> Response:
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         call = session.get(Call, form.get("CallSid", ""))
         if call is not None:
             call.status = form.get("DialCallStatus") or form.get("CallStatus") or call.status
@@ -82,9 +83,9 @@ def call_status(form: FormData = Depends(twilio_form)) -> Response:
 @router.post("/voice/recording")
 def recording_completed(form: FormData = Depends(twilio_form)) -> Response:
     url = form.get("RecordingUrl", "")
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         call = session.get(Call, form.get("CallSid", ""))
-        if call is not None and url.startswith(TWILIO_API_BASE):
+        if call is not None and is_twilio_recording(url):
             call.recording_url = url
             session.commit()
     return Response(status_code=204)
@@ -102,7 +103,7 @@ def transcription_event(form: FormData = Depends(twilio_form)) -> Response:
         return Response(status_code=204)
     text = data.get("transcript")
     confidence = data.get("confidence")
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         session.add(
             TranscriptSegment(
                 call_sid=form.get("CallSid", ""),

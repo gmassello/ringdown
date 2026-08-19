@@ -16,15 +16,19 @@ os.environ.update(
     }
 )
 
+from fastapi.testclient import TestClient
+
+from app.main import app
+
+
+@pytest.fixture(scope="session")
+def client():
+    with TestClient(app) as running:
+        yield running
+
 
 @pytest.fixture
-def create_call():
-    from fastapi.testclient import TestClient
-
-    from app.main import app
-
-    client = TestClient(app)
-
+def create_call(client):
     def _create(sid: str, from_number: str = "+15550000001") -> None:
         client.post(
             "/voice",

@@ -1,0 +1,20 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [apps/python/ringdown, apps/python/calle-receiver]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: "! ls apps/python/*/pyproject.toml | grep -v -e /ringdown/ -e /calle-receiver/"
+      - run: uv sync
+        working-directory: ${{ matrix.package }}
+      - run: uv run pytest
+        working-directory: ${{ matrix.package }}

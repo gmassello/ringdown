@@ -5,10 +5,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from twilio.rest import Client
 
-from app.config import settings
+from app.config import get_settings
 
 
 def main() -> None:
+    settings = get_settings()
     client = Client(settings.twilio_account_sid, settings.twilio_auth_token)
     call = client.calls.create(
         to=settings.forward_to,

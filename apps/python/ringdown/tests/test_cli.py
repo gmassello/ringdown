@@ -16,6 +16,7 @@ from ringdown.exits import (
     EXIT_UNVERIFIED,
     EXIT_USAGE,
 )
+from ringdown.audit import append_record
 from ringdown.calle import RestClient
 from tests.data import ALICE, BEN, CARLA, EXAMPLES, example_body, write_json
 
@@ -129,6 +130,16 @@ def test_an_acknowledged_and_verified_call_exits_zero(serving, incident_file, tm
     assert code == EXIT_ACKNOWLEDGED
     kinds = [json.loads(line)["type"] for line in ledger.read_text().splitlines()]
     assert kinds == ["intent", "attempt", "verdict", "verification"]
+
+
+def test_a_truncated_ledger_refuses_to_run_and_places_no_call(serving, incident_file, tmp_path):
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+    append_record(ledger, {"type": "note"})
+    ledger.write_text(ledger.read_text()[:-2])
+    code = _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION)
+    assert code == EXIT_USAGE
+    assert len(server.created) == 0
 
 
 def test_a_channel_mismatch_exits_forty(serving, incident_file, tmp_path, capsys):

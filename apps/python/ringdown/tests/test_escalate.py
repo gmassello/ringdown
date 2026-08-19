@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+import pytest
+
 from fake import scenarios
 from ringdown.calls import snapshot_from
-from ringdown.escalate import place_and_settle, run_ladder
+from ringdown.escalate import Attempt, place_and_settle, run_ladder
 from ringdown.report import unknown_lines
 from ringdown.script import attempt_id
 from tests.data import ALICE, BEN, CARLA, FAST, LADDER, an_incident
@@ -260,3 +262,15 @@ def test_a_call_that_reports_the_wrong_identity_settles_unknown_not_acknowledged
         assert attempt.verdict == "unknown"
         assert attempt.reason == "call_identity_mismatch"
         assert attempt.call_id == "c1"
+
+
+def test_a_settled_attempt_without_its_evidence_is_unrepresentable():
+    with pytest.raises(ValueError, match="without a snapshot and extraction"):
+        Attempt(
+            rung=LADDER[0],
+            key="rd-test-key",
+            attempt_id="inc-1/primary/1",
+            verdict="acknowledged",
+            reason="committed",
+            call_id="c1",
+        )

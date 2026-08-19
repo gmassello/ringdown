@@ -26,6 +26,17 @@ class Attempt:
     extraction: Extraction | None = None
     instructed: bool = False
 
+    def __post_init__(self) -> None:
+        if (
+            self.call_id is not None
+            and self.verdict != "unknown"
+            and (self.snapshot is None or self.extraction is None)
+        ):
+            raise ValueError(
+                f"attempt {self.attempt_id} settled {self.verdict} "
+                f"for call {self.call_id} without a snapshot and extraction"
+            )
+
 
 @dataclass(frozen=True)
 class LadderResult:

@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse, Response, StreamingResponse
 from sqlmodel import Session, col, select
 
-from app.config import TWILIO_API_BASE, settings
-from app.db import engine
+from app.config import get_settings, is_twilio_recording
+from app.db import get_engine
 from app.models import Call, TranscriptSegment
 from app.security import dashboard_auth
 
@@ -52,7 +52,7 @@ def _row(call: Call, segments: list[TranscriptSegment]) -> str:
     duration = f"{call.duration_seconds}s" if call.duration_seconds is not None else "&mdash;"
     audio = (
         f'<audio controls preload="none" src="/calls/{html.escape(call.call_sid)}/recording.mp3"></audio>'
-        if call.recording_url
+        if is_twilio_recording(call.recording_url or "")
         else '<span class="muted">&mdash;</span>'
     )
     if segments:
@@ -78,7 +78,7 @@ def _row(call: Call, segments: list[TranscriptSegment]) -> str:
 
 @router.get("/calls", response_class=HTMLResponse)
 def dashboard() -> str:
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         calls = session.exec(select(Call).order_by(col(Call.started_at).desc()).limit(50)).all()
         segments = session.exec(
             select(TranscriptSegment)
@@ -94,10 +94,11 @@ def dashboard() -> str:
 
 @router.get("/calls/{call_sid}/recording.mp3")
 def recording(call_sid: str) -> Response:
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         call = session.get(Call, call_sid)
-    if call is None or not (call.recording_url or "").startswith(TWILIO_API_BASE):
+    if call is None or not is_twilio_recording(call.recording_url or ""):
         raise HTTPException(status_code=404, detail="No recording for this call")
+    settings = get_settings()
     try:
         upstream = requests.get(
             f"{call.recording_url}.mp3",

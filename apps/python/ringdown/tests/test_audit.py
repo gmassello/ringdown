@@ -20,7 +20,7 @@ from ringdown.audit import (
     verification_record,
     verdict_v1,
 )
-from ringdown.calls import parse_turns
+from ringdown.calls import parse_turns, snapshot_from
 from ringdown.canonical import canonical_json
 from ringdown.checks import all_ok, contradicted
 from ringdown.escalate import Attempt, LadderResult
@@ -40,6 +40,8 @@ def an_attempt(**overrides) -> Attempt:
         "verdict": "not_acknowledged",
         "reason": "no_answer",
         "call_id": "call_fake1",
+        "snapshot": snapshot_from({"id": "call_fake1", "status": "failed"}),
+        "extraction": EXTRACTION,
     }
     return Attempt(**{**fields, **overrides})
 

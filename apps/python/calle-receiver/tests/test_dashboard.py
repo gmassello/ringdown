@@ -1,16 +1,13 @@
 import requests
-from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from app.db import engine
-from app.main import app
+from app.db import get_engine
 from app.models import Call
 
-client = TestClient(app)
 AUTH = ("dashboard", "testpass")
 
 
-def test_dashboard_lists_call_with_transcript(create_call):
+def test_dashboard_lists_call_with_transcript(client, create_call):
     create_call("CAdash1", from_number="+15550000009")
     client.post(
         "/voice/transcription",
@@ -28,25 +25,25 @@ def test_dashboard_lists_call_with_transcript(create_call):
     assert "<details>" in resp.text
 
 
-def test_dashboard_requires_auth():
+def test_dashboard_requires_auth(client):
     assert client.get("/calls").status_code == 401
     assert client.get("/calls", auth=("dashboard", "wrong")).status_code == 401
     assert client.get("/calls/CAnope/recording.mp3").status_code == 401
 
 
-def test_recording_proxy_404_without_recording(create_call):
+def test_recording_proxy_404_without_recording(client, create_call):
     create_call("CAdash2")
     assert client.get("/calls/CAdash2/recording.mp3", auth=AUTH).status_code == 404
     assert client.get("/calls/CAnope/recording.mp3", auth=AUTH).status_code == 404
 
 
-def test_recording_callback_ignores_non_twilio_url(create_call):
+def test_recording_callback_ignores_non_twilio_url(client, create_call):
     create_call("CAdash3")
     client.post(
         "/voice/recording",
         data={"CallSid": "CAdash3", "RecordingUrl": "https://evil.example/steal-creds"},
     )
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         assert session.get(Call, "CAdash3").recording_url is None
     assert client.get("/calls/CAdash3/recording.mp3", auth=AUTH).status_code == 404
 
@@ -54,20 +51,20 @@ def test_recording_callback_ignores_non_twilio_url(create_call):
 def _with_recording(
     sid: str, url: str = "https://api.twilio.com/2010-04-01/Recordings/RE1"
 ) -> None:
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         call = session.get(Call, sid)
         call.recording_url = url
         session.add(call)
         session.commit()
 
 
-def test_recording_proxy_rejects_non_twilio_url(create_call):
+def test_recording_proxy_rejects_non_twilio_url(client, create_call):
     create_call("CAdash4")
     _with_recording("CAdash4", url="https://evil.example/steal-creds")
     assert client.get("/calls/CAdash4/recording.mp3", auth=AUTH).status_code == 404
 
 
-def test_recording_proxy_streams_the_upstream_audio(create_call, monkeypatch):
+def test_recording_proxy_streams_the_upstream_audio(client, create_call, monkeypatch):
     create_call("CAdash5")
     _with_recording("CAdash5")
 
@@ -97,7 +94,7 @@ def test_recording_proxy_streams_the_upstream_audio(create_call, monkeypatch):
     assert seen["stream"] is True
 
 
-def test_recording_proxy_reports_upstream_failure_as_502(create_call, monkeypatch):
+def test_recording_proxy_reports_upstream_failure_as_502(client, create_call, monkeypatch):
     create_call("CAdash6")
     _with_recording("CAdash6")
 
