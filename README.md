@@ -14,7 +14,7 @@
 <p align="center">
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="264 tests" src="https://img.shields.io/badge/tests-264-2f6f4e">
+  <img alt="284 tests" src="https://img.shields.io/badge/tests-284-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -54,7 +54,7 @@ nothing rings — the demo supplies its own throwaway key. This is the second on
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
-      idempotency key rd-inc-2026-08-09-0113-primary-1-d1bf47925379
+      idempotency key rd-inc-2026-08-09-0113-primary-1-fa4c8e3b3de0
       call call_fake1  status completed  confidence 0.91 high
       not acknowledged (no_eta)  the call completed and the provider was confident,
                                  and no number of minutes was committed to when asked
