@@ -321,7 +321,7 @@ class Handler(BaseHTTPRequestHandler):
         if params.get("name") != "get_call_run":
             self._rpc(rid, {"error": {"code": -32602, "message": "ringdown reads get_call_run"}})
             return
-        call_id = params.get("arguments", {}).get("call_id")
+        call_id = params.get("arguments", {}).get("run_id")
         record = self.fake.calls.get(call_id)
         if record is None:
             self._rpc(rid, {"error": {"code": -32004, "message": f"no call run for {call_id}"}})

@@ -13,3 +13,5 @@ calls.db*
 video/out/
 video/*.mov
 video/*.log
+video/live/
+video/*.png.bak

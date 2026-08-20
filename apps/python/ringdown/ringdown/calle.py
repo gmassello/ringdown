@@ -160,7 +160,7 @@ class McpClient(_Client):
                 "jsonrpc": "2.0",
                 "id": 1,
                 "method": "tools/call",
-                "params": {"name": "get_call_run", "arguments": {"call_id": call_id}},
+                "params": {"name": "get_call_run", "arguments": {"run_id": call_id}},
             },
         )
         if not isinstance(body, dict) or "error" in body:
@@ -205,8 +205,12 @@ def _unwrap_content(result: Any) -> dict[str, Any]:
     content = result.get("content") or []
     if not content or not isinstance(content[0], dict):
         raise CalleError("unreadable_run", None, "the run payload carries no content")
+    text = str(content[0].get("text") or "")
+    if result.get("isError"):
+        reported = " ".join(text.split()) or "the tool reported an error"
+        raise CalleError("mcp_tool_error", 400, reported)
     try:
-        parsed = json.loads(content[0].get("text") or "")
+        parsed = json.loads(text)
     except json.JSONDecodeError as error:
         raise CalleError("unreadable_run", None, f"the run payload is not JSON: {error}") from error
     if not isinstance(parsed, dict):

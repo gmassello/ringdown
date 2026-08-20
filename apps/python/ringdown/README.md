@@ -143,10 +143,10 @@ a 5xx, a refused token, a run it cannot find — renders `[?]` rather than `[ ]`
 error code beside the label. A channel that would not answer does not contradict anything. Only a
 channel that answered and disagreed produces a failure.
 
-All of it is proven against the fake and none of it against the live provider, which is the first
-thing to read in [Known ceilings](#known-ceilings). The live MCP surface indexes calls by a
-`run_id` that only its own placement tool hands out, so a call placed over REST may have no run to
-read at all.
+All of it is proven against the fake, and against the live provider none of it holds, which is the
+first thing to read in [Known ceilings](#known-ceilings). The live MCP surface indexes calls by a
+`run_id` that only its own placement tool hands out, and no identifier a REST-placed call exposes
+resolves to one, so there is no run to read. Live, every verdict settles at exit 45.
 
 ## Exit codes
 
@@ -364,21 +364,36 @@ own call over a second transport. Same technique, different product.
     prints when it finishes, compared by hand. A keyed HMAC, and a `verify` that takes the expected
     head, are the real fix and a different product.
 
-12. No call has ever been placed against the live provider, so no successful response from it has
-    ever been seen — not from `get_call_run`, not from REST. The happy path every claim above
-    rests on is a reading of the published contract, reproduced by a fake written from that same
-    reading and confirmed by neither. What is committed instead is
-    [`tests/fixtures/`](tests/fixtures/): the responses that *were* observed, each carrying what
-    it does not prove, parsed by tests that never touch the fake. Two divergences are known and
-    not modelled: the live MCP surface indexes calls by a `run_id` that its `get_call_run`
-    describes as "returned by `run_call`", and a run carries `result.call_id` inside it — the
-    mapping runs from run to call, and no tool resolves a call id back to a run. A call placed
-    over REST may therefore have no run to read. The untested candidate is the attempt's
-    `provider_call_id`; deciding it needs a real call, and guessing it here would be three
-    conjectures stacked on each other. What is defended is the degradation rather than the
-    contract: a response the parser cannot read — an embedded failure, a renamed field, a body
-    nested somewhere unexpected — yields `[?]` and exit 45, never a contradiction. A run that
-    arrives without a call id is not a run that went wrong; it is a reply we could not read.
+12. Six calls have now been placed against the live provider, on 2026-08-20, and what they
+    settled is worth more than what they confirmed. **Cross-surface verification does not work,
+    and cannot be made to work from this side.** `get_call_run` takes a `run_id` and rejects
+    `call_id` outright with a validation error; Ringdown had been sending `call_id`, which is
+    fixed. But no identifier a REST-placed call exposes resolves to a run — not the call id, not
+    the attempt's `provider_call_id`, not the attempt or recipient id. The `provider_call_id`
+    candidate this ceiling used to leave open is closed: it does not work. So a live run settles
+    at exit 45, and the checks the second channel is supposed to answer are answered by nothing.
+
+    Worse, and only visible because a run was finally seen: **the parser cannot read a run even
+    when one is served.** [`mcp-get-call-run-completed.json`](tests/fixtures/) is the first
+    successful response ever observed from that tool, and `run_from` returns `readable=False`
+    for it. The call id sits at `result.call_id` rather than at the top level, `transcript` is
+    one newline-joined string rather than a list of turns, and `recipient_phone`, `completed_at`
+    and `metadata` are absent from the run entirely — so three of the ten checks would have
+    nothing to read even if the mapping existed. The fake still mirrors the shape this app
+    invented, which is exactly the failure `tests/fixtures/` exists to catch: client and fake
+    were written from one reading of the docs, so the mistake landed in both and no test could
+    see it. Making the fake faithful changes what the ten checks can prove, so it is a decision
+    and not a patch, and it has not been taken.
+
+    The same six calls confirmed the REST contract, which had also never been observed.
+    `metadata` comes back exactly as sent, so the attempt identity check passes; each attempt
+    carries a `provider_call_id`; and the content-derived idempotency key works. All five REST
+    creates returned `transport_failure` before answering, and all five replays returned the
+    existing call rather than placing a second one. That is not a defensive branch that rarely
+    runs: against the real API the 15-second socket timeout in `calle.py` is shorter than the
+    provider's create latency, so **reconciliation is the normal path**, and the demo's fourth
+    scenario is the ordinary one.
+
 13. The two channels do not share credentials, and only one of them can be automated. REST takes
     the API key; MCP is an OAuth protected resource whose authorization server offers
     `authorization_code` with PKCE and no machine grant at all, so the token behind
@@ -391,13 +406,26 @@ own call over a second transport. Same technique, different product.
     with `Region is not allowed for this channel`. A rotation that lists an on-call engineer in a
     refused region resolves cleanly, previews cleanly, and fails at the first call. Reading the
     supported set at load time is a preflight this app does not do.
-15. Every artefact in this repository was produced with one channel wearing two names. The demo
-    points both flags at a single `FakeCalleServer` — same process, same port, one transcript in
-    memory — so the seven scenarios, the committed ledger and the test suite all verify against
-    the server that placed the call. Ringdown now refuses that collision off loopback, announces
-    it on loopback and records both hostnames in the verification record, so the gap is visible
-    rather than hidden. Visible is not closed: closing it needs a live provider, which is
-    ceiling 12.
+15. Almost every artefact in this repository was produced with one channel wearing two names.
+    The demo points both flags at a single `FakeCalleServer` — same process, same port, one
+    transcript in memory — so the seven scenarios, the committed ledger and most of the suite
+    verify against the server that placed the call. Ringdown refuses that collision off
+    loopback, announces it on loopback and records both hostnames either way, so the gap is
+    visible rather than hidden. The exception is now real: [`tests/fixtures/`](tests/fixtures/)
+    holds what the live provider actually sent, parsed by tests that never touch the fake, and
+    one of those responses proves the parser wrong. It is the only part of this repository
+    confirmed by something other than itself.
+
+16. The provider drops calls, often, and reports it as the recipient hanging up. Four of the six
+    calls placed on 2026-08-20 ended three seconds after the provider's own log said
+    `status=calling`, with an attempt whose `started_at` and `completed_at` are the same second,
+    an empty transcript, and `failure_message` reading `calling task status=DECLINED (Hangup by:
+    user)`. The Twilio account that owns the destination number has no record of any of them, so
+    nobody hung up: the call never reached the destination network. It is not tied to a surface —
+    a call placed over MCP connected between two REST failures, and a REST call connected between
+    two others — and Ringdown cannot tell the difference from a real decline except by the empty
+    transcript. A ladder run against this provider should expect to be exhausted by infrastructure
+    rather than by people, and `failure_code` is the only honest signal for it.
 
 This is a demo app for a workflow pattern, not a CALL-E SDK and not a supported
 product API.

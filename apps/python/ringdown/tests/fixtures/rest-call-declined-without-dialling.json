@@ -1,0 +1,59 @@
+{
+  "what": "GET /v1/calls/{id} for a call the provider declined three seconds after it started dialling",
+  "source": "observed against the live REST API on 2026-08-20, the second of two attempts that failed the same way",
+  "unobserved": "task was dropped: it is the text Ringdown sent. The carrier's own reason is not exposed anywhere in this body; the call never reached the destination network, which was confirmed out of band against the Twilio account that owns the number",
+  "why_it_matters": "the first REST call body ever observed. It settles two things the fake could only assume: metadata comes back exactly as sent, so the attempt identity check can pass, and each attempt carries a provider_call_id. It also records that failure_message says 'Hangup by: user' for a call of zero seconds that no carrier ever saw",
+  "payload": {
+    "id": "call_pfg_AK40V67JKOaSGWjEEw",
+    "object": "call_task",
+    "status": "failed",
+    "recipients": [
+      {
+        "id": "rcp_b4afcf7db81550f1",
+        "phones": [
+          "+1********44"
+        ],
+        "locale": null,
+        "region": null,
+        "status": "failed",
+        "structured_result": null,
+        "summary": "The first call did not connect or complete; the recipient may be busy or unavailable, so I suggest retrying in about 45 minutes\u2014you can confirm that time, provide a different retry time, or ask to retry immediately.",
+        "attempts": [
+          {
+            "id": "att_3f63c982f88eff05",
+            "phone": "+1********44",
+            "status": "failed",
+            "started_at": "2026-08-20T00:28:03Z",
+            "completed_at": "2026-08-20T00:28:03Z",
+            "summary": "The first call did not connect or complete; the recipient may be busy or unavailable, so I suggest retrying in about 45 minutes\u2014you can confirm that time, provide a different retry time, or ask to retry immediately.",
+            "transcript_turns": [],
+            "provider_call_id": "13a385a107a64769832a0a18cb084428",
+            "failure_code": null,
+            "failure_message": null
+          }
+        ]
+      }
+    ],
+    "structured_result": null,
+    "summary": "The first call did not connect or complete; the recipient may be busy or unavailable, so I suggest retrying in about 45 minutes\u2014you can confirm that time, provide a different retry time, or ask to retry immediately.",
+    "task_completed": false,
+    "completion_confidence": {
+      "score": 0.72,
+      "label": "medium"
+    },
+    "evidence": [
+      "The call ended immediately with no call duration.",
+      "There was no transcript or speech recognition result from the recipient.",
+      "The on-call page required reaching and confirming the intended engineer."
+    ],
+    "metadata": {
+      "ringdown_attempt_id": "inc-2026-08-19-0001/primary/1",
+      "ringdown_contact_id": "gm",
+      "ringdown_incident_id": "inc-2026-08-19-0001"
+    },
+    "failure_code": "call_failed",
+    "failure_message": "calling task status=DECLINED (Hangup by: user)",
+    "created_at": "2026-08-20T00:27:09.859328Z",
+    "completed_at": "2026-08-20T00:28:47.540754Z"
+  }
+}

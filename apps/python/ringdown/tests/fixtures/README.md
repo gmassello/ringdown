@@ -20,17 +20,29 @@ Every fixture carries its own provenance:
 
 Read `unobserved` before trusting a fixture. The evidence is partial and the gaps are the point.
 
-## The gap
+## What the live provider settled, and what it broke
 
-**No successful response has ever been observed.** Not from `get_call_run`, not from
-`POST /v1/calls`, not from `GET /v1/calls/{id}`. No call has been placed against the live
-provider — the account cannot dial the region the on-call engineer is in (ceiling 14), so the
-happy path is documented by the provider and reproduced by our fake, and confirmed by neither.
+On 2026-08-20 three calls were placed against the live provider from a US Twilio number that
+bridges to the on-call engineer's phone, which is how ceiling 14 was worked around. Two over
+REST, one over MCP. They settled four things the fake could only assume:
 
-Which means the shape `run_from` and `snapshot_from` parse on the happy path is a reading of the
-docs, not a record of a reply. What is defended instead is the degradation: a response the parser
-cannot read is reported as unresolved rather than as a contradiction, whatever shape it arrives
-in. See ceiling 12.
+- **`metadata` comes back exactly as sent**, and each attempt carries a `provider_call_id`. The
+  attempt identity check can pass against the real API.
+- **The idempotency key works.** Both REST creates timed out without saying whether a call
+  existed; both replays returned the existing call rather than placing a second one.
+- **`get_call_run` takes `run_id` and rejects `call_id`** with a validation error delivered
+  inside an HTTP 200. Ringdown had been sending `call_id`.
+- **No identifier a REST-placed call exposes resolves to a run.** Not the call id, not
+  `provider_call_id`, not the attempt or recipient id. The `provider_call_id` candidate that
+  ceiling 12 left open is closed: it does not work.
 
-Adding a fixture from a real call is the single highest-value thing anyone with a dialable number
-can do for this repo.
+And one thing they broke. `mcp-get-call-run-completed.json` is the first successful response
+ever seen from that tool, and **`run_from` cannot read it**: the call id is at `result.call_id`
+rather than at the top level, `transcript` is one newline-joined string rather than a list of
+turns, and `recipient_phone`, `completed_at` and `metadata` are not in the run at all. Three of
+the ten verification checks have nothing to read even when the run is served.
+
+That is exactly the failure this directory exists to catch — the client and the fake were
+written from one reading of the docs, so the mistake landed in both and the tests could not see
+it. The fake still mirrors the wrong shape. Making it faithful changes what the ten checks can
+prove, which is a decision, not a patch.

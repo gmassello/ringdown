@@ -53,7 +53,7 @@ def get_call_run(server: FakeCalleServer, call_id: str) -> dict:
             "jsonrpc": "2.0",
             "id": 1,
             "method": "tools/call",
-            "params": {"name": "get_call_run", "arguments": {"call_id": call_id}},
+            "params": {"name": "get_call_run", "arguments": {"run_id": call_id}},
         },
     )
     if "error" in body:

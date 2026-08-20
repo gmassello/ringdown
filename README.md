@@ -14,7 +14,7 @@
 <p align="center">
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="304 tests" src="https://img.shields.io/badge/tests-304-2f6f4e">
+  <img alt="311 tests" src="https://img.shields.io/badge/tests-311-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -201,13 +201,17 @@ audits its own call over a second transport. Same technique, different product.
 
 ## Known ceilings
 
-- **No call has ever been placed against the live provider.** Everything here is proven against
-  the fake, and the fake is written to the published contract rather than observed from a real
-  run. The live MCP surface indexes calls by a `run_id` that only its own placement tool hands
-  out, so a call placed over REST may have no run to read — in which case the verification
-  renders `[?]` and every live verdict settles at exit 45 instead of 0. And that fake is one
-  server wearing two names, so nothing here proves the two channels are two: each run says so in
-  its first line and the ledger records both hostnames.
+- **Six calls were placed against the live provider on 2026-08-20, and they broke the thing they
+  were meant to confirm.** Cross-surface verification does not work: `get_call_run` takes a
+  `run_id`, rejects the `call_id` Ringdown was sending, and no identifier a REST-placed call
+  exposes resolves to a run — the `provider_call_id` candidate included. And the first successful
+  run ever seen does not have the shape this app parses, so three of the ten checks would have
+  nothing to read even if the mapping existed. Every live verdict settles at exit 45. What the
+  same calls *did* confirm is the REST contract and the idempotency key: five creates timed out,
+  five replays returned the existing call, and nobody was dialled twice.
+- **The provider drops calls and blames the recipient.** Four of those six ended three seconds
+  after it started dialling, with an empty transcript and `DECLINED (Hangup by: user)`, and the
+  Twilio account that owns the number has no record of them.
 - Grounding compares text, not meaning. It proves a span was spoken, not that it answered the
   question, so the ETA is read only from what follows the question asking for one and never from
   a number spoken past a negation. An engineer who paraphrases honestly costs a human review.
@@ -217,6 +221,6 @@ audits its own call over a second transport. Same technique, different product.
 - The ladder never re-calls, and retries would need another key and another record.
 - The provider does not dial every country, and Ringdown does not preflight the list.
 
-The [app README](apps/python/ringdown/README.md#known-ceilings) has all fifteen, unvarnished.
+The [app README](apps/python/ringdown/README.md#known-ceilings) has all sixteen, unvarnished.
 
 This is a demo app for a workflow pattern, not a CALL-E SDK and not a supported product API.
