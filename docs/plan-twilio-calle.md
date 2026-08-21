@@ -1,7 +1,7 @@
 # Plan: a Twilio call receiver for the CALL-E hackathon
 
 > **Status (16 Aug 2026):** implemented in `apps/python/calle-receiver/` (forward mode).
-> Number `+13643658544` purchased, account upgraded, Argentina enabled, webhook
+> Number `+1********44` purchased, account upgraded, Argentina enabled, webhook
 > configured, outbound test OK, inbound flow validated (§7.2) and the **full
 > CALL-E → Twilio → Argentine mobile flow validated end to end** (§7.3–7.4:
 > CALL-E does dial VoIP; recording and transcription land in `calls.db`). The
@@ -113,7 +113,7 @@ Twilio asks for an upgrade with US$20 of balance (see §3.2); that balance is sp
 
 ## 3. Manual Twilio setup (before the code)
 
-### 3.1 Create an account and buy a number — ✅ DONE (`+13643658544`, Voice channel)
+### 3.1 Create an account and buy a number — ✅ DONE (`+1********44`, Voice channel)
 
 1. Create an account at twilio.com (works from Argentina, with an Argentine card).
 2. `Console → Phone Numbers → Buy a number`
@@ -417,7 +417,7 @@ The advantage is a stable URL, so the Twilio config never has to be touched agai
    recording and 3 transcript segments (both tracks) in `calls.db`.
    Gotcha learned: never call from the same phone that is `FORWARD_TO`.
 3. ✅ **First CALL-E call** — DONE (16 Aug): CALL-E dialled the VoIP number without
-   being blocked (caller `+18325903283`), `completed` with `task_completed=True`.
+   being blocked (caller `+1********83`), `completed` with `task_completed=True`.
 4. ✅ **Full flow** — DONE (16 Aug, same call): CALL-E agent → Twilio number → Argentine
    mobile, 18s bridged, dual-channel recording and both transcript tracks in `calls.db`.
 5. ✅ **Video rehearsal** — DONE (20 Aug): the trial message does not appear (the account
