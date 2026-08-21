@@ -55,7 +55,7 @@ dashboard, (2) redeploy so settings reload, (3) re-point the Twilio number's
 webhooks via REST API (console sessions expire; the API always works):
 
 ```python
-client.incoming_phone_numbers("PN939da01ace5684ac0edbff0d70deb11e").update(
+client.incoming_phone_numbers("<PHONE_SID>").update(
     voice_url=f"{url}/voice", voice_method="POST",
     status_callback=f"{url}/voice/status", status_callback_method="POST",
 )

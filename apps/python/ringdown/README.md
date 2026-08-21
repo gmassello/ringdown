@@ -62,7 +62,7 @@ Python 3.11 or newer. No runtime dependencies — `dependencies = []`, standard 
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install pytest
-python -m pytest -q       # 264 tests, no credentials, no outbound calls
+python -m pytest -q       # 295 tests, no credentials, no outbound calls
 ```
 
 ## Preview, which is the default

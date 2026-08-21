@@ -67,7 +67,7 @@ receiving and forwarding to Argentina, skip them all.
 - Free tier sleeps after 15 min idle → first call times out. `curl` the URL to
   wake it before any demo.
 - The number's webhooks can be updated via REST API without the console:
-  `client.incoming_phone_numbers('PN939da01ace5684ac0edbff0d70deb11e').update(voice_url=..., status_callback=...)`
+  `client.incoming_phone_numbers('<PHONE_SID>').update(voice_url=..., status_callback=...)`
   — useful because Twilio console sessions expire.
 
 ## Local tunnel (dev only)
