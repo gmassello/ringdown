@@ -15,3 +15,5 @@ video/*.mov
 video/*.log
 video/live/
 video/*.png.bak
+.DS_Store
+review-*.md
