@@ -1,10 +1,10 @@
 {
   "what": "get_call_run for a run that completed, read by its run_id",
-  "source": "observed against the live MCP endpoint on 2026-08-20, for a call placed over MCP run_call",
+  "source": "observed against the live MCP endpoint on 2026-08-20, for a call placed over MCP run_call. Identifiers, phone numbers and spoken names are synthetic; the shape and every field that carries a finding are as observed.",
   "unobserved": "three elisions, none of them read by this app: result.extracted and display_goal restate the task Ringdown sent, and activity is the provider's own stage log, kept at 3 of its 63 entries. The JSON-RPC envelope around this payload is not included, only structuredContent. No run has ever been observed for a call placed over REST",
   "why_it_matters": "the first successful response ever seen from this tool, and it does not have the shape run_from reads. The call id lives at result.call_id rather than at the top level, transcript is one newline-joined string rather than a list of turns, and recipient_phone, completed_at and metadata are absent entirely, so three of the ten verification checks have nothing to read",
   "payload": {
-    "run_id": "zpLHjGw20QVOYVUtIpL1sA",
+    "run_id": "run_example_completed",
     "requested_run_id": null,
     "parent_run_id": null,
     "root_run_id": null,
@@ -24,22 +24,22 @@
           "label": "high"
         },
         "evidence": [
-          "The recipient confirmed they were German Massello before the incident details were read.",
+          "The recipient confirmed they were Alice Okafor before the incident details were read.",
           "The sev2 checkout-api latency incident was delivered.",
           "The engineer acknowledged taking the incident and provided a 15-minute timeframe."
         ]
       },
-      "transcript": "[00:00:00] BOT: This is an automated on-call page from Ringdown,\n[00:00:02] BOT: and this call is recorded. Am I speaking with German Massello?\n[00:00:11] USER: Yes. This is Herman Marcelo.\n[00:00:12] BOT: May I speak with German Massello?\n[00:00:19] USER: Yes. I am Darma Masvido.\n[00:00:20] BOT: I apologize for the confusion.\n[00:00:22] BOT: May I speak with German Massello?\n[00:00:29] USER: Yes. This is.\n[00:00:30] BOT: You're confirming you are German Massello?\n[00:00:32] BOT: Actually, let me re-confirm \u2014 are you German Massello?\n[00:00:39] USER: Yes. Confirm.\n[00:00:40] BOT: I'll take that as a confirmation that I'm speaking with German Massello.\n[00:00:43] BOT: There is a sev2 incident on checkout-api: checkout p99 latency above 3s.\n[00:00:49] BOT: p99 latency is 3.4s against a 1.2s objective and has been climbing for 12 minutes.\n[00:00:55] BOT: Are you taking this incident right now?\n[00:01:03] USER: Yes. I I am taking this incident right now.\n[00:01:04] BOT: Thank you.\n[00:01:05] BOT: How many minutes until you are working the incident?\n[00:01:12] USER: Give me 15 minutes, please.\n[00:01:14] BOT: Got it, 15 minutes.\n[00:01:15] BOT: Just to confirm \u2014 you are taking this incident. Thank you,\n[00:01:19] BOT: bye.",
-      "call_id": "e15a8c5beac54fbe8faef6ef300bf37a",
+      "transcript": "[00:00:00] BOT: This is an automated on-call page from Ringdown,\n[00:00:02] BOT: and this call is recorded. Am I speaking with Alice Okafor?\n[00:00:11] USER: Yes. This is Alice O'Connor.\n[00:00:12] BOT: May I speak with Alice Okafor?\n[00:00:19] USER: Yes. I am Alicia Kafka.\n[00:00:20] BOT: I apologize for the confusion.\n[00:00:22] BOT: May I speak with Alice Okafor?\n[00:00:29] USER: Yes. This is.\n[00:00:30] BOT: You're confirming you are Alice Okafor?\n[00:00:32] BOT: Actually, let me re-confirm — are you Alice Okafor?\n[00:00:39] USER: Yes. Confirm.\n[00:00:40] BOT: I'll take that as a confirmation that I'm speaking with Alice Okafor.\n[00:00:43] BOT: There is a sev2 incident on checkout-api: checkout p99 latency above 3s.\n[00:00:49] BOT: p99 latency is 3.4s against a 1.2s objective and has been climbing for 12 minutes.\n[00:00:55] BOT: Are you taking this incident right now?\n[00:01:03] USER: Yes. I I am taking this incident right now.\n[00:01:04] BOT: Thank you.\n[00:01:05] BOT: How many minutes until you are working the incident?\n[00:01:12] USER: Give me 15 minutes, please.\n[00:01:14] BOT: Got it, 15 minutes.\n[00:01:15] BOT: Just to confirm — you are taking this incident. Thank you,\n[00:01:19] BOT: bye.",
+      "call_id": "call_example_completed",
       "call_ids": [
-        "e15a8c5beac54fbe8faef6ef300bf37a"
+        "call_example_completed"
       ],
       "batch": null
     },
     "expires_at": null,
     "activity": [
       {
-        "run_id": "zpLHjGw20QVOYVUtIpL1sA",
+        "run_id": "run_example_completed",
         "ts": "2026-08-20T01:29:24.407542Z",
         "level": "info",
         "kind": "stage_start",
@@ -47,7 +47,7 @@
         "data": {}
       },
       {
-        "run_id": "zpLHjGw20QVOYVUtIpL1sA",
+        "run_id": "run_example_completed",
         "ts": "2026-08-20T01:29:27.637370Z",
         "level": "info",
         "kind": "external_call",
@@ -55,7 +55,7 @@
         "data": {}
       },
       {
-        "run_id": "zpLHjGw20QVOYVUtIpL1sA",
+        "run_id": "run_example_completed",
         "ts": "2026-08-20T01:29:48.334138Z",
         "level": "info",
         "kind": "external_call",
@@ -63,11 +63,11 @@
         "data": {}
       }
     ],
-    "next_cursor": "1787189502562-0",
+    "next_cursor": "1-0",
     "next_step": {
       "action": "report_result",
       "tool_name": null,
-      "run_id": "zpLHjGw20QVOYVUtIpL1sA",
+      "run_id": "run_example_completed",
       "plan_id": null,
       "parent_run_id": null,
       "poll_after_seconds": null,

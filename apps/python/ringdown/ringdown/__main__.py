@@ -21,11 +21,13 @@ from ringdown.audit import (
     verification_record,
 )
 from ringdown.calle import (
-    LOOPBACK_HOSTS,
+    LIVE_BASE_URL,
+    LIVE_MCP_URL,
     McpClient,
     RestClient,
     UntrustedHost,
     assert_trusted_base_url,
+    is_loopback,
 )
 from ringdown.escalate import Attempt, LadderResult, run_ladder
 from ringdown.exits import (
@@ -52,8 +54,6 @@ from ringdown.checks import Check, all_checks, render_blocks
 from ringdown.verify import verify_ladder
 
 CONFIRMATION = "place real calls"
-DEFAULT_BASE_URL = "https://api.heycall-e.com"
-DEFAULT_MCP_URL = "https://seleven-mcp-sg.airudder.com/mcp/openagent_oauth"
 WINDOW_SLACK = timedelta(seconds=60)
 
 
@@ -76,9 +76,8 @@ def _parser() -> argparse.ArgumentParser:
     run = with_files("run")
     run.add_argument("--ledger", type=Path, required=True)
     run.add_argument("--confirm", default="")
-    run.add_argument("--base-url", default=DEFAULT_BASE_URL)
-    run.add_argument("--mcp-url", default=DEFAULT_MCP_URL)
-    run.add_argument("--allow-host", action="append", default=[])
+    run.add_argument("--base-url", default=LIVE_BASE_URL)
+    run.add_argument("--mcp-url", default=LIVE_MCP_URL)
 
     verify = commands.add_parser("verify")
     verify.add_argument("--ledger", type=Path, required=True)
@@ -116,28 +115,31 @@ def _verify(
     return all_checks(blocks)
 
 
+def _credential(url: str, live: str, fake: str) -> str:
+    name = fake if is_loopback(url) else live
+    value = os.environ.get(name, "")
+    if not value:
+        emit(f"{name} is not set in the environment")
+    return value
+
+
 def run(args: argparse.Namespace) -> int:
     if args.confirm != CONFIRMATION:
         emit(f"refusing to place calls without --confirm {CONFIRMATION!r}")
         return EXIT_USAGE
-    api_key = os.environ.get("CALLE_API_KEY", "")
-    if not api_key:
-        emit("CALLE_API_KEY is not set in the environment")
-        return EXIT_USAGE
-    mcp_key = os.environ.get("CALLE_MCP_TOKEN", "")
-    if not mcp_key:
-        emit("CALLE_MCP_TOKEN is not set in the environment")
-        return EXIT_USAGE
-    allowed = frozenset(args.allow_host)
-    base_url = assert_trusted_base_url(args.base_url, allowed)
-    mcp_url = assert_trusted_base_url(args.mcp_url, allowed)
+    base_url = assert_trusted_base_url(args.base_url)
+    mcp_url = assert_trusted_base_url(args.mcp_url)
     rest_host = urlparse(base_url).hostname or ""
     mcp_host = urlparse(mcp_url).hostname or ""
     if rest_host == mcp_host:
-        if mcp_host not in LOOPBACK_HOSTS:
+        if not is_loopback(mcp_url):
             emit(f"refusing to verify {mcp_host} against itself: the second channel is the first one")
             return EXIT_USAGE
         emit(f"note: both channels are {mcp_host}, so this run cannot prove they are two")
+    api_key = _credential(base_url, "CALLE_API_KEY", "RINGDOWN_FAKE_API_KEY")
+    mcp_key = _credential(mcp_url, "CALLE_MCP_TOKEN", "RINGDOWN_FAKE_MCP_TOKEN")
+    if not api_key or not mcp_key:
+        return EXIT_USAGE
     incident = load_incident(args.incident)
     start = datetime.now(UTC)
     rungs = _ladder(incident, args.rotation, start)
@@ -156,7 +158,7 @@ def run(args: argparse.Namespace) -> int:
         append_record(args.ledger, intent_record(incident.id, attempt_id, key, rung))
 
     result = run_ladder(
-        RestClient(base_url, api_key, allowed_hosts=allowed),
+        RestClient(base_url, api_key),
         incident,
         rungs,
         log=lambda line: emit(report.progress_line(line)),
@@ -168,7 +170,7 @@ def run(args: argparse.Namespace) -> int:
 
     checks: list[Check] = []
     if verifiable(result.verdict, result.placed):
-        mcp = McpClient(mcp_url, mcp_key, allowed_hosts=allowed)
+        mcp = McpClient(mcp_url, mcp_key)
         checks = _verify(mcp, incident, result, start)
         append_record(
             args.ledger,

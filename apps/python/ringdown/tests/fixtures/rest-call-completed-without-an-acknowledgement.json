@@ -1,17 +1,17 @@
 {
   "what": "GET /v1/calls/{id} for a call that connected, where the provider reported an acknowledgement and Ringdown did not",
-  "source": "observed against the live REST API on 2026-08-20, the one call of five placed over REST that reached the recipient",
+  "source": "observed against the live REST API on 2026-08-20, the one call of five placed over REST that reached the recipient. Identifiers, phone numbers and spoken names are synthetic; the shape and every field that carries a finding are as observed.",
   "unobserved": "task was dropped: it is the text Ringdown sent. The audio behind transcript_turns was not captured, so how faithfully the provider transcribed it cannot be checked from here",
   "why_it_matters": "the whole argument of this app, observed rather than argued. The provider returned task_completed true at 0.86 high and its own evidence claims the engineer acknowledged taking the incident. The recipient turn it rests on reads 'Yes. I'm banking this incident right now' - speech recognition heard 'banking' for 'taking' - so no commitment phrase was ever spoken in the transcript, the disposition grounds to unclear and the verdict is not_acknowledged. A system branching on task_completed, the confidence label and the provider summary reports this incident as escalated. It also shows the ETA grounding working on the same call: 'K. Give me 15 minutes, please' is quoted as the span",
   "payload": {
-    "id": "call_zU0ikLWrqToX6vl0cYGfCA",
+    "id": "call_example_completed",
     "object": "call_task",
     "status": "completed",
     "recipients": [
       {
-        "id": "rcp_a5dec55208397377",
+        "id": "rcp_example_1",
         "phones": [
-          "+1********44"
+          "+15550101234"
         ],
         "locale": null,
         "region": null,
@@ -20,8 +20,8 @@
         "summary": "The on-call page completed. The engineer acknowledged taking the incident and said they would be working it in 15 minutes.",
         "attempts": [
           {
-            "id": "att_2b7874b61d03b239",
-            "phone": "+1********44",
+            "id": "att_example_1",
+            "phone": "+15550101234",
             "status": "completed",
             "started_at": "2026-08-20T01:42:05Z",
             "completed_at": "2026-08-20T01:43:25Z",
@@ -35,27 +35,27 @@
               {
                 "offset_seconds": 2,
                 "speaker": "bot",
-                "text": "and this call is recorded. Am I speaking with German Massello?"
+                "text": "and this call is recorded. Am I speaking with Alice Okafor?"
               },
               {
                 "offset_seconds": 11,
                 "speaker": "user",
-                "text": "Yes. This is Sharma."
+                "text": "Yes. This is Alyssa."
               },
               {
                 "offset_seconds": 12,
                 "speaker": "bot",
-                "text": "The identity doesn't match German Massello."
+                "text": "The identity doesn't match Alice Okafor."
               },
               {
                 "offset_seconds": 14,
                 "speaker": "bot",
-                "text": "I need to check if Sharma can get German Massello."
+                "text": "I need to check if Alyssa can get Alice Okafor."
               },
               {
                 "offset_seconds": 17,
                 "speaker": "bot",
-                "text": "May I speak with German Massello?"
+                "text": "May I speak with Alice Okafor?"
               },
               {
                 "offset_seconds": 22,
@@ -70,7 +70,7 @@
               {
                 "offset_seconds": 26,
                 "speaker": "bot",
-                "text": "Welcome, German. There is a sev2 incident on checkout-api: checkout p99 latency above 3s."
+                "text": "Welcome, Alice. There is a sev2 incident on checkout-api: checkout p99 latency above 3s."
               },
               {
                 "offset_seconds": 32,
@@ -123,7 +123,7 @@
                 "text": "Bye."
               }
             ],
-            "provider_call_id": "4b1cb9076f7648c09dac07284acb9378",
+            "provider_call_id": "prov_example_1",
             "failure_code": null,
             "failure_message": null
           }
@@ -144,7 +144,7 @@
     ],
     "metadata": {
       "ringdown_attempt_id": "inc-2026-08-19-0002/primary/1",
-      "ringdown_contact_id": "gm",
+      "ringdown_contact_id": "alice",
       "ringdown_incident_id": "inc-2026-08-19-0002"
     },
     "failure_code": null,

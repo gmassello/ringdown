@@ -33,7 +33,10 @@ the user; full numbers stay in the rotation file.
 `CALLE_API_KEY` and `CALLE_MCP_TOKEN` live in the environment or a secret
 manager. Never put either in the incident file, never echo them, never write
 them into a log line or a commit. The two channels do not share credentials,
-and the app refuses to send the key to any host outside its allowlist.
+and each is pinned to one exact live URL: a different port, path or host is a
+different target and is refused, with no flag that permits one. A run against
+a local fake reads `RINGDOWN_FAKE_API_KEY` and `RINGDOWN_FAKE_MCP_TOKEN`
+instead, so the live credentials never travel over plaintext loopback.
 
 ## No hidden or duplicate work
 

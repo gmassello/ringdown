@@ -80,6 +80,7 @@ token is a `--` flag other than `--help` is a preview.
 
 ```bash
 export CALLE_API_KEY=...
+export CALLE_MCP_TOKEN=...
 python -m ringdown run --incident incident.json \
                        --rotation rotation.json \
                        --ledger ledger.jsonl \
@@ -90,14 +91,20 @@ python -m ringdown run --incident incident.json \
 `refusing to place calls without --confirm 'place real calls'` and exits 30 having placed
 nothing. `--base-url` selects the REST environment and defaults to `https://api.heycall-e.com`.
 `--mcp-url` selects the second channel separately and defaults to
-`https://seleven-mcp-sg.airudder.com/mcp/openagent_oauth` — the two surfaces do not live on the
-same host, and that is enforced rather than described: if both flags resolve to one host that is
-not loopback, Ringdown prints `refusing to verify <host> against itself` and exits 30 having
-placed nothing. On loopback it says so in a note and runs anyway, which is what the demo does.
-Either way the verification record names both hosts, so the artefact carries the answer instead
-of the reader having to trust the tool. Any other host on either flag
-needs `--allow-host`, which is repeatable. The API key is read from the environment only. Why
-that is a trust boundary and not a convenience is in [Threat model](#threat-model).
+`https://seleven-mcp-sg.airudder.com/mcp/openagent_oauth`. Those two URLs are the only live
+targets either flag accepts — not the hosts, the whole URLs, so a different port, an extra path
+segment or userinfo is a different target and is refused. There is no flag that adds one. The
+only other thing either flag accepts is loopback, and a loopback target is served a different
+credential entirely: `RINGDOWN_FAKE_API_KEY` and `RINGDOWN_FAKE_MCP_TOKEN`, which is what the
+demo exports. `CALLE_API_KEY` is never even read for a run that points at localhost.
+
+The two surfaces do not live on the same host, and that is enforced rather than described: if
+both flags resolve to one host that is not loopback, Ringdown prints
+`refusing to verify <host> against itself` and exits 30 having placed nothing. On loopback it
+says so in a note and runs anyway, which is what the demo does. Either way the verification
+record names both hosts, so the artefact carries the answer instead of the reader having to
+trust the tool. Why the URL is a trust boundary and not a convenience is in
+[Threat model](#threat-model).
 
 The two channels do not share credentials either. REST authenticates with `CALLE_API_KEY`; the
 MCP endpoint is an OAuth protected resource and refuses that key with `invalid_token`. Set
@@ -276,8 +283,10 @@ those that are non-empty. Contact ids are stored in the clear.
   Ctrl-C still leaves every call it placed on record. When the call state is unknown Ringdown says
   so, prints the id of the call that decided the verdict, and tells you to reconcile it rather
   than run again to find out.
-- `CALLE_API_KEY` is read from the environment only. It is never written to the ledger, never
-  logged, and never sent to a host outside the allowlist.
+- `CALLE_API_KEY` is read from the environment only, and only when the run targets the pinned
+  live URL. It is never written to the ledger, never logged, and never sent anywhere else. A run
+  against a local fake carries `RINGDOWN_FAKE_API_KEY` instead, so a throwaway value is the only
+  thing that ever travels over plaintext loopback.
 - `run` persists only to the file named by `--ledger`, and `adapt --out` writes the file you name.
   Nothing else is written anywhere. The demo writes under `demo/out/` and regenerates
   `examples/ledger.example.jsonl`.
@@ -285,9 +294,12 @@ those that are non-empty. Contact ids are stored in the clear.
 ## Threat model
 
 The API key travels on every request, so `--base-url` and `--mcp-url` are trust boundaries and not
-conveniences: a mistyped host would otherwise carry the key to whoever answers. Both are validated
-against the allowlist before any client is built. Plain `http` to a non-loopback host is refused
-outright.
+conveniences: a mistyped host would otherwise carry the key to whoever answers. Each is pinned to
+one exact live URL before any client is built, which is a string comparison and not a host match,
+so `https://api.heycall-e.com:8443`, `https://api.heycall-e.com/../evil` and
+`https://someone:secret@api.heycall-e.com` are all refused the same way an unknown domain is.
+Plain `http` is refused outright except on loopback, and loopback is served the throwaway
+credential rather than the live one, so the fake never sees a real key.
 
 Webhooks are not used. The provider's deliveries carry no secret, no timestamp and no signature,
 and an unsigned delivery proves nothing about its sender, so Ringdown polls instead of trusting
@@ -374,9 +386,9 @@ own call over a second transport. Same technique, different product.
     at exit 45, and the checks the second channel is supposed to answer are answered by nothing.
 
     Worse, and only visible because a run was finally seen: **the parser cannot read a run even
-    when one is served.** [`mcp-get-call-run-completed.json`](tests/fixtures/) is the first
-    successful response ever observed from that tool, and `run_from` returns `readable=False`
-    for it. The call id sits at `result.call_id` rather than at the top level, `transcript` is
+    when one is served.** [`mcp-get-call-run-completed.json`](tests/fixtures/) carries the shape
+    of the first successful response ever observed from that tool, and `run_from` returns
+    `readable=False` for it. The call id sits at `result.call_id` rather than at the top level, `transcript` is
     one newline-joined string rather than a list of turns, and `recipient_phone`, `completed_at`
     and `metadata` are absent from the run entirely — so three of the ten checks would have
     nothing to read even if the mapping existed. The fake still mirrors the shape this app
@@ -412,9 +424,10 @@ own call over a second transport. Same technique, different product.
     verify against the server that placed the call. Ringdown refuses that collision off
     loopback, announces it on loopback and records both hostnames either way, so the gap is
     visible rather than hidden. The exception is now real: [`tests/fixtures/`](tests/fixtures/)
-    holds what the live provider actually sent, parsed by tests that never touch the fake, and
-    one of those responses proves the parser wrong. It is the only part of this repository
-    confirmed by something other than itself.
+    holds the shapes the live provider actually sent, identities synthesised and nothing else
+    changed, parsed by tests that never touch the fake, and one of those responses proves the
+    parser wrong. It is the only part of this repository confirmed by something other than
+    itself.
 
 16. The provider drops calls, often, and reports it as the recipient hanging up. Four of the six
     calls placed on 2026-08-20 ended three seconds after the provider's own log said

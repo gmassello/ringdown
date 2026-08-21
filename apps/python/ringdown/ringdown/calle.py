@@ -10,7 +10,8 @@ from urllib.parse import urlparse
 from ringdown.calls import CallRun, CallSnapshot, run_from, snapshot_from
 
 CODE_LIMIT = 40
-TRUSTED_HOSTS = frozenset({"api.heycall-e.com", "seleven-mcp-sg.airudder.com"})
+LIVE_BASE_URL = "https://api.heycall-e.com"
+LIVE_MCP_URL = "https://seleven-mcp-sg.airudder.com/mcp/openagent_oauth"
 LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 AMBIGUOUS_STATUSES = frozenset({408, 409, 425, 429})
 MCP_RETRY_DELAY = 1.0
@@ -49,7 +50,12 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 _OPENER = urllib.request.build_opener(_NoRedirect)
 
 
-def assert_trusted_base_url(url: str, allowed: frozenset[str] = frozenset()) -> str:
+def is_loopback(url: str) -> bool:
+    return (urlparse(url).hostname or "") in LOOPBACK_HOSTS
+
+
+def assert_trusted_base_url(url: str) -> str:
+    pinned = url.rstrip("/")
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.hostname:
         raise UntrustedHost(f"{url!r} is not an http or https URL")
@@ -57,26 +63,17 @@ def assert_trusted_base_url(url: str, allowed: frozenset[str] = frozenset()) -> 
         raise UntrustedHost("refusing a URL that carries credentials in its userinfo")
     if parsed.query or parsed.fragment:
         raise UntrustedHost("refusing a base URL that carries a query string or a fragment")
-    host = parsed.hostname
-    loopback = host in LOOPBACK_HOSTS
-    if parsed.scheme == "http" and not loopback:
-        raise UntrustedHost(f"refusing to send an API key over plain http to {host}")
-    if not (loopback or host in TRUSTED_HOSTS or host in allowed):
+    if pinned not in (LIVE_BASE_URL, LIVE_MCP_URL) and not is_loopback(url):
         raise UntrustedHost(
-            f"refusing to send an API key to {host}. Name it with --allow-host to permit it."
+            f"refusing to send a credential to {url!r}: the live channels are pinned to "
+            f"{LIVE_BASE_URL} and {LIVE_MCP_URL}, and every other target must be loopback"
         )
-    return url.rstrip("/")
+    return pinned
 
 
 class _Client:
-    def __init__(
-        self,
-        url: str,
-        api_key: str,
-        timeout: float = 15.0,
-        allowed_hosts: frozenset[str] = frozenset(),
-    ) -> None:
-        self._url = assert_trusted_base_url(url, allowed_hosts)
+    def __init__(self, url: str, api_key: str, timeout: float = 15.0) -> None:
+        self._url = assert_trusted_base_url(url)
         self._api_key = api_key
         self._timeout = timeout
 

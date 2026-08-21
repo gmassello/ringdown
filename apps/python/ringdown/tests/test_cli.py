@@ -26,8 +26,8 @@ PAYLOAD = str(EXAMPLES / "alertmanager.example.json")
 
 @pytest.fixture(autouse=True)
 def api_key(monkeypatch):
-    monkeypatch.setenv("CALLE_API_KEY", "rd_test_key")
-    monkeypatch.setenv("CALLE_MCP_TOKEN", "rd_test_token")
+    monkeypatch.setenv("RINGDOWN_FAKE_API_KEY", "rd_test_key")
+    monkeypatch.setenv("RINGDOWN_FAKE_MCP_TOKEN", "rd_test_token")
 
 
 @pytest.fixture
@@ -82,7 +82,7 @@ def test_run_without_the_confirmation_phrase_places_no_call(serving, incident_fi
 def test_run_without_an_api_key_in_the_environment_places_no_call(
     serving, incident_file, tmp_path, monkeypatch
 ):
-    monkeypatch.delenv("CALLE_API_KEY")
+    monkeypatch.delenv("RINGDOWN_FAKE_API_KEY")
     server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
     code = _run(server.base_url, incident_file, tmp_path / "l.jsonl", "--confirm", CONFIRMATION)
     assert code == EXIT_USAGE
@@ -96,9 +96,32 @@ def test_a_host_outside_the_allowlist_is_refused(incident_file, tmp_path):
     assert code == EXIT_USAGE
 
 
+def test_the_live_api_key_is_never_read_for_a_run_against_the_local_fake(
+    serving, incident_file, tmp_path, capsys, monkeypatch
+):
+    monkeypatch.delenv("RINGDOWN_FAKE_API_KEY")
+    monkeypatch.setenv("CALLE_API_KEY", "rd_live_key")
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+
+    code = _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION)
+
+    assert code == EXIT_USAGE
+    assert "RINGDOWN_FAKE_API_KEY is not set" in capsys.readouterr().out
+    assert server.created == []
+    assert not ledger.exists()
+
+
 def test_the_second_channel_may_not_be_the_first(incident_file, tmp_path, capsys):
     ledger = tmp_path / "l.jsonl"
-    code = _run("https://api.heycall-e.com", incident_file, ledger, "--confirm", CONFIRMATION)
+    code = _run(
+        "https://api.heycall-e.com",
+        incident_file,
+        ledger,
+        "--confirm",
+        CONFIRMATION,
+        mcp_url="https://api.heycall-e.com",
+    )
     assert code == EXIT_USAGE
     assert "refusing to verify api.heycall-e.com against itself" in capsys.readouterr().out
     assert not ledger.exists()
@@ -188,7 +211,7 @@ def test_a_second_channel_that_cannot_be_reached_is_unresolved_not_a_mismatch(
 def test_a_second_channel_that_refuses_our_credentials_is_unresolved_not_a_mismatch(
     serving, incident_file, tmp_path, capsys, monkeypatch
 ):
-    monkeypatch.setenv("CALLE_MCP_TOKEN", "expired")
+    monkeypatch.setenv("RINGDOWN_FAKE_MCP_TOKEN", "expired")
     server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
     ledger = tmp_path / "l.jsonl"
 
@@ -352,7 +375,7 @@ def test_a_ledger_the_second_channel_contradicted_does_not_pass_verify_ledger(
 def test_a_ledger_the_second_channel_never_answered_is_unresolved_not_unverified(
     serving, incident_file, tmp_path, capsys, monkeypatch
 ):
-    monkeypatch.setenv("CALLE_MCP_TOKEN", "expired")
+    monkeypatch.setenv("RINGDOWN_FAKE_MCP_TOKEN", "expired")
     server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
     ledger = tmp_path / "l.jsonl"
     assert _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION) == EXIT_UNRESOLVED
@@ -365,14 +388,14 @@ def test_a_ledger_the_second_channel_never_answered_is_unresolved_not_unverified
 def test_a_missing_mcp_token_stops_the_run_before_any_call_is_placed(
     serving, incident_file, tmp_path, capsys, monkeypatch
 ):
-    monkeypatch.delenv("CALLE_MCP_TOKEN")
+    monkeypatch.delenv("RINGDOWN_FAKE_MCP_TOKEN")
     server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
     ledger = tmp_path / "l.jsonl"
 
     code = _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION)
 
     assert code == EXIT_USAGE
-    assert "CALLE_MCP_TOKEN is not set" in capsys.readouterr().out
+    assert "RINGDOWN_FAKE_MCP_TOKEN is not set" in capsys.readouterr().out
     assert len(server.created) == 0
     assert not ledger.exists()
 

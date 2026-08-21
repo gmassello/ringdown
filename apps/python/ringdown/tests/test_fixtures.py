@@ -73,7 +73,7 @@ def test_the_live_rest_body_echoes_the_metadata_the_attempt_identity_check_needs
     snapshot = snapshot_from(payload)
 
     assert snapshot.metadata["ringdown_attempt_id"] == "inc-2026-08-19-0001/primary/1"
-    assert snapshot.recipient_phone == "+1********44"
+    assert snapshot.recipient_phone == "+15550101234"
     assert snapshot.status == "failed"
 
 

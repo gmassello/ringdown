@@ -11,6 +11,7 @@ from fake import scenarios
 from fake.calle_server import FakeCalleServer, Fault
 from ringdown.calle import (
     CODE_LIMIT,
+    LIVE_MCP_URL,
     CalleError,
     McpClient,
     RestClient,
@@ -40,33 +41,36 @@ def payload(incident) -> dict:
     return call_payload(incident, LADDER[0])
 
 
-def test_a_plain_http_host_that_is_not_loopback_never_receives_the_api_key():
-    with pytest.raises(UntrustedHost, match="plain http"):
+def test_a_plain_http_host_that_is_not_loopback_never_receives_a_credential():
+    with pytest.raises(UntrustedHost, match="refusing to send a credential"):
         assert_trusted_base_url("http://calle.example.com")
 
 
-def test_an_unknown_https_host_is_refused_unless_it_is_named():
-    with pytest.raises(UntrustedHost, match="refusing to send an API key"):
+def test_an_unknown_https_host_is_refused_and_there_is_no_flag_that_permits_it():
+    with pytest.raises(UntrustedHost, match="refusing to send a credential"):
         assert_trusted_base_url("https://calle.example.com")
 
-    assert assert_trusted_base_url(
-        "https://calle.example.com", frozenset({"calle.example.com"})
-    ) == "https://calle.example.com"
 
-
-def test_the_production_host_and_loopback_are_trusted_without_being_named():
+def test_the_two_live_urls_and_loopback_are_the_only_targets():
     assert assert_trusted_base_url("https://api.heycall-e.com/") == "https://api.heycall-e.com"
+    assert assert_trusted_base_url(LIVE_MCP_URL) == LIVE_MCP_URL
     assert assert_trusted_base_url("http://127.0.0.1:8080") == "http://127.0.0.1:8080"
 
 
-def test_a_lookalike_host_is_not_matched_as_a_prefix_of_a_trusted_one():
-    for lookalike in (
+def test_the_trusted_host_is_pinned_to_one_whole_url_and_not_to_its_name():
+    for near_miss in (
         "https://api.heycall-e.com.evil.test",
         "https://evil.test/api.heycall-e.com",
         "https://notapi.heycall-e.com",
+        "https://api.heycall-e.com:8443",
+        "https://api.heycall-e.com/../evil",
+        "https://api.heycall-e.com/v1/calls",
+        "http://api.heycall-e.com",
+        "https://someone:secret@api.heycall-e.com",
+        "https://seleven-mcp-sg.airudder.com/mcp/openagent_oauth/../../evil",
     ):
         with pytest.raises(UntrustedHost):
-            assert_trusted_base_url(lookalike)
+            assert_trusted_base_url(near_miss)
 
 
 def test_a_url_that_is_not_http_is_refused():

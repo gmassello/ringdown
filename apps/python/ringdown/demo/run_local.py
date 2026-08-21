@@ -123,8 +123,8 @@ SCENARIOS: list[tuple[str, str, Scenarios]] = [
 
 
 def demo() -> None:
-    os.environ["CALLE_API_KEY"] = "demo-local-only"
-    os.environ["CALLE_MCP_TOKEN"] = "demo-local-only"
+    os.environ["RINGDOWN_FAKE_API_KEY"] = "demo-local-only"
+    os.environ["RINGDOWN_FAKE_MCP_TOKEN"] = "demo-local-only"
     shutil.rmtree(OUT, ignore_errors=True)
     OUT.mkdir(parents=True)
     EXAMPLE_LEDGER.unlink(missing_ok=True)

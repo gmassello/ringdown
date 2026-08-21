@@ -1,22 +1,29 @@
 # What the provider actually sent
 
-Responses observed against the live CALL-E API and MCP endpoint, committed verbatim. They exist
-because the client and the fake in `fake/` were both written from the same reading of the same
-documentation on the same day, so a mistake in that reading lands in both and the tests cannot
-see it. That already happened once: the payload sent `recipient` where the API takes
+Responses observed against the live CALL-E API and MCP endpoint, transcribed field for field.
+They exist because the client and the fake in `fake/` were both written from the same reading of
+the same documentation on the same day, so a mistake in that reading lands in both and the tests
+cannot see it. That already happened once: the payload sent `recipient` where the API takes
 `recipients: [{phones: []}]`, and the fake accepted both.
 
 These files are the third artefact. `tests/golden/` holds ledgers this app wrote; this directory
 holds what somebody else sent us. Tests read them directly, without the fake, so the parser is
 checked against evidence rather than against a mirror.
 
+**Every identity here is synthetic.** Call, run, recipient, attempt and provider identifiers,
+phone numbers and the names spoken in the transcripts were replaced with fictional values before
+these files were committed; the phone numbers come from the reserved `+1555010xxxx` range and the
+engineer is the same Alice Okafor the demo pages. Nothing else was changed. What is evidentiary is
+the shape — which keys exist, where they sit, what type they hold and what the provider says when
+it fails — and that is reproduced exactly.
+
 Every fixture carries its own provenance:
 
 - `what` — the request it answers
-- `source` — where it was transcribed from, and when it was observed
+- `source` — where it was observed, and when
 - `unobserved` — what is **not** evidence: the parts elided, assumed, or never captured
 - `why_it_matters` — the failure it pins down
-- `payload` — the literal body
+- `payload` — the body
 
 Read `unobserved` before trusting a fixture. The evidence is partial and the gaps are the point.
 
