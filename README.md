@@ -6,6 +6,11 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/gmassello/ringdown/actions/workflows/ci.yml"><img src="https://github.com/gmassello/ringdown/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT">
+</p>
+
+<p align="center">
   <a href="apps/python/ringdown/README.md"><b>Operational manual</b></a> ·
   <a href="apps/python/ringdown/demo/EXPECTED.md"><b>Demo output</b></a> ·
   <a href="apps/python/ringdown/examples/ledger.example.jsonl"><b>A real ledger</b></a>
