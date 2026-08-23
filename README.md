@@ -11,6 +11,7 @@
 </p>
 
 <p align="center">
+  <a href="https://youtu.be/WIYBWFslix4"><b>Video (2:50)</b></a> ·
   <a href="apps/python/ringdown/README.md"><b>Operational manual</b></a> ·
   <a href="apps/python/ringdown/demo/EXPECTED.md"><b>Demo output</b></a> ·
   <a href="apps/python/ringdown/examples/ledger.example.jsonl"><b>A real ledger</b></a>
@@ -22,6 +23,11 @@
   <img alt="313 tests" src="https://img.shields.io/badge/tests-313-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
+</p>
+
+<p align="center">
+  <a href="https://youtu.be/WIYBWFslix4"><img src="https://img.youtube.com/vi/WIYBWFslix4/maxresdefault.jpg" alt="Watch the demo (2:50)" width="560"></a><br>
+  <a href="https://youtu.be/WIYBWFslix4"><b>▶ Watch the demo</b></a> · 2:50
 </p>
 
 ---
