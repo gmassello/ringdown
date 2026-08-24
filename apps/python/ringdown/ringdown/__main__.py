@@ -26,7 +26,7 @@ from ringdown.calle import (
     McpClient,
     RestClient,
     UntrustedHost,
-    assert_trusted_base_url,
+    assert_trusted_url,
     is_loopback,
 )
 from ringdown.escalate import Attempt, LadderResult, run_ladder
@@ -127,15 +127,12 @@ def run(args: argparse.Namespace) -> int:
     if args.confirm != CONFIRMATION:
         emit(f"refusing to place calls without --confirm {CONFIRMATION!r}")
         return EXIT_USAGE
-    base_url = assert_trusted_base_url(args.base_url)
-    mcp_url = assert_trusted_base_url(args.mcp_url)
+    base_url = assert_trusted_url(args.base_url, LIVE_BASE_URL)
+    mcp_url = assert_trusted_url(args.mcp_url, LIVE_MCP_URL)
     rest_host = urlparse(base_url).hostname or ""
     mcp_host = urlparse(mcp_url).hostname or ""
-    if rest_host == mcp_host:
-        if not is_loopback(mcp_url):
-            emit(f"refusing to verify {mcp_host} against itself: the second channel is the first one")
-            return EXIT_USAGE
-        emit(f"note: both channels are {mcp_host}, so this run cannot prove they are two")
+    if is_loopback(base_url) and is_loopback(mcp_url):
+        emit("note: both channels are loopback, so this run cannot prove they are two")
     api_key = _credential(base_url, "CALLE_API_KEY", "RINGDOWN_FAKE_API_KEY")
     mcp_key = _credential(mcp_url, "CALLE_MCP_TOKEN", "RINGDOWN_FAKE_MCP_TOKEN")
     if not api_key or not mcp_key:

@@ -35,7 +35,7 @@ incident and gives a number of minutes. Every recorded field quotes the span tha
 and the second channel finds all three spans in turns the recipient spoke.
 
 ```text
-note: both channels are 127.0.0.1, so this run cannot prove they are two
+note: both channels are loopback, so this run cannot prove they are two
 incident inc-2026-08-09-0113  sev2  checkout-api
   checkout p99 latency above 3s
 

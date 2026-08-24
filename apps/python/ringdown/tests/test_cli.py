@@ -17,7 +17,7 @@ from ringdown.exits import (
     EXIT_USAGE,
 )
 from ringdown.audit import append_record
-from ringdown.calle import RestClient
+from ringdown.calle import LIVE_BASE_URL, LIVE_MCP_URL, RestClient
 from tests.data import ALICE, BEN, CARLA, EXAMPLES, example_body, write_json
 
 ROTATION = str(EXAMPLES / "rotation.example.json")
@@ -112,18 +112,20 @@ def test_the_live_api_key_is_never_read_for_a_run_against_the_local_fake(
     assert not ledger.exists()
 
 
-def test_the_second_channel_may_not_be_the_first(incident_file, tmp_path, capsys):
+def test_swapping_the_two_flags_never_sends_a_credential_to_the_other_channel(
+    incident_file, tmp_path, capsys
+):
     ledger = tmp_path / "l.jsonl"
     code = _run(
-        "https://api.heycall-e.com",
+        LIVE_MCP_URL,
         incident_file,
         ledger,
         "--confirm",
         CONFIRMATION,
-        mcp_url="https://api.heycall-e.com",
+        mcp_url=LIVE_BASE_URL,
     )
     assert code == EXIT_USAGE
-    assert "refusing to verify api.heycall-e.com against itself" in capsys.readouterr().out
+    assert "refusing to send a credential" in capsys.readouterr().out
     assert not ledger.exists()
 
 
@@ -133,7 +135,7 @@ def test_two_channels_on_one_loopback_host_are_announced_not_refused(
     server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
     code = _run(server.base_url, incident_file, tmp_path / "l.jsonl", "--confirm", CONFIRMATION)
     assert code == EXIT_ACKNOWLEDGED
-    assert "note: both channels are 127.0.0.1" in capsys.readouterr().out
+    assert "note: both channels are loopback" in capsys.readouterr().out
 
 
 def test_the_ledger_names_the_channels_it_ran_against(serving, incident_file, tmp_path):

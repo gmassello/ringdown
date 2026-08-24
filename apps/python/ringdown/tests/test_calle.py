@@ -11,6 +11,7 @@ from fake import scenarios
 from fake.calle_server import FakeCalleServer, Fault
 from ringdown.calle import (
     CODE_LIMIT,
+    LIVE_BASE_URL,
     LIVE_MCP_URL,
     CalleError,
     McpClient,
@@ -18,7 +19,7 @@ from ringdown.calle import (
     UntrustedHost,
     _call_run,
     _snapshot,
-    assert_trusted_base_url,
+    assert_trusted_url,
 )
 from ringdown.script import attempt_id, call_payload, idempotency_key
 from tests.data import ALICE, LADDER
@@ -43,40 +44,51 @@ def payload(incident) -> dict:
 
 def test_a_plain_http_host_that_is_not_loopback_never_receives_a_credential():
     with pytest.raises(UntrustedHost, match="refusing to send a credential"):
-        assert_trusted_base_url("http://calle.example.com")
+        assert_trusted_url("http://calle.example.com", LIVE_BASE_URL)
 
 
 def test_an_unknown_https_host_is_refused_and_there_is_no_flag_that_permits_it():
     with pytest.raises(UntrustedHost, match="refusing to send a credential"):
-        assert_trusted_base_url("https://calle.example.com")
+        assert_trusted_url("https://calle.example.com", LIVE_BASE_URL)
 
 
-def test_the_two_live_urls_and_loopback_are_the_only_targets():
-    assert assert_trusted_base_url("https://api.heycall-e.com/") == "https://api.heycall-e.com"
-    assert assert_trusted_base_url(LIVE_MCP_URL) == LIVE_MCP_URL
-    assert assert_trusted_base_url("http://127.0.0.1:8080") == "http://127.0.0.1:8080"
+def test_each_channel_accepts_its_own_live_url_and_loopback():
+    assert assert_trusted_url(LIVE_BASE_URL + "/", LIVE_BASE_URL) == LIVE_BASE_URL
+    assert assert_trusted_url(LIVE_MCP_URL, LIVE_MCP_URL) == LIVE_MCP_URL
+    assert assert_trusted_url("http://127.0.0.1:8080", LIVE_BASE_URL) == "http://127.0.0.1:8080"
+    assert assert_trusted_url("http://127.0.0.1:8080", LIVE_MCP_URL) == "http://127.0.0.1:8080"
+
+
+def test_each_client_pins_itself_and_does_not_trust_the_caller():
+    with pytest.raises(UntrustedHost):
+        RestClient(LIVE_MCP_URL, "rd_test_key")
+
+    with pytest.raises(UntrustedHost):
+        McpClient(LIVE_BASE_URL, "rd_test_key")
 
 
 def test_the_trusted_host_is_pinned_to_one_whole_url_and_not_to_its_name():
-    for near_miss in (
-        "https://api.heycall-e.com.evil.test",
-        "https://evil.test/api.heycall-e.com",
-        "https://notapi.heycall-e.com",
-        "https://api.heycall-e.com:8443",
-        "https://api.heycall-e.com/../evil",
-        "https://api.heycall-e.com/v1/calls",
-        "http://api.heycall-e.com",
-        "https://someone:secret@api.heycall-e.com",
-        "https://seleven-mcp-sg.airudder.com/mcp/openagent_oauth/../../evil",
+    for near_miss, live in (
+        ("https://api.heycall-e.com.evil.test", LIVE_BASE_URL),
+        ("https://evil.test/api.heycall-e.com", LIVE_BASE_URL),
+        ("https://notapi.heycall-e.com", LIVE_BASE_URL),
+        ("https://api.heycall-e.com:8443", LIVE_BASE_URL),
+        ("https://api.heycall-e.com/../evil", LIVE_BASE_URL),
+        ("https://api.heycall-e.com/v1/calls", LIVE_BASE_URL),
+        ("http://api.heycall-e.com", LIVE_BASE_URL),
+        ("https://someone:secret@api.heycall-e.com", LIVE_BASE_URL),
+        ("https://seleven-mcp-sg.airudder.com/mcp/openagent_oauth/../../evil", LIVE_MCP_URL),
+        (LIVE_MCP_URL, LIVE_BASE_URL),
+        (LIVE_BASE_URL, LIVE_MCP_URL),
     ):
         with pytest.raises(UntrustedHost):
-            assert_trusted_base_url(near_miss)
+            assert_trusted_url(near_miss, live)
 
 
 def test_a_url_that_is_not_http_is_refused():
     for bad in ("ftp://api.heycall-e.com", "file:///etc/passwd", "not a url"):
         with pytest.raises(UntrustedHost):
-            assert_trusted_base_url(bad)
+            assert_trusted_url(bad, LIVE_BASE_URL)
 
 
 def test_a_created_call_is_read_back_from_the_placing_channel(incident):

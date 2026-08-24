@@ -54,7 +54,7 @@ def is_loopback(url: str) -> bool:
     return (urlparse(url).hostname or "") in LOOPBACK_HOSTS
 
 
-def assert_trusted_base_url(url: str) -> str:
+def assert_trusted_url(url: str, live: str) -> str:
     pinned = url.rstrip("/")
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.hostname:
@@ -63,17 +63,19 @@ def assert_trusted_base_url(url: str) -> str:
         raise UntrustedHost("refusing a URL that carries credentials in its userinfo")
     if parsed.query or parsed.fragment:
         raise UntrustedHost("refusing a base URL that carries a query string or a fragment")
-    if pinned not in (LIVE_BASE_URL, LIVE_MCP_URL) and not is_loopback(url):
+    if pinned != live and not is_loopback(url):
         raise UntrustedHost(
-            f"refusing to send a credential to {url!r}: the live channels are pinned to "
-            f"{LIVE_BASE_URL} and {LIVE_MCP_URL}, and every other target must be loopback"
+            f"refusing to send a credential to {url!r}: this channel is pinned to {live}, "
+            "and every other target must be loopback"
         )
     return pinned
 
 
 class _Client:
+    LIVE: str
+
     def __init__(self, url: str, api_key: str, timeout: float = 15.0) -> None:
-        self._url = assert_trusted_base_url(url)
+        self._url = assert_trusted_url(url, self.LIVE)
         self._api_key = api_key
         self._timeout = timeout
 
@@ -116,6 +118,8 @@ def _http_error(error: urllib.error.HTTPError) -> CalleError:
 
 
 class RestClient(_Client):
+    LIVE = LIVE_BASE_URL
+
     def create_call(self, payload: Mapping[str, Any], key: str) -> CallSnapshot:
         return _snapshot(self._send(f"{self._url}/v1/calls", payload, {"Idempotency-Key": key}))
 
@@ -141,6 +145,8 @@ class RestClient(_Client):
 
 
 class McpClient(_Client):
+    LIVE = LIVE_MCP_URL
+
     def get_call_run(self, call_id: str) -> CallRun:
         try:
             return self._read_run(call_id)

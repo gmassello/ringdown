@@ -18,11 +18,13 @@ def payload_of(name: str) -> dict:
 
 
 @pytest.mark.parametrize("path", DOCUMENTED, ids=lambda path: path.stem)
-def test_every_captured_response_says_where_it_came_from_and_what_it_does_not_prove(path):
+def test_every_fixture_says_where_its_shape_came_from_and_what_it_does_not_prove(path):
     fixture = json.loads(path.read_text())
 
     assert set(fixture) == {"what", "source", "unobserved", "why_it_matters", "payload"}
     assert "observed" in fixture["source"]
+    if path.name != "mcp-authorization-server.json":
+        assert "written for this repository" in fixture["source"]
 
 
 def test_the_parser_does_not_mistake_the_providers_missing_run_for_a_run():
@@ -57,7 +59,7 @@ def test_the_tool_rejects_the_argument_name_ringdown_used_to_send():
     assert "call_id" in raised.value.message
 
 
-def test_a_real_completed_run_is_not_readable_by_the_parser_that_was_written_for_it():
+def test_the_completed_run_shape_is_not_readable_by_the_parser_that_was_written_for_it():
     payload = payload_of("mcp-get-call-run-completed.json")
 
     assert payload["result"]["call_id"]
@@ -68,7 +70,7 @@ def test_a_real_completed_run_is_not_readable_by_the_parser_that_was_written_for
     assert run.turns == ()
 
 
-def test_the_live_rest_body_echoes_the_metadata_the_attempt_identity_check_needs():
+def test_the_rest_body_shape_echoes_the_metadata_the_attempt_identity_check_needs():
     payload = payload_of("rest-call-declined-without-dialling.json")
     snapshot = snapshot_from(payload)
 
@@ -99,6 +101,6 @@ def test_the_provider_reported_an_acknowledgement_the_transcript_does_not_carry(
     spoken = " ".join(normalise(turn.text) for turn in recipient_turns(snapshot.turns))
     extraction = extract(snapshot.turns)
 
-    assert "banking this incident" in spoken
+    assert "tacking this incident" in spoken
     assert extraction.disposition == "unclear"
     assert extraction.eta_minutes == 15
