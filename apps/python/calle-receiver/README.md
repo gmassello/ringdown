@@ -96,7 +96,7 @@ Unit tests: `uv run pytest`.
 | `POST /voice/status` | End of the `<Dial>`: stores final status and duration |
 | `POST /voice/recording` | Stores the `RecordingUrl` (download it with `.mp3` + basic auth SID:TOKEN) |
 | `POST /voice/transcription` | Stores one `TranscriptSegment` per `transcription-content` event |
-| `GET /calls` | HTML dashboard: calls with audio player and transcript (5s auto-refresh) |
+| `GET /calls` | HTML dashboard: one card per call with audio player and transcript (5s auto-refresh) |
 | `GET /calls/{sid}/recording.mp3` | Recording proxy (adds Twilio auth for the `<audio>` element) |
 
 The `POST /voice*` webhooks validate the `X-Twilio-Signature` header (can be

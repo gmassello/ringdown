@@ -11,6 +11,7 @@
 </p>
 
 <p align="center">
+  <a href="https://gmassello.github.io/ringdown/"><b>Site</b></a> ·
   <a href="https://youtu.be/WIYBWFslix4"><b>Video (2:50)</b></a> ·
   <a href="apps/python/ringdown/README.md"><b>Operational manual</b></a> ·
   <a href="apps/python/ringdown/demo/EXPECTED.md"><b>Demo output</b></a> ·
@@ -20,7 +21,7 @@
 <p align="center">
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="313 tests" src="https://img.shields.io/badge/tests-313-2f6f4e">
+  <img alt="316 tests" src="https://img.shields.io/badge/tests-316-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -186,6 +187,7 @@ stored: an attempt keeps only the spans quoted as evidence.
 | [`apps/python/ringdown/`](apps/python/ringdown/) | The app, and its [README](apps/python/ringdown/README.md): setup, exit codes, file formats, threat model, all the ceilings |
 | [`apps/python/ringdown/demo/EXPECTED.md`](apps/python/ringdown/demo/EXPECTED.md) | The demo scenarios, narrated, written before the code that produces them |
 | [`apps/python/ringdown/examples/`](apps/python/ringdown/examples/) | The incident, rotation and mapping files, and a ledger committed exactly as the demo wrote it |
+| [`docs/`](docs/) | The project site (GitHub Pages): the overview, two demo scenarios replayed step by step, and a ledger you can tamper with in the browser. No build step, no dependencies |
 | [`apps/python/calle-receiver/`](apps/python/calle-receiver/) | Demo infrastructure, not the product: CALL-E's recipient regions don't include Argentina, so this FastAPI service receives the agent's call on a US Twilio number and bridges it to an Argentine phone, with recording, live transcription and a password-protected [dashboard](https://calle-receiver.onrender.com/calls). |
 
 Only the app and its skill are meant to travel to

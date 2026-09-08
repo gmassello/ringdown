@@ -10,7 +10,7 @@ live in `~/.claude/skills/personal-record-video/scripts/`.
 | `reset.sh` | Demo state for the terminal take. `--check` reports without changing anything |
 | `take.sh` | The shot list. Enter advances, one screen per beat after the slide |
 | `slide.png` | Beat 1, the opening card: the problem and the thesis |
-| `dashboard.png` | First closing still: the real call, recorded and transcribed |
+| `dashboard.png` | First closing still: the real call, recorded and transcribed. **Shot before the dashboard was restyled** — re-shoot it before the next take |
 | `closing.png` | Last still: the thesis, what the live provider answered, the repo |
 | `live/` | The live call: run files, pre-flight, evidence capture. Gitignored |
 | `out/` | Generated. `build-audio.sh` wipes it on every run |

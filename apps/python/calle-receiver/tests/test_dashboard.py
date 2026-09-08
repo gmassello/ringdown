@@ -22,7 +22,20 @@ def test_dashboard_lists_call_with_transcript(client, create_call):
     assert resp.status_code == 200
     assert "+15550000009" in resp.text
     assert "dashboard test segment" in resp.text
-    assert "<details>" in resp.text
+    assert "<details open>" in resp.text
+    assert "1 segments" in resp.text
+
+
+def test_dashboard_renders_one_card_per_call(client, create_call):
+    before = client.get("/calls", auth=AUTH).text.count('<div class="call">')
+    create_call("CAcard1", from_number="+15550000011")
+    create_call("CAcard2", from_number="+15550000012")
+    resp = client.get("/calls", auth=AUTH)
+    assert resp.text.count('<div class="call">') == before + 2
+    assert "+15550000011" in resp.text
+    assert "+15550000012" in resp.text
+    assert "started (UTC)" in resp.text
+    assert "No transcript." in resp.text
 
 
 def test_dashboard_requires_auth(client):
