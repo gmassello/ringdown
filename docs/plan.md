@@ -381,7 +381,7 @@ masked · no secrets or API keys.
 - ✅ **The `provider_call_id` conjecture is closed.** It was the untested candidate ceiling 12 left
   open. It does not resolve to a run either, and neither do the attempt id or the recipient id.
 - ✅ **Video under 3 minutes** — 2:50, at
-  [youtu.be/WIYBWFslix4](https://youtu.be/WIYBWFslix4), unlisted, with burned-in subtitles and an
+  [youtu.be/KITNQLZixWw](https://youtu.be/KITNQLZixWw), unlisted, with burned-in subtitles and an
   SRT caption track. Eight beats: the problem, `preview`, the happy path, the yes without an ETA,
   the lost reply, the second channel disagreeing, the ledger and its tampered copy, and a real call
   ringing a phone in Argentina. Built from `video/`, which holds the narration, the three stills and

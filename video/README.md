@@ -7,16 +7,20 @@ live in `~/.claude/skills/personal-record-video/scripts/`.
 | --- | --- |
 | `narration.tsv` | The script. Edit this and nothing downstream survives |
 | `mkstills.sh` | Regenerates the three stills. The closing line lives in the script |
+| `mkintro.sh` | Regenerates the opening 18.7 s and mixes the ringback under the voice |
+| `mkbody.sh` | Rebuilds the body: the seven terminal stills plus the dashboard as closing evidence |
 | `reset.sh` | Demo state for the terminal take. `--check` reports without changing anything |
-| `take.sh` | The shot list. Enter advances, one screen per beat after the slide |
-| `slide.png` | Beat 1, the opening card: the problem and the thesis |
+| `take.sh` | The shot list. Enter advances, one screen per beat after the opening |
+| `slide.png` | The opening card. No longer in the video — `mkintro.sh` replaced it. Poster and thumbnail |
 | `dashboard.png` | First closing still: the real call, recorded and transcribed |
 | `closing.png` | Last still: the thesis, what the live provider answered, the repo |
 | `live/` | The live call: run files, pre-flight, evidence capture. Gitignored |
-| `out/` | Generated. `build-audio.sh` wipes it on every run |
+| `out/` | Generated. `build-audio.sh` wipes it on every run, `narration.voice.wav` included |
 
 Two recordings feed one video: `raw-terminal.mov` (the CLI) and `phone.mov` (the phone
-ringing). They get concatenated into `raw.mov` before the fit.
+ringing). **`phone.mov` no longer reaches the video directly** — `mkintro.sh` takes tight,
+masked bands out of it for the opening, and the closing seconds show the dashboard instead.
+The clip that used to sit there printed the caller ID in the clear.
 
 ## 1. The live call
 
@@ -105,7 +109,57 @@ headless Chrome gives you and what keeps the card sharp when it is scaled back u
 Seed the call **already masked** (`+1********83 → +1********44`) — the dashboard prints whatever is
 in the database, and the still is published.
 
-## 4. Assembling
+## 4. The opening
+
+Beat 1 used to be `slide.png` held still for 18.7 s. `mkintro.sh` replaces it with six shots cut
+out of `phone.mov`, and mixes a ringback tone under the voice that already exists:
+
+```bash
+bash video/mkintro.sh          # -> out/intro.mov (561 frames), out/ring.wav, out/narration.wav
+```
+
+The cuts land in the silences between the spoken lines (`3.76-4.16`, `6.11-6.61`, `9.96-10.26`,
+`13.96-14.66`, from `out/captions.srt`), so no shot changes mid-sentence. The tone is the real US
+ringback — 440+480 Hz, 2 s on, 4 s off — synthesised, so there is no licence to clear: a bed at
+`BED=0.05` until 14.3 s, then one burst at `RING=0.12` that stops dead at 16.3 s when the shot cuts
+to the answered call. Both are env vars; that is the knob to set by ear.
+
+Every shot of the phone is a **tight band**: the Vysor chrome, the home screen and the app names
+never make it in, and the caller ID is masked with `delogo`. `crop=638:1384:68:128` is the phone's
+own screen inside the 774x1692 source.
+
+`narration.voice.wav` is the take as `build-audio.sh` produced it and `narration.wav` is derived
+from it, so the script is safe to re-run. **That backup is now as irreplaceable as
+`raw-fitted.mov`** — `build-audio.sh` deletes both.
+
+## 5. The body
+
+`mkbody.sh` rebuilds `out/raw-fitted.mov` — the 142.6 s between the opening and the outro:
+
+```bash
+bash video/mkbody.sh          # -> out/frames/s6.png, out/terminal.mp4, out/evidence.mp4, out/raw-fitted.mov
+```
+
+Two things it fixes.
+
+**`s6.png` is regenerated from the recording, not taken from the fit.** The mark handed to
+`fit-to-audio.py` landed inside the previous screen's hold, so `s6` came out a duplicate of `s5`:
+ten seconds of `verified 6/10 · exit 40` while the voice says *"Every verdict is sealed into a
+hash-chained ledger / Twenty-six checks pass"*. The right screen is in `raw-terminal.mov` at
+`LEDGER_AT=36`; the crop lands the text where the other six stills put it.
+
+**The dashboard replaces the phone clip as the closing evidence.** It now runs from 2:32 to 2:45
+— 13.2 s instead of 4, because the body and the outro show the same image and the seam does not
+read. That puts all three spoken lines on top of it: *"CALL-E does not dial Argentina"*,
+*"lands on a US Twilio number"*, *"bridged to a real phone, recorded and transcribed"*. The clip it
+replaces showed the caller ID unmasked and the phone's home screen, and repeated what the opening
+already shows better.
+
+Frame counts are asserted, and they are the whole point: `terminal.mp4` must be 4002 and
+`evidence.mp4` 277, because a drift of one frame slides the entire video against the voice and
+`build-video.sh` absorbs it into `RATIO` without complaining.
+
+## 6. Assembling
 
 The audio is already built and under the cap — `out/timing.txt` has the verdict and the
 per-beat lengths, and it is the only source for the numbers below. Re-run `build-audio.sh`
@@ -126,16 +180,26 @@ timestamped contact sheet:
 VIDEO_DIR=$PWD/video python3 ~/.claude/skills/personal-record-video/scripts/fit-to-audio.py \
   video/raw.mov --beats <m1,m2,m3,m4,m5,m6,m7> --timing video/out/timing-noslide.txt
 
-VIDEO_DIR=$PWD/video END=142.6 \
-  SLIDE=video/slide.png SLIDE_DUR=18.7 \
+printf "file 'intro.mov'\nfile 'raw-fitted.mov'\n" > video/out/intro-concat.txt
+ffmpeg -y -f concat -safe 0 -i video/out/intro-concat.txt -c copy video/out/raw-with-intro.mov
+
+VIDEO_DIR=$PWD/video END=161.3 \
   OUTRO="video/dashboard.png:4,video/closing.png:4.2" OUTRO_REPLACE=8.2 \
-  bash ~/.claude/skills/personal-record-video/scripts/build-video.sh video/out/raw-fitted.mov
+  bash ~/.claude/skills/personal-record-video/scripts/build-video.sh video/out/raw-with-intro.mov
 ```
+
+**No `SLIDE`.** The intro is concatenated onto the front of the screencast instead, so the whole
+161.3 s goes through the fit as one clip: `RATIO = 161.3 / (169.5 - 8.2) = 1.000`.
 
 The arithmetic, all of it out of `out/timing.txt`: the track is 169.5 s and beat 1 is 18.7 s,
 so the recording covers beats 2 to 8 = 150.8 s. The two closing stills cover the tail, so
-`OUTRO_REPLACE = 4 + 4.2` and `END = 150.8 - 8.2 = 142.6`. Beat 8 is 17.2 s, so the phone keeps
-`17.2 - 8.2 = 9` of them. Under ~3.5 s a still cannot be read; adjust the split once the
+`OUTRO_REPLACE = 4 + 4.2` and `END = 18.7 + 150.8 - 8.2 = 161.3`. Beat 8 is 17.2 s, so the phone
+keeps `17.2 - 8.2 = 9` of them.
+
+`TOTAL = A + max(0, OUTRO_TOTAL - OUTRO_REPLACE)` does not depend on `END`, so the video is pinned
+to the length of `narration.wav` and nothing else. What `END` does control is the fit — and if
+`intro.mov` is not exactly 561 frames the whole screencast slides against the voice, silently.
+`mkintro.sh` asserts that count and refuses to finish without it. Under ~3.5 s a still cannot be read; adjust the split once the
 footage exists.
 
 Out comes `video/out/demo.mp4` and `video/out/demo.en.srt`. Upload public or unlisted, never

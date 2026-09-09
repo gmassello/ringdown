@@ -12,7 +12,7 @@
 
 > **Update (20 Aug 2026):** delivered. Six real calls were placed through this
 > bridge (see `docs/plan.md`, Stage 10), the demo video is published at
-> [youtu.be/WIYBWFslix4](https://youtu.be/WIYBWFslix4), and the pull request is
+> [youtu.be/KITNQLZixWw](https://youtu.be/KITNQLZixWw), and the pull request is
 > open as
 > [CALLE-AI/awesome-phone-call-agents#205](https://github.com/CALLE-AI/awesome-phone-call-agents/pull/205).
 > What is left is the Devpost submission itself.
@@ -448,7 +448,7 @@ calls to third parties without telling them.
 
 - [x] Uses CALL-E's SDK / API / MCP / CLI / SKILL — REST plus MCP plus a Skill
 - [x] Pull request to `CALLE-AI/awesome-phone-call-agents` — [#205](https://github.com/CALLE-AI/awesome-phone-call-agents/pull/205)
-- [x] ~3 minute demo video (YouTube or Vimeo) — [youtu.be/WIYBWFslix4](https://youtu.be/WIYBWFslix4), 2:50, unlisted
+- [x] ~3 minute demo video (YouTube or Vimeo) — [youtu.be/KITNQLZixWw](https://youtu.be/KITNQLZixWw), 2:50, unlisted
 - [ ] Email tied to the CALL-E account included in the submission
 - [ ] Working demo URL (optional but it helps)
 - [ ] Submitted before **14 Sep 2026, 23:45 SGT** (= 12:45 on 14 Sep in Argentina)
