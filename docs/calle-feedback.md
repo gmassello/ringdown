@@ -1,16 +1,5 @@
 # Feedback for the CALL-E team
 
-Five findings from building Ringdown, an on-call escalation agent that places calls over REST and
-audits them over MCP. Every item below was observed in August 2026 against the live API and the
-live MCP endpoint, with a real account. Nothing here is speculative, and none of it was found by
-reading the docs alone.
-
-Ordered by how much they cost us.
-
----
-
-# Feedback for the CALL-E team
-
 Eight findings from building Ringdown, an on-call escalation agent that places calls over REST and
 audits them over MCP. Every item below was observed against the live API and the live MCP endpoint
 with a real account, and the first four come from **six real calls placed on 2026-08-20** to a US

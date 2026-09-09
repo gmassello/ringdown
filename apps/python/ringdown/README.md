@@ -60,9 +60,8 @@ point". There is no owner and no clock, so it is not an acknowledgement.
 Python 3.11 or newer. No runtime dependencies — `dependencies = []`, standard library only.
 
 ```bash
-python -m venv .venv && . .venv/bin/activate
-pip install pytest
-python -m pytest -q       # 295 tests, no credentials, no outbound calls
+uv sync
+uv run pytest -q          # 298 tests, no credentials, no outbound calls
 ```
 
 ## Preview, which is the default

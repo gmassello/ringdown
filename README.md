@@ -7,11 +7,11 @@
 
 <p align="center">
   <a href="https://github.com/gmassello/ringdown/actions/workflows/ci.yml"><img src="https://github.com/gmassello/ringdown/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
 </p>
 
 <p align="center">
-  <a href="https://gmassello.github.io/ringdown/"><b>Site</b></a> ·
+  <a href="https://gmassello.github.io/ringdown/"><b>Tamper with the ledger in your browser</b></a> ·
   <a href="https://youtu.be/KITNQLZixWw"><b>Video (2:50)</b></a> ·
   <a href="apps/python/ringdown/README.md"><b>Operational manual</b></a> ·
   <a href="apps/python/ringdown/demo/EXPECTED.md"><b>Demo output</b></a> ·
@@ -21,7 +21,7 @@
 <p align="center">
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="316 tests" src="https://img.shields.io/badge/tests-316-2f6f4e">
+  <img alt="317 tests" src="https://img.shields.io/badge/tests-317-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -29,6 +29,12 @@
 <p align="center">
   <a href="https://youtu.be/KITNQLZixWw"><img src="https://img.youtube.com/vi/KITNQLZixWw/maxresdefault.jpg" alt="Watch the demo (2:50)" width="560"></a><br>
   <a href="https://youtu.be/KITNQLZixWw"><b>▶ Watch the demo</b></a> · 2:50
+</p>
+
+<p align="center">
+  <i>Or skip the install: <a href="https://gmassello.github.io/ringdown/">rewrite every verdict in the committed ledger</a>,
+  reseal the whole chain from the genesis hash, and watch the links, the seals and the positions all<br>
+  stay green while the verification fails anyway — because it re-derives the verdict from the recorded attempts.</i>
 </p>
 
 ---
@@ -58,7 +64,7 @@ the part nobody verifies.
 ## Sixty seconds
 
 ```bash
-cd apps/python/ringdown && python -m demo.run_local
+cd apps/python/ringdown && uv sync && uv run python -m demo.run_local
 ```
 
 Seven scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
@@ -144,10 +150,23 @@ setup are in the [operational manual](apps/python/ringdown/README.md).
 > rather than described: two flags resolving to one non-loopback host exit 30, on loopback the run
 > says so out loud, and the ledger records both hostnames either way.
 
-Seven exit codes — 0 acknowledged and verified, 10 declined, 20 ladder exhausted, 25 call state
-unknown, 30 usage, 40 the second channel disagrees, 45 the second channel could not be reached —
-and 40 overrides 0, 10, 20 and 45 alike, so a decline the second channel does not support exits
-40, not 10. A channel that is down is never read as a channel that disagrees.
+Seven exit codes:
+
+| Exit | Meaning |
+| ---: | --- |
+| `0` | acknowledged, and the second channel agrees |
+| `10` | declined |
+| `20` | the ladder ran out with nobody committed |
+| `25` | a call's state is unknown |
+| `30` | usage error |
+| `40` | the second channel contradicts the recorded verdict |
+| `45` | the second channel could not be reached |
+
+Precedence is the interesting part. `40` overrides `0`, `10`, `20` and `45` alike, so a decline the
+second channel does not support exits 40, not 10. `25` outranks everything and skips verification
+entirely — there is nothing to re-derive from a call whose state nobody knows. And `45` only lands
+when nothing was contradicted: **a channel that is down is never read as a channel that disagrees.**
+That distinction is why `Check` is a ternary and why `None` is load-bearing rather than falsy.
 [Full table](apps/python/ringdown/README.md#exit-codes).
 
 ## What it proves
@@ -229,6 +248,24 @@ audits its own call over a second transport. Same technique, different product.
   question, so the ETA is read only from what follows the question asking for one and never from
   a number spoken past a negation. An engineer who paraphrases honestly costs a human review.
   That is the acceptable direction of error, and still a real cost.
+- **The hash chain proves nothing against an adversary.** It is unkeyed and anchored to nothing
+  outside itself: cut records off the end and the file still verifies; renumber and reseal the whole
+  chain and it still verifies. The position check catches a record lost by accident, not one removed
+  on purpose. What ties a ledger to reality is the `record count` and `head` digest that `run`
+  prints when it finishes, compared by hand. A keyed HMAC and a `verify` that takes the expected
+  head is the real fix, and it is not written yet. The browser demo above is a demonstration of this
+  ceiling, not a refutation of it — what catches the tamper there is the re-derivation, never the
+  hash.
+- **Almost every artefact in this repository was produced with one channel wearing two names.** The
+  demo points both flags at a single fake: same process, same port, one transcript in memory. The
+  seven scenarios, the committed ledger and nearly the whole suite verify against the server that
+  placed the call. The exception is `tests/fixtures/`, parsed by tests that never touch the fake —
+  and one of those shapes proves the parser is wrong. It is the only thing here confirmed by
+  something other than itself.
+- **What a phone acknowledgement does not prove.** Not that the person is awake enough to work the
+  incident, not that they have access, not that the ETA is real. It proves that a named human,
+  reached on a number from the rotation, said out loud that they were taking it and gave a number of
+  minutes. That is strictly more than "notification sent", and strictly less than a resolution.
 - A verdict of `unknown` is never verified — there may be a live call.
 - A call already in flight cannot be cancelled. What is cancellable is the ladder.
 - The ladder never re-calls, and retries would need another key and another record.
