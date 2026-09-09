@@ -254,7 +254,7 @@ const setUpLedger = async () => {
   try {
     committed = await fetchLedger();
   } catch (error) {
-    status.textContent = `Could not fetch the ledger from GitHub (${error.message}). It is committed at examples/ledger.example.jsonl.`;
+    status.textContent = `Could not fetch the ledger (${error.message}). It is committed at examples/ledger.example.jsonl.`;
     tamperButton.disabled = true;
     return;
   }

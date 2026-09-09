@@ -1,6 +1,5 @@
 export const GENESIS = "sha256:" + "0".repeat(64);
-export const LEDGER_URL =
-  "https://raw.githubusercontent.com/gmassello/ringdown/main/apps/python/ringdown/examples/ledger.example.jsonl";
+export const LEDGER_URL = "./ledger.example.jsonl";
 
 const SUPPORTED_SCHEMA = 1;
 
@@ -44,7 +43,7 @@ export const parseLedger = (text) =>
 
 export const fetchLedger = async () => {
   const response = await fetch(LEDGER_URL, { cache: "no-store" });
-  if (!response.ok) throw new Error(`GitHub answered ${response.status}`);
+  if (!response.ok) throw new Error(`the server answered ${response.status}`);
   return parseLedger(await response.text());
 };
 

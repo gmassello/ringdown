@@ -32,10 +32,11 @@ $(line 'github.com/gmassello/ringdown' $GO 44 830)"
 
 [ -n "${1:-}" ] || { echo "no screenshot given, keeping video/dashboard.png"; exit 0; }
 
-# Crops the header, the row and the transcript down to the acknowledgement. Tuned to a
-# 1505x812 window-mode screenshot of /calls with the details expanded.
+# Crops the header and the call card out of a 2128x1400 shot of /calls: a 1064x700 viewport
+# at device scale 2, which is what "The stills" in video/README.md tells you to capture.
 ffmpeg -y -loglevel error -i "$1" -vf "\
-crop=1200:790:150:20,scale=-1:900,pad=1920:1080:(ow-iw)/2:150:$BG,\
-$(line 'The agent called a US Twilio number. It rang a phone in Argentina.' $DIM 40 60)" \
+crop=1920:1148:104:88,scale=-1:754,pad=1920:1080:(ow-iw)/2:105:$BG,\
+$(line 'The agent called a US Twilio number. It rang a phone in Argentina.' $DIM 40 36),\
+$(line 'github.com/gmassello/ringdown' $GO 44 882)" \
 video/dashboard.png
 echo "wrote video/dashboard.png"

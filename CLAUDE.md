@@ -31,7 +31,10 @@ It runs seven scenarios against `fake/calle_server.py` on loopback and **rewrite
 `examples/ledger.example.jsonl`**. `tests/test_demo.py` asserts that the committed ledger is byte-identical
 to what the demo writes, and that the demo still prints every block quoted in `demo/EXPECTED.md`,
 in order. So a change to output formatting or ledger content means: run the demo, reconcile
-`EXPECTED.md` by hand, commit the regenerated ledger.
+`EXPECTED.md` by hand, commit the regenerated ledger — **and copy it to
+`docs/ledger.example.jsonl`**, which the site fetches from its own origin. A third assertion in
+`tests/test_demo.py` fails when those two files drift; it skips where `docs/` does not exist, so
+the upstream checkout is unaffected.
 
 Receiver locally: `uv run uvicorn app.main:app --reload --port 8000` plus a
 `cloudflared` tunnel — see `apps/python/calle-receiver/README.md` and the `deploy` / `twilio`

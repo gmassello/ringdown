@@ -6,6 +6,7 @@ results/
 *.jsonl
 !**/examples/*.jsonl
 !**/tests/golden/*.jsonl
+!docs/ledger.example.jsonl
 **/demo/out/
 .env
 calls.db*

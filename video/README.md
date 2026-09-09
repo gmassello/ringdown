@@ -10,7 +10,7 @@ live in `~/.claude/skills/personal-record-video/scripts/`.
 | `reset.sh` | Demo state for the terminal take. `--check` reports without changing anything |
 | `take.sh` | The shot list. Enter advances, one screen per beat after the slide |
 | `slide.png` | Beat 1, the opening card: the problem and the thesis |
-| `dashboard.png` | First closing still: the real call, recorded and transcribed. **Shot before the dashboard was restyled** — re-shoot it before the next take |
+| `dashboard.png` | First closing still: the real call, recorded and transcribed |
 | `closing.png` | Last still: the thesis, what the live provider answered, the repo |
 | `live/` | The live call: run files, pre-flight, evidence capture. Gitignored |
 | `out/` | Generated. `build-audio.sh` wipes it on every run |
@@ -92,6 +92,18 @@ returned. Edit it in `mkstills.sh` and re-run.
 `calls.db`, fetch the page with `curl -u`, serve that static copy and shoot it. The Render free
 tier wipes the database on every deploy, and Basic Auth opens a native dialog that blocks
 browser automation — hence the static copy.
+
+The crop is tuned to a **2128x1400** shot — a 1064x700 viewport at device scale 2, which is what
+headless Chrome gives you and what keeps the card sharp when it is scaled back up:
+
+```bash
+'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --headless=new --disable-gpu \
+  --screenshot=shot.png --window-size=1064,700 --force-device-scale-factor=2 --hide-scrollbars \
+  http://localhost:8123/
+```
+
+Seed the call **already masked** (`+1********83 → +1********44`) — the dashboard prints whatever is
+in the database, and the still is published.
 
 ## 4. Assembling
 
