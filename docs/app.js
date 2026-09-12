@@ -74,7 +74,7 @@ const setUpRun = () => {
   let timer = null;
 
   const totalSteps = () =>
-    Number(tabs.find((tab) => tab.getAttribute("aria-selected") === "true").dataset.steps);
+    Number(tabs.find((tab) => tab.getAttribute("aria-pressed") === "true").dataset.steps);
 
   const stop = () => {
     clearInterval(timer);
@@ -86,6 +86,10 @@ const setUpRun = () => {
   const replay = () => {
     clearInterval(timer);
     const total = totalSteps();
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      paintStep(total);
+      return;
+    }
     let step = 0;
     paintStep(step);
     button.textContent = "Running…";
@@ -101,12 +105,15 @@ const setUpRun = () => {
     stop();
     for (const other of tabs) {
       const selected = other === tab;
-      other.setAttribute("aria-selected", String(selected));
+      other.setAttribute("aria-pressed", String(selected));
       document.querySelector(
         `[data-scenario-panel="${other.dataset.scenario}"]`,
       ).hidden = !selected;
     }
     paintStep(totalSteps());
+    // the panels differ by up to 672px, so switching while scrolled down leaves the reader
+    // adrift with the tabs off-screen above them
+    if (tab.getBoundingClientRect().top < 0) tab.scrollIntoView({ block: "start" });
   };
 
   button.addEventListener("click", replay);
@@ -114,12 +121,6 @@ const setUpRun = () => {
   for (const tab of tabs) {
     tab.addEventListener("click", () => select(tab));
   }
-};
-
-const MARK = {
-  true: ["[x]", "This check passed."],
-  false: ["[!]", "This check was contradicted: the ledger says one thing and re-deriving it says another."],
-  null: ["[?]", "This check went unanswered — the second channel could not be read. Unanswered is not the same as contradicted."],
 };
 
 const STATE_HELP = {
@@ -135,21 +136,13 @@ const STATE_HELP = {
   "on the call": "The call connected and is in progress.",
 };
 
-const RECORD_HELP = {
-  intent: "Written before the call is placed. An intent with no attempt after it is the shape that says a call may exist.",
-  attempt: "One rung of the ladder, after it settled: the verdict, the reason, and the spans the recipient actually spoke.",
-  verdict: "The outcome of the whole ladder. verify re-derives it from the attempts instead of trusting what is written here.",
-  verification: "The result of re-reading the call on the second channel, which never saw the write.",
-  notified: "A note Ringdown tried to write back on the incident in PagerDuty. It records whether it arrived.",
-};
-
 const checkRow = (ok, label) => {
   const row = document.createElement("div");
   row.className =
     "check" + (ok === false ? " check-fail" : ok === null ? " check-unresolved" : "");
   const mark = document.createElement("span");
   mark.className = "check-mark";
-  [mark.textContent, mark.title] = MARK[String(ok)];
+  mark.textContent = ok === false ? "[!]" : ok === null ? "[?]" : "[x]";
   const text = document.createElement("span");
   text.textContent = label;
   row.append(mark, text);
@@ -198,7 +191,7 @@ const renderChecks = (checks) => {
   const summary = document.createElement("summary");
   summary.style.cursor = "pointer";
   summary.style.color = "var(--color-neutral-500)";
-  summary.style.fontSize = "13px";
+  summary.style.fontSize = "0.8125rem";
   summary.textContent = `All ${checks.length} checks, one by one`;
   details.append(summary);
   const all = document.createElement("div");
@@ -224,23 +217,20 @@ const renderRecords = (records, changed) => {
     seq.textContent = String(record.seq);
     const type = document.createElement("span");
     type.style.cssText = "font-family:var(--font-heading);flex:1;min-width:0";
-    type.textContent =
-      record.type === "verdict" ? `verdict ${record.verdict}` : record.type;
-    if (RECORD_HELP[record.type]) type.title = RECORD_HELP[record.type];
+    type.textContent = recordLabel(record);
     const hash = document.createElement("button");
-    hash.className = "mono";
-    hash.style.cssText =
-      "font-size:11.5px;color:var(--color-neutral-600);cursor:pointer;flex:none;" +
-      "background:none;border:0;padding:0;font-family:inherit";
+    hash.type = "button";
+    hash.className = "mono hash-copy";
     hash.textContent = shortHash(record.hash);
     hash.title = `${record.hash}\n\nClick to copy.`;
+    hash.setAttribute("aria-label", `Copy the full hash of record ${record.seq}`);
     hash.addEventListener("click", () => copyHash(hash, record.hash));
     row.append(seq, type);
     if (record.instructed === true) {
       const flag = document.createElement("span");
       flag.className = "mono";
       flag.style.cssText =
-        "font-size:11px;color:var(--color-bad);border:1px solid var(--color-bad);" +
+        "font-size:0.6875rem;color:var(--color-bad);border:1px solid var(--color-bad);" +
         "border-radius:999px;padding:1px 8px;flex:none";
       flag.textContent = "instructed";
       flag.title =
@@ -252,7 +242,12 @@ const renderRecords = (records, changed) => {
   }
 };
 
+const HASH_PREFIX = "sha256:".length;
+
 const shortHash = (hash) => hash.slice(0, 14) + "…";
+
+const recordLabel = (record) =>
+  record.type === "verdict" ? `verdict ${record.verdict}` : record.type;
 
 const copyHash = async (element, value) => {
   try {
@@ -266,26 +261,55 @@ const copyHash = async (element, value) => {
   }, 1200);
 };
 
-const verdictLine = (checks) => {
+const verdictOf = (checks) => {
   if (checks.some((check) => check.ok === false)) {
-    return [
-      "exit 40 — the ledger does not verify",
-      "var(--color-bad)",
-      "The second channel contradicted the run. Treat the incident as unowned.",
-    ];
+    return {
+      exit: "exit 40",
+      summary: "the ledger does not verify",
+      colour: "var(--color-bad)",
+      help: "The second channel contradicted the run. Treat the incident as unowned.",
+    };
   }
   if (checks.some((check) => check.ok === null)) {
-    return [
-      "exit 45 — unproven, not tampered with",
-      "var(--color-neutral-400)",
-      "Nothing was contradicted, but nothing could be corroborated either.",
-    ];
+    return {
+      exit: "exit 45",
+      summary: "unproven, not tampered with",
+      colour: "var(--color-neutral-400)",
+      help: "Nothing was contradicted, but nothing could be corroborated either.",
+    };
   }
-  return [
-    "exit 0 — the ledger verifies",
-    "var(--color-accent-300)",
-    "Somebody acknowledged, with an owner and an ETA, and the second channel agreed.",
-  ];
+  return {
+    exit: "exit 0",
+    summary: "the ledger verifies",
+    colour: "var(--color-accent-300)",
+    help: "Somebody acknowledged, with an owner and an ETA, and the second channel agreed.",
+  };
+};
+
+const renderHeroLedger = (records) => {
+  const host = document.getElementById("hero-ledger-records");
+  for (const record of records) {
+    const row = document.createElement("div");
+    row.className = "mono";
+    row.style.cssText =
+      "display:flex;gap:10px;align-items:baseline;font-size:0.75rem;color:var(--color-neutral-500)";
+    const seq = document.createElement("span");
+    seq.style.width = "12px";
+    seq.textContent = String(record.seq);
+    const type = document.createElement("span");
+    type.style.cssText = "flex:1;min-width:0;color:var(--color-text)";
+    type.textContent = recordLabel(record);
+    const hash = document.createElement("span");
+    hash.textContent = record.hash.slice(HASH_PREFIX, HASH_PREFIX + 7);
+    row.append(seq, type, hash);
+    host.append(row);
+  }
+};
+
+const renderHeroFoot = (verdict, records) => {
+  const head = records[records.length - 1];
+  document.getElementById("hero-ledger-foot").textContent =
+    `${verdict.exit} · ${records.length} records · head ${shortHash(head.hash)}`;
 };
 
 const setUpLedger = async () => {
@@ -303,20 +327,35 @@ const setUpLedger = async () => {
     return;
   }
 
-  const show = async (records, changed) => {
-    const checks = await chainChecks(records);
+  const verdict = document.getElementById("ledger-verdict");
+
+  const show = async (records, changed, checks) => {
+    const settled = checks ?? (await chainChecks(records));
     renderRecords(records, changed);
-    renderChecks(checks);
-    const [line, colour, help] = verdictLine(checks);
-    const verdict = document.getElementById("ledger-verdict");
-    verdict.textContent = line;
-    verdict.style.color = colour;
-    verdict.title = help;
+    renderChecks(settled);
+    const seen = verdictOf(settled);
+    verdict.textContent = `${seen.exit} — ${seen.summary}`;
+    verdict.style.color = seen.colour;
+    verdict.title = seen.help;
   };
+
+  // the hero is above the fold and needs no crypto, so it paints before the ledger
+  // view, which is hidden on load and costs a SHA-256 per record to fill
+  renderHeroLedger(committed);
+  const checks = await chainChecks(committed);
+  renderHeroFoot(verdictOf(checks), committed);
 
   status.hidden = true;
   body.hidden = false;
-  await show(committed, new Set());
+  await show(committed, new Set(), checks);
+
+  const swap = async (records, changed, tampered) => {
+    tamperButton.hidden = tampered;
+    restoreButton.hidden = !tampered;
+    await show(records, changed);
+    verdict.scrollIntoView({ block: "center" });
+    verdict.focus({ preventScroll: true });
+  };
 
   tamperButton.addEventListener("click", async () => {
     const rewritten = await tamper(committed);
@@ -325,16 +364,10 @@ const setUpLedger = async () => {
         .filter((record, index) => record.hash !== committed[index].hash)
         .map((record) => record.seq),
     );
-    await show(rewritten, changed);
-    tamperButton.hidden = true;
-    restoreButton.hidden = false;
+    await swap(rewritten, changed, true);
   });
 
-  restoreButton.addEventListener("click", async () => {
-    await show(committed, new Set());
-    restoreButton.hidden = true;
-    tamperButton.hidden = false;
-  });
+  restoreButton.addEventListener("click", () => swap(committed, new Set(), false));
 };
 
 setUpTheme();

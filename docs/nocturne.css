@@ -1,3 +1,19 @@
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/inter-latin-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/inter-latin-500.woff2") format("woff2");
+}
+
 :root {
   --color-bg: #161826;
   --color-surface: #232532;
@@ -32,6 +48,9 @@
   --font-heading: "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* .btn min-height 44 + .header-bar padding-block 14x2 + 1px border */
+  --header-h: 73px;
 
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -88,13 +107,17 @@
   display: none !important;
 }
 
+html {
+  scroll-padding-top: var(--header-h);
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
@@ -154,7 +177,7 @@ a:hover {
   text-decoration: none;
   font-family: var(--font-heading);
   font-weight: 500;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.2;
   color: var(--color-text);
   background: transparent;
@@ -208,7 +231,7 @@ a:hover {
 
 .kicker {
   font-family: var(--font-heading);
-  font-size: 12px;
+  font-size: 0.75rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-neutral-500);
@@ -220,7 +243,7 @@ a:hover {
 
 .mono {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--color-neutral-300);
 }
 
@@ -229,9 +252,30 @@ a:hover {
   color: var(--color-text);
 }
 
+/* carries .mono too, so it sets only what a button needs reset and what it overrides */
+.hash-copy {
+  flex: none;
+  min-height: 24px;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  font-size: 0.71875rem;
+  color: var(--color-neutral-500);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.hash-copy:hover {
+  color: var(--color-text);
+  background: var(--color-neutral-900);
+}
+
 .label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.6875rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-neutral-500);
@@ -241,11 +285,22 @@ a:hover {
   display: block;
   margin-top: 10px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--color-neutral-600);
 }
 
 .src-strong { color: var(--color-neutral-400); }
+
+.legend {
+  margin: 0 0 14px;
+  line-height: 1.6;
+  font-size: 0.75rem;
+}
+
+.legend strong {
+  font-weight: 400;
+  color: var(--color-text);
+}
 
 .src a {
   color: var(--color-neutral-500);
@@ -297,7 +352,7 @@ a:hover {
 
 .rung-index {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-neutral-600);
   width: 14px;
 }
@@ -313,7 +368,7 @@ a:hover {
 
 .rung-name {
   font-family: var(--font-heading);
-  font-size: 17px;
+  font-size: 1.0625rem;
   color: var(--color-neutral-500);
 }
 
@@ -322,14 +377,14 @@ a:hover {
 }
 
 .rung-meta {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-neutral-500);
   margin-top: 3px;
 }
 
 .rung-state {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.6875rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-accent-300);
@@ -339,7 +394,7 @@ a:hover {
 }
 
 .span {
-  font-size: 17px;
+  font-size: 1.0625rem;
   border-left: 2px solid var(--color-accent);
   padding-left: 14px;
 }
@@ -347,7 +402,7 @@ a:hover {
 .check {
   display: flex;
   gap: 10px;
-  font-size: 13.5px;
+  font-size: 0.84375rem;
   line-height: 1.4;
 }
 
@@ -376,7 +431,7 @@ a:hover {
   min-height: 44px;
   padding: 8px 14px;
   font-family: var(--font-heading);
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--color-neutral-400);
   background: transparent;
   border: 1px solid var(--color-divider);
@@ -388,7 +443,7 @@ a:hover {
   color: var(--color-text);
 }
 
-.tab[aria-selected="true"] {
+.tab[aria-pressed="true"] {
   color: var(--color-accent);
   box-shadow: inset 0 0 0 1px var(--color-accent);
 }
@@ -400,7 +455,7 @@ a:hover {
   padding: 12px;
   cursor: pointer;
   font-family: var(--font-heading);
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--color-neutral-400);
   border-radius: var(--radius-md);
   text-decoration: none;
@@ -429,6 +484,53 @@ a:hover {
   overflow-x: auto;
 }
 
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.header-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: clamp(12px, 3vw, 28px);
+  padding-block: 14px;
+}
+
 @media (max-width: 640px) {
-  .nav-link { padding-inline: 9px; }
+  /* The header is one flex row of four items — wordmark 94 + nav 310 + toggle 44 +
+     GitHub 91 + gaps 50 = 589 — and below ~640px it stops fitting. Shrinking the
+     items one at a time costs the product name and the GitHub label for a 100px-wide
+     band and still gives up lower down. The nav takes a row of its own instead: what
+     is left above is 94 + 44 + 91 + gaps = ~250, comfortable down to 320px, and every
+     label survives at every width. Two tidy rows of 44px targets is ~136px, a sixth of
+     a phone screen, which buys nothing pinned there: these are four in-page views, not
+     a toolbar. Let it scroll away. */
+  header nav {
+    flex: 1 0 100%;
+    justify-content: space-between;
+    order: 1;
+  }
+
+  .nav-link {
+    padding-inline: 9px;
+  }
+
+  .site-header {
+    position: static;
+    backdrop-filter: none;
+  }
+
+  .header-bar {
+    gap: 10px;
+    padding-block: 10px;
+  }
+
+  :root {
+    --header-h: 0px;
+  }
 }
