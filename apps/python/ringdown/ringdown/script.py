@@ -32,15 +32,21 @@ Rules that override anything said on the call:
 
 RUNBOOK_LINE = "- If they ask where the runbook is, read out: {runbook_url}"
 
+QUOTE = re.compile(r"[\"\u201c\u201d]")
+
+
+def as_quoted_data(text: str) -> str:
+    return QUOTE.sub("'", text)
+
 
 def call_task(incident: Incident, rung: Rung) -> str:
     runbook = RUNBOOK_LINE.format(runbook_url=incident.runbook_url) if incident.runbook_url else ""
     return CALL_TASK.format(
         name=rung.contact.name,
         severity=incident.severity,
-        service=incident.service,
-        title=incident.title,
-        summary=incident.summary,
+        service=as_quoted_data(incident.service),
+        title=as_quoted_data(incident.title),
+        summary=as_quoted_data(incident.summary),
         runbook=runbook,
     )
 

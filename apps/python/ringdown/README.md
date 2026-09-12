@@ -318,6 +318,19 @@ alert payload, which is not trusted: they are length-limited and validated (`run
 a single http or https URL), and the call task marks them as quoted data the agent must read
 aloud and never obey. The verdict still derives only from what the recipient says.
 
+The quoted wrapper is the mark, so data that can close it voids it. `title`, `summary` and
+`service` are interpolated inside one pair of double quotes in the spoken task, and a summary
+arriving with a `"` in it would close that pair early and hand the agent everything after it as
+task text. The quotes in those three fields are therefore neutralised where the task is formatted,
+not where the incident is parsed: `clean_text` also validates `id`, which feeds the idempotency
+key, and moving that key would place a different call. `severity` needs no such treatment — it is
+an enum. Neither does `runbook_url`, which must already be a single URL with no spaces.
+
+The rotation file is not in that trust boundary. `contact.name` is interpolated into the same
+quoted question and is left as it is, because the rotation is an operator file written alongside
+the configuration, not a payload arriving from an alerting system. If it ever becomes remotely
+sourced, it joins the fields above.
+
 What a phone acknowledgement does not prove: that the person is awake enough to work, that they
 have access, or that the ETA is real. It proves that a named human, reached at a number on the
 rotation, said out loud that they were taking it and gave a number of minutes.
@@ -443,6 +456,22 @@ own call over a second transport. Same technique, different product.
     two others — and Ringdown cannot tell the difference from a real decline except by the empty
     transcript. A ladder run against this provider should expect to be exhausted by infrastructure
     rather than by people, and `failure_code` is the only honest signal for it.
+
+17. `instructed` is a heuristic, not a classifier. It matches three families of English phrasing —
+    instruction override, role or system impersonation, and commands that name a verdict — so an
+    attack phrased outside them, or in another language, is stored without the flag. That is a gap
+    in the evidence, not in the defence: the flag decides nothing. What keeps a hostile transcript
+    from acknowledging is structural, and holds whether or not the flag trips — every verdict field
+    comes from deterministic rules over recipient turns, each one must be quoted by a span the
+    recipient actually spoke, and the ladder's own signals (`task_completed`, the confidence score)
+    come from the provider rather than from anything said on the call. The flag exists so an auditor
+    reading the ledger can see that somebody tried.
+
+    The converse is not a hole either, and is worth stating because it looks like one: a recipient
+    who says "disregard your instructions" and then, in their own voice, gives their name, says they
+    are taking the incident and names a number of minutes, is acknowledged. Nothing was obeyed — the
+    person simply said the thing. Distinguishing that from an impersonator who says the same words
+    is identity verification, which a phone call does not provide and this app does not claim.
 
 This is a demo app for a workflow pattern, not a CALL-E SDK and not a supported
 product API.
