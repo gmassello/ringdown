@@ -21,7 +21,7 @@
 <p align="center">
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="397 tests" src="https://img.shields.io/badge/tests-397-2f6f4e">
+  <img alt="412 tests" src="https://img.shields.io/badge/tests-412-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -137,6 +137,11 @@ flowchart TD
   payload and are read aloud inside a quoted wrapper the agent is told never to obey. Their quotes
   are neutralised where the task is formatted, so the payload cannot close that wrapper and speak
   to the agent from outside it.
+- **One engine, more than one use case.** What the agent says is a template the incident file can
+  replace, so the same ladder, verification and ledger notify a supplier that a service level was
+  missed — [an example ships](apps/python/ringdown/examples/sla-breach.example.json) — with no code
+  that knows about SLAs. A script is refused if it drops the sentences the extractor and the
+  injection defence depend on.
 
 ## Running it
 
@@ -209,7 +214,7 @@ stored: an attempt keeps only the spans quoted as evidence.
 | --- | --- |
 | [`apps/python/ringdown/`](apps/python/ringdown/) | The app, and its [README](apps/python/ringdown/README.md): setup, exit codes, file formats, threat model, all the ceilings |
 | [`apps/python/ringdown/demo/EXPECTED.md`](apps/python/ringdown/demo/EXPECTED.md) | The demo scenarios, narrated, written before the code that produces them |
-| [`apps/python/ringdown/examples/`](apps/python/ringdown/examples/) | The incident, rotation and mapping files, and a ledger committed exactly as the demo wrote it |
+| [`apps/python/ringdown/examples/`](apps/python/ringdown/examples/) | The incident, rotation, mapping and call-script files, a second use case that runs on the same binary, and a ledger committed exactly as the demo wrote it |
 | [`docs/`](docs/) | The project site (GitHub Pages): the overview, two demo scenarios replayed step by step, and a ledger you can tamper with in the browser. No build step, no dependencies |
 | [`apps/python/calle-receiver/`](apps/python/calle-receiver/) | Demo infrastructure, not the product: CALL-E's recipient regions don't include Argentina, so this FastAPI service receives the agent's call on a US Twilio number and bridges it to an Argentine phone, with recording, live transcription and a password-protected [dashboard](https://calle-receiver.onrender.com/calls). |
 
@@ -275,6 +280,6 @@ audits its own call over a second transport. Same technique, different product.
 - The ladder never re-calls, and retries would need another key and another record.
 - The provider does not dial every country, and Ringdown does not preflight the list.
 
-The [app README](apps/python/ringdown/README.md#known-ceilings) has all eighteen, unvarnished.
+The [app README](apps/python/ringdown/README.md#known-ceilings) has all nineteen, unvarnished.
 
 This is a demo app for a workflow pattern, not a CALL-E SDK and not a supported product API.

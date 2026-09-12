@@ -18,6 +18,7 @@ from ringdown.exits import (
 )
 from ringdown.audit import append_record
 from ringdown.calle import LIVE_BASE_URL, LIVE_MCP_URL, RestClient
+from ringdown.task import CALL_TASK
 from tests.data import ALICE, BEN, CARLA, EXAMPLES, example_body, write_json
 
 ROTATION = str(EXAMPLES / "rotation.example.json")
@@ -493,3 +494,30 @@ def test_a_pagerduty_note_that_cannot_be_delivered_never_changes_the_exit_code(
     assert main(["verify", "--ledger", str(ledger)]) == EXIT_UNRESOLVED
 
 
+
+
+def test_a_second_use_case_runs_on_the_same_binary(capsys):
+    code = main(
+        [
+            "preview",
+            "--incident", str(EXAMPLES / "sla-breach.example.json"),
+            "--rotation", ROTATION,
+        ]
+    )
+    printed = capsys.readouterr().out
+
+    assert code == EXIT_ACKNOWLEDGED
+    assert "service level has been breached" in printed
+    assert "How many minutes" in printed
+    assert "on-call page" not in printed
+
+
+def test_a_call_script_the_engine_cannot_use_is_refused_as_a_usage_error(tmp_path, capsys):
+    (tmp_path / "s.txt").write_text(CALL_TASK.replace("How many minutes", "How long"))
+    body = {**example_body("sla-breach"), "script": "s.txt"}
+    incident = write_json(tmp_path, "incident.json", body)
+
+    code = main(["preview", "--incident", str(incident), "--rotation", ROTATION])
+
+    assert code == EXIT_USAGE
+    assert "never asks how many minutes" in capsys.readouterr().out

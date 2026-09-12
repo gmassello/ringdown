@@ -303,38 +303,28 @@ Tasks:
 
 ---
 
-## Day 2 (afternoon) — Generative-AI narration layer (optional, bounded)
+## Day 2 (afternoon) — Generative-AI narration layer — **DROPPED, 2026-09-11**
 
-**Objective:** add a visible generative-AI surface for the judges without touching the deterministic
-decision path.
+**Objective, as originally written:** add a visible generative-AI surface for the judges without
+touching the deterministic decision path — an optional `apps/python/ringdown/narration/` module that
+turns a settled verdict into a natural-language summary.
 
-Tasks:
+**Not built, and not because it ran late.** Two things changed between writing this plan and
+reaching this day:
 
-- [ ] A new optional module `apps/python/ringdown/narration/` that, once the verdict has settled
-      (already verified by REST+MCP), generates a natural-language summary of the incident for
-      humans: what happened, who answered, how long it took, and what the person said exactly —
-      quoting the grounding spans that already exist.
-- [ ] Make it unmistakable in the code, in the docs and on the site that this narration is **purely
-      informational and after the fact**, never an input to the decision — always show the raw
-      deterministic verdict next to the generated text.
-- [ ] With no API key configured, the system keeps working exactly as before (the narration is an
-      extra, not a hard dependency) — this protects the core's zero-dependency promise.
-- [ ] A test confirming the verdict does not move if the narration fails or is disabled.
-- [ ] If it runs late, it is dropped. Nothing else in this plan depends on it.
+- **Day 1 already produces the artefact this was for.** `pagerduty.note_text` writes prose a human
+  reads on the incident: who was called, what they committed to, the exact phrases they spoke, the
+  settled exit code and the ledger head. It is deterministic, it quotes only grounded spans, and it
+  is testable without a network. A model narrating the same facts would add an API key, a failure
+  mode and a source of drift to restate what is already stated.
+- **It argues against the product.** The pitch is that the verdict comes from deterministic rules
+  over what the recipient actually said, cross-checked on a second transport, and that nothing here
+  depends on a model being right. Bolting on a model — even one that decides nothing — invites the
+  question the whole design exists to foreclose. The honest answer to "where is the generative AI?"
+  is that the agent on the phone is the model, and everything downstream of it is deliberately not.
 
-### Task brief — Day 2 (afternoon)
-
-> Committing directly to `main`. Add a generative-AI narration layer to Ringdown, but make it
-> unmistakable — in code, in docs and on the site — that it is purely informational and strictly
-> after the verdict, never part of the decision. It goes in an optional module
-> `apps/python/ringdown/narration/` that takes the settled verdict (already REST+MCP verified) and
-> produces a natural-language summary quoting the exact grounding spans. With no API key configured,
-> or if the narration fails, the system must behave exactly as it does today — it is an extra, not a
-> hard dependency of the core, which stays dependency-free. Add a test that proves precisely that:
-> the deterministic verdict does not shift when the narration is unavailable. Update the README in
-> the same commit, including the disclaimer.
-
----
+The decision is recorded in `apps/python/ringdown/README.md` so it reads as a choice rather than an
+omission. Nothing else in this plan depended on it.
 
 ## Day 3 — Widen the scope without rewriting the core, and final polish
 

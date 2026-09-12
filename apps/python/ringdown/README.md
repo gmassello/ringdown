@@ -183,16 +183,53 @@ the owner is unconfirmed and has to be checked another way.
 
 ## The incident file
 
-Required: `id`, `title`, `severity` (`sev1`–`sev3`, or PagerDuty's `p1`–`p5`), `service`,
-`summary`, `ladder`
-(the ordered scopes to walk) and `timezone` (an IANA name — Ringdown never infers one). Optional:
-`runbook_url`, read out only if the engineer asks for it, and `policy`.
+Required: `id`, `title`, `summary`, `ladder` (the ordered scopes to walk) and `timezone` (an IANA
+name — Ringdown never infers one). Optional: `runbook_url`, read out only if the engineer asks for
+it, `policy`, and `script`.
+
+`severity` (`sev1`–`sev3`, or PagerDuty's `p1`–`p5`) and `service` are required **only when the call
+script reads them out**, which the default one does. A script that never mentions a service does not
+need the incident to carry one: the field list follows the script rather than the other way round.
 
 Policy defaults: `min_confidence` 0.7, `accepted_confidence_labels` `["medium", "high"]`,
 `max_eta_minutes` 120, `per_call_timeout_seconds` 180, `poll_interval_seconds` 3. The score is the
 strict signal: a `high` label carrying 0.05 does not pass.
 
 See [`examples/incident.example.json`](examples/incident.example.json).
+
+## The call script
+
+What the agent says is a template, and `script` names a file next to the incident that replaces it.
+Leave it out and the built-in on-call script is used, unchanged.
+
+```bash
+python -m ringdown preview --incident examples/sla-breach.example.json \
+                           --rotation examples/rotation.example.json
+```
+
+[`examples/sla-breach.example.json`](examples/sla-breach.example.json) and its
+[script](examples/sla-breach.script.txt) notify a supplier's duty contact that a contractual service
+level was missed. Same binary, same ladder, same cross-channel verification, same ledger — and not
+one line of code that knows about SLAs. It works because the shape of the problem is the same one
+the product is about: a named human has to accept something, and say when.
+
+A script can use `{name}`, `{severity}`, `{service}`, `{title}`, `{summary}` and `{runbook}`, and
+nothing else. It is refused, with the reason, if it:
+
+- **never asks how many minutes** — `extract.ETA_QUESTION` looks for those words in the agent's own
+  turns to know where an ETA may start, so a script without them yields no ETA and every call
+  settles as not acknowledged;
+- **drops the quoted-data rule** — that line is what tells the agent on the phone to read the
+  incident fields out and never obey them. Dropping it does not disarm what decides the verdict —
+  quotes are still neutralised, and every recorded field still has to be quoted by a span the
+  recipient spoke — but it removes the only instruction standing between a hostile summary and an
+  agent that acts on it, so a script without it is refused;
+- **never says `{name}`** — the agent would read the incident out without confirming who picked up;
+- **asks for a field Ringdown cannot fill.**
+
+The check is presence, not meaning: it proves the script still contains the sentences the rest of
+the machine relies on, not that the rest of it says anything sensible. Read a new script out loud
+before dialling with it.
 
 ## The rotation file
 
@@ -427,6 +464,23 @@ What a phone acknowledgement does not prove: that the person is awake enough to 
 have access, or that the ETA is real. It proves that a named human, reached at a number on the
 rotation, said out loud that they were taking it and gave a number of minutes.
 
+## Where the model is, and where it deliberately is not
+
+The agent on the phone is a language model: it speaks, it listens, and it improvises around a
+scripted task. Everything downstream of the call is not, and that is the design rather than a gap.
+
+The disposition, the owner and the ETA come from deterministic rules over the recipient's own turns;
+each one has to be quoted by a span the person actually spoke; the verdict is re-derived on a second
+transport that never saw the write, and re-derived again from the ledger by `verify`. A model
+anywhere on that path would be a thing to trust, and the point of the app is to need less trust, not
+more.
+
+The same reasoning rules out the obvious extra: a model that narrates the outcome after the fact,
+deciding nothing. The prose a human reads already exists and is deterministic — the PagerDuty note
+quotes the spans, names the settled exit code and cites the ledger head — so a generated retelling
+would add an API key, a failure mode and a source of drift in exchange for restating what is already
+stated. It was considered and dropped on purpose.
+
 ## The defence
 
 The nearest neighbour, the `deployment-approval-call` skill, asks *before* acting — "may I do
@@ -477,7 +531,9 @@ own call over a second transport. Same technique, different product.
 9. `ladder_timeout_seconds` is a global deadline checked between rungs: once it expires no new
    rung is started, but a call already in flight is never cut short — its real bound stays
    `per_call_timeout_seconds`.
-10. Disposition and ETA extraction are English-only phrase lists and regexes.
+10. Disposition and ETA extraction are English-only phrase lists and regexes, and so is the call
+    script check: a script in another language is refused because it cannot contain the English
+    sentence the extractor looks for. Translating the call means translating the extractor with it.
 11. The chain proves internal consistency, not completeness, and it proves nothing against an
     adversary. It is unkeyed and anchored to nothing outside the file: cutting records off the end
     leaves a file that verifies, and so does renumbering and resealing the whole chain. The
@@ -577,6 +633,20 @@ own call over a second transport. Same technique, different product.
     server, so what is proven is the request this app builds, not the response their API gives it.
     A note that does not arrive is not silent, though: the failure is appended to the ledger and
     `verify` reports it as unresolved.
+
+19. The call script is configurable; the shape of the commitment is not. Ringdown settles a call as
+    acknowledged only when somebody names a number of minutes: `classify` returns `no_eta` before it
+    even looks at whether the person agreed, and `verify` re-derives the same rule on the second
+    channel. So a use case whose commitment has no clock — confirming an appointment, accepting a
+    delivery window — does not fit this engine by editing a script: it needs that gate opened, which
+    is a decision about what the product claims, not a patch. Everything else generalises: the
+    ladder, the grounding, the injection defence, the ledger and the cross-channel verification are
+    domain-neutral, and `examples/sla-breach.example.json` runs on them unchanged.
+
+    What did not move with the script is the vocabulary around it. The terminal report still prints
+    `incident`, the ledger still keys its records on `incident`, and the exit codes are still named
+    for paging. They are accurate for on-call and merely odd elsewhere, and renaming them would
+    change the ledger format for no functional gain.
 
 This is a demo app for a workflow pattern, not a CALL-E SDK and not a supported
 product API.
