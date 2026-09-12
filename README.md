@@ -169,6 +169,9 @@ second channel does not support exits 40, not 10. And `45` only lands when nothi
 | [`apps/python/ringdown/examples/`](apps/python/ringdown/examples/) | The incident, rotation, mapping and call-script files, a second use case that runs on the same binary, and a ledger committed exactly as the demo wrote it |
 | [`docs/`](docs/) | The project site (GitHub Pages): the overview, two demo scenarios replayed step by step, and a ledger you can tamper with in the browser. No build step, no dependencies |
 | [`apps/python/calle-receiver/`](apps/python/calle-receiver/) | Demo infrastructure, not the product: CALL-E's recipient regions don't include Argentina, so this FastAPI service receives the agent's call on a US Twilio number and bridges it to an Argentine phone, with recording, live transcription and a password-protected [dashboard](https://calle-receiver.onrender.com/calls). |
+| [`skills/incident-escalation-call/`](skills/incident-escalation-call/) | The Claude skill that drives the app, and the second of the two paths that travel upstream: the task shape, worked examples and the safety notes |
+| [`video/`](video/) | How the demo video was produced — the takes, the stills and the assembly steps. Author-facing; most of its inputs are gitignored |
+| [`notes/`](notes/) | Working notes kept as written: the planning documents and the feedback sent to the provider after the live calls |
 
 ---
 
@@ -216,21 +219,14 @@ is why `Check` is a ternary and why `None` is load-bearing rather than falsy.
 
 <br>
 
-**Against `deployment-approval-call`**, the nearest neighbour: it asks *before* acting — "may I do
-X?" — of a known approver, and its failure is safe, because nothing happens. Ringdown asks *after*
-something already broke — "will you take it?" — of a rotation that has to be resolved first, and
-its failure is unsafe: nobody answers and the incident keeps running. Success is not permission, it
-is a commitment with an owner and an ETA.
+`deployment-approval-call` asks *before* acting, of a known approver, and its failure is safe
+because nothing happens. The Zapier recipe for this same scenario cannot reconcile, so it buys its
+guarantee by waking two people whenever the state is unknown. `verify-by-phone` shares the span
+grounding but makes one call about one published fact.
 
-**Against the Zapier recipe** for the same scenario: it argues its position well — a missed page
-costs far more than a duplicate one — but it pays for that insurance by waking two people whenever
-the state is unknown, because it cannot reconcile. Ringdown gets the same guarantee for one phone
-call by replaying a content-derived idempotency key. And it never verifies that the acknowledgement
-existed, which is the point here.
-
-**Against `verify-by-phone`**, which shares the span grounding: it makes one call to verify one
-published fact, and abstains when it cannot. Ringdown runs a ladder looking for a commitment and
-audits its own call over a second transport. Same technique, different product.
+Ringdown asks *after* something already broke, of a rotation that has to be resolved first, and its
+failure is unsafe. The full argument, one project at a time, is in
+[The defence](apps/python/ringdown/README.md#the-defence).
 
 </details>
 

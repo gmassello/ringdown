@@ -10,6 +10,11 @@ transcription in SQLite.
 > **In production:** [`https://calle-receiver.onrender.com/calls`](https://calle-receiver.onrender.com/calls)
 > — full CALL-E → Twilio → AR cell phone flow validated end-to-end on 2026-08-16.
 
+Two operational skills carry the parts this README summarises, in more detail and with the
+failure modes: [`.claude/skills/deploy/SKILL.md`](../../../.claude/skills/deploy/SKILL.md) for
+Render, and [`.claude/skills/twilio/SKILL.md`](../../../.claude/skills/twilio/SKILL.md) for the
+voice webhooks, geo permissions and the 21215 error.
+
 ## Flow
 
 ```
@@ -59,6 +64,11 @@ client.incoming_phone_numbers("PNxxxx").update(
 
 ### 3. Local (development)
 
+Python 3.11 or newer, [uv](https://docs.astral.sh/uv/), and a
+[cloudflared](https://developers.cloudflare.com/cloudflare-tunnel/) binary. Unlike Ringdown, this
+service has runtime dependencies — FastAPI, uvicorn, the Twilio SDK, SQLModel — and `uv sync`
+installs them from the lockfile in this directory.
+
 ```bash
 cd apps/python/calle-receiver
 uv sync
@@ -86,7 +96,7 @@ All three steps are validated (2026-08-16): CALL-E dials Twilio VoIP numbers
 without anti-fraud blocking — `completed` call with dual-channel recording
 and transcription of both tracks.
 
-Unit tests: `uv run pytest`.
+Unit tests: `uv run pytest` — 19 of them, no Twilio credentials and no outbound calls.
 
 ## Endpoints
 
@@ -105,3 +115,5 @@ disabled with `VALIDATE_TWILIO_SIGNATURE=false` for local development);
 `https://api.twilio.com/`. The dashboard and the recording proxy require
 **Basic Auth**: the password is the `DASHBOARD_PASSWORD` env var (required —
 the app does not start without it), the username does not matter.
+
+MIT, like the rest of the repository — see [`LICENSE`](../../../LICENSE).

@@ -12,6 +12,27 @@ The part that matters is the last step. Ringdown **places the call over the REST
 it over MCP**, then writes both the verdict and the verification into a hash-chained ledger. An
 agent that audits itself through the same channel it wrote with has proved nothing.
 
+- [The problem](#the-problem)
+- [Setup](#setup)
+- [Try it without an account](#try-it-without-an-account)
+- [Preview, which is the default](#preview-which-is-the-default)
+- [One live run](#one-live-run)
+- [Two channels, one verdict](#two-channels-one-verdict)
+- [Exit codes](#exit-codes)
+- [The incident file](#the-incident-file)
+- [The call script](#the-call-script)
+- [The rotation file](#the-rotation-file)
+- [Adapting an alert payload](#adapting-an-alert-payload)
+  - [A worked example: PagerDuty](#a-worked-example-pagerduty)
+- [Telling PagerDuty what happened](#telling-pagerduty-what-happened)
+- [The ledger](#the-ledger)
+- [Side effects, cancellation, credentials](#side-effects-cancellation-credentials)
+- [Threat model](#threat-model)
+- [Where the model is, and where it deliberately is not](#where-the-model-is-and-where-it-deliberately-is-not)
+- [The defence](#the-defence)
+- [Known ceilings](#known-ceilings)
+- [License](#license)
+
 ## The problem
 
 Every on-call system reports "notification sent" and treats the incident as escalated. That
@@ -22,6 +43,20 @@ matters and it is exactly the part nobody verifies.
 A commitment is not a delivery receipt. It has an owner and an ETA, and both have to come out of
 the recipient's own mouth.
 
+## Setup
+
+Python 3.11 or newer, and [uv](https://docs.astral.sh/uv/). No runtime dependencies —
+`dependencies = []`, standard library only.
+
+```bash
+git clone https://github.com/gmassello/ringdown
+cd ringdown/apps/python/ringdown
+uv sync
+uv run pytest -q          # 393 tests, no credentials, no outbound calls
+```
+
+**Every command in this file runs from `apps/python/ringdown/`.**
+
 ## Try it without an account
 
 Nothing to install: the [project site](https://gmassello.github.io/ringdown/#ledger) fetches the
@@ -31,7 +66,7 @@ browser — and shows the verification failing anyway.
 Locally, the demo needs no account either:
 
 ```bash
-python -m demo.run_local
+uv run python -m demo.run_local
 ```
 
 Seven scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
@@ -60,15 +95,6 @@ That first rung is the case the whole app exists for. The call completed, `task_
 true, confidence is `high` at 0.91, and a system that branches on those three signals reports the
 incident as escalated and goes back to sleep. Alice said "yeah, sure, I'll take a look at some
 point". There is no owner and no clock, so it is not an acknowledgement.
-
-## Setup
-
-Python 3.11 or newer. No runtime dependencies — `dependencies = []`, standard library only.
-
-```bash
-uv sync
-uv run pytest -q          # 378 tests, no credentials, no outbound calls
-```
 
 ## Preview, which is the default
 
@@ -647,6 +673,10 @@ own call over a second transport. Same technique, different product.
     `incident`, the ledger still keys its records on `incident`, and the exit codes are still named
     for paging. They are accurate for on-call and merely odd elsewhere, and renaming them would
     change the ledger format for no functional gain.
+
+## License
+
+MIT. See [`LICENSE`](LICENSE).
 
 This is a demo app for a workflow pattern, not a CALL-E SDK and not a supported
 product API.

@@ -24,7 +24,7 @@ uv run pytest tests/test_verify.py -k grounding    # one file / one test
 Ringdown demo, and the thing to run after touching the ladder, the report or the ledger:
 
 ```bash
-cd apps/python/ringdown && python -m demo.run_local
+cd apps/python/ringdown && uv sync && uv run python -m demo.run_local
 ```
 
 It runs seven scenarios against `fake/calle_server.py` on loopback and **rewrites
