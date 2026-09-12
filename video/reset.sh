@@ -41,6 +41,12 @@ else
   bad "$RECEIVER/calls.db is missing - the dashboard shot has no data"
 fi
 
+hdr "screen 3 asks a real model"
+( set -a; . "$ROOT/apps/python/ringdown/.env" 2>/dev/null; set +a
+  [ -n "${GEMINI_API_KEY:-}" ] ) \
+  && ok "GEMINI_API_KEY is in apps/python/ringdown/.env" \
+  || bad "GEMINI_API_KEY is missing: screen 3 would film the refusal, not a draft"
+
 hdr "toolchain"
 [ -d /opt/homebrew/opt/ffmpeg@7/bin ] && PATH="/opt/homebrew/opt/ffmpeg@7/bin:$PATH"
 [ "$(ffmpeg -filters 2>/dev/null | grep -c ' subtitles ')" -gt 0 ] \

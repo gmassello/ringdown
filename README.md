@@ -26,7 +26,7 @@
 </p>
 
 <p align="center">
-  <a href="https://youtu.be/KITNQLZixWw"><b>▶ Watch the demo</b></a> (2:50) ·
+  <a href="https://youtu.be/tt7WPVJ0cJk"><b>▶ Watch the demo</b></a> (2:58) ·
   <a href="apps/python/ringdown/README.md"><b>Operational manual</b></a> ·
   <a href="apps/python/ringdown/demo/EXPECTED.md"><b>Demo output</b></a> ·
   <a href="apps/python/ringdown/examples/ledger.example.jsonl"><b>A real ledger</b></a>

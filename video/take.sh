@@ -8,6 +8,10 @@ LOG="$ROOT/video/demo.log"
 PREVIEW='python -m ringdown preview --incident examples/incident.example.json --rotation examples/rotation.example.json'
 cd "$ROOT/apps/python/ringdown"
 
+# the app reads os.environ, not .env; screen 3 needs GEMINI_API_KEY
+[ -f .env ] && { set -a; . ./.env; set +a; }
+[ -n "${GEMINI_API_KEY:-}" ] || { echo "GEMINI_API_KEY is not set: screen 3 shows the refusal, not a draft"; sleep 2; }
+
 dwell() { [ -n "${DWELL:-}" ] && sleep "$DWELL" || read -r; }
 gate() { dwell; clear; }
 cmd()  { printf '\033[1;36m$ %s\033[0m\n\n' "$1"; }
@@ -24,6 +28,19 @@ scene '^Scenario 1 '
 gate
 
 scene '^Scenario 2 '
+gate
+
+cmd 'cat examples/pagerduty-mapping.example.json'
+cat examples/pagerduty-mapping.example.json
+echo
+cmd 'python -m ringdown adapt --payload examples/pagerduty.example.json --mapping examples/pagerduty-mapping.example.json'
+uv run python -m ringdown adapt \
+  --payload examples/pagerduty.example.json \
+  --mapping examples/pagerduty-mapping.example.json | grep -E '"(id|severity|service|title)"'
+echo
+cmd 'python -m ringdown suggest-mapping --payload examples/opsgenie.example.json --out /tmp/drafted.json'
+uv run python -m ringdown suggest-mapping \
+  --payload examples/opsgenie.example.json --out /tmp/drafted.json
 gate
 
 scene '^Scenario 4 '
