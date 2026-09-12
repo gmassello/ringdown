@@ -77,6 +77,8 @@ setInterval(() => {
 
 EMPTY_ROW = '<div class="call"><div class="empty">No calls yet.</div></div>'
 STATUS_CLASS = {"completed": "ok", "failed": "bad"}
+CALL_LIMIT = 50
+SEGMENT_LIMIT = 200
 
 
 def _meta(call: Call) -> str:
@@ -105,7 +107,7 @@ def _audio(call: Call) -> str:
     )
 
 
-def _segments(segments: list[TranscriptSegment]) -> str:
+def _segments(segments: list[TranscriptSegment], total: int) -> str:
     if not segments:
         return '<div class="segments"><span class="muted">No transcript.</span></div>'
     lines = "".join(
@@ -114,21 +116,31 @@ def _segments(segments: list[TranscriptSegment]) -> str:
         f'<span class="text">{html.escape(seg.text)}</span></div>'
         for seg in segments
     )
+    # saying "200 segments" over a call that produced 412 would be a quiet lie, and this
+    # dashboard sits next to an app whose whole point is not making those
+    counted = f"{len(segments)} segments"
+    if total > len(segments):
+        counted = f"last {len(segments)} of {total} segments"
     return (
         '<div class="segments"><details open>'
-        f"<summary>{len(segments)} segments</summary>{lines}"
+        f"<summary>{counted}</summary>{lines}"
         "</details></div>"
     )
 
 
 def _call_card(call: Call, segments: list[TranscriptSegment]) -> str:
-    return f'<div class="call">{_meta(call)}{_audio(call)}{_segments(segments)}</div>'
+    return (
+        f'<div class="call">{_meta(call)}{_audio(call)}'
+        f"{_segments(segments[-SEGMENT_LIMIT:], len(segments))}</div>"
+    )
 
 
 @router.get("/calls", response_class=HTMLResponse)
 def dashboard() -> str:
     with Session(get_engine()) as session:
-        calls = session.exec(select(Call).order_by(col(Call.started_at).desc()).limit(50)).all()
+        calls = session.exec(
+            select(Call).order_by(col(Call.started_at).desc()).limit(CALL_LIMIT)
+        ).all()
         segments = session.exec(
             select(TranscriptSegment)
             .where(col(TranscriptSegment.call_sid).in_([call.call_sid for call in calls]))

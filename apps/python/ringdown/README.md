@@ -52,7 +52,7 @@ Python 3.11 or newer, and [uv](https://docs.astral.sh/uv/). No runtime dependenc
 git clone https://github.com/gmassello/ringdown
 cd ringdown/apps/python/ringdown
 uv sync
-uv run pytest -q          # 420 tests, no credentials, no outbound calls
+uv run pytest -q          # 427 tests, no credentials, no outbound calls
 ```
 
 **Every command in this file runs from `apps/python/ringdown/`.**
@@ -261,7 +261,14 @@ nothing else. It is refused, with the reason, if it:
   recipient spoke — but it removes the only instruction standing between a hostile summary and an
   agent that acts on it, so a script without it is refused;
 - **never says `{name}`** — the agent would read the incident out without confirming who picked up;
-- **asks for a field Ringdown cannot fill.**
+- **asks for a field Ringdown cannot fill;**
+- **writes a placeholder with a format spec, a conversion or no field name at all** — `{summary!r}`,
+  `{summary:{customer_email}}`, `{summary:>999999999}`, `{}`. A field is read out as it is given, so
+  none of those has a use here, and each one is a way around something: a spec is a second place a
+  field name can hide from the allowlist, `!r` re-delimits with the double quote that
+  `as_quoted_data` just took out, and a padding width turns a 4 KB script into a gigabyte of task.
+  The form is refused rather than rendered, because rendering it to find out is the same as paying
+  for it.
 
 The check is presence, not meaning: it proves the script still contains the sentences the rest of
 the machine relies on, not that the rest of it says anything sensible. Read a new script out loud

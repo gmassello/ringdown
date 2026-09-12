@@ -7,7 +7,13 @@ import pytest
 from ringdown.extract import ETA_QUESTION, normalise
 from ringdown.incident import IncidentError, load_incident
 from ringdown.script import call_payload, call_task, idempotency_key
-from ringdown.task import CALL_TASK, TEMPLATE_LIMIT, TaskError, validate_task_template
+from ringdown.task import (
+    CALL_TASK,
+    TEMPLATE_LIMIT,
+    TaskError,
+    placeholders_in,
+    validate_task_template,
+)
 from tests.data import ALICE, BEN, EXAMPLES, LADDER, an_incident, example_body, write_json
 
 
@@ -163,6 +169,31 @@ def test_a_script_that_never_confirms_who_answered_is_refused():
 def test_a_script_asking_for_a_field_ringdown_cannot_fill_is_refused():
     with pytest.raises(TaskError, match="cannot fill"):
         validate_task_template(CALL_TASK.replace("{summary}", "{customer_email}"))
+
+
+@pytest.mark.parametrize(
+    ("placeholder", "reason"),
+    [
+        ("{}", "no field name"),
+        ("{0}", "no field name"),
+        ("{summary!r}", "refused"),
+        ("{summary:{severity}}", "refused"),
+        ("{summary:{customer_email}}", "refused"),
+        ("{summary:>999999999}", "refused"),
+    ],
+)
+def test_a_script_the_engine_cannot_render_is_refused_before_any_call(placeholder, reason):
+    with pytest.raises(TaskError, match=reason):
+        validate_task_template(CALL_TASK.replace("{summary}", placeholder))
+
+
+def test_a_format_spec_cannot_smuggle_a_field_past_the_allowlist():
+    hidden = CALL_TASK.replace("{summary}", "{summary:{customer_email}}")
+
+    with pytest.raises(TaskError):
+        validate_task_template(hidden)
+
+    assert "customer_email" not in placeholders_in(CALL_TASK)
 
 
 def test_an_empty_script_is_refused():

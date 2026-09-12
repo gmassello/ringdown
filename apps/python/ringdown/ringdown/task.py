@@ -45,6 +45,25 @@ def placeholders_in(template: str, where: str = "the call script") -> tuple[str,
         parsed = tuple(Formatter().parse(template))
     except ValueError as error:
         raise TaskError(f"{where} is not a usable template: {error}") from error
+    for _, field, spec, conversion in parsed:
+        if field is None:
+            continue
+        if not field or field.isdigit():
+            raise TaskError(
+                f"{where} uses a placeholder with no field name. Ringdown fills its fields by "
+                f"name: write {{{SPOKEN_FIELDS[0]}}}, not {{{field}}}"
+            )
+        if spec or conversion:
+            written = "{%s%s%s}" % (
+                field,
+                f"!{conversion}" if conversion else "",
+                f":{spec}" if spec else "",
+            )
+            raise TaskError(
+                f"{where} writes {written}. A field is read out as it is given, so a format spec "
+                "or a conversion is refused: it can hide a field the allowlist never sees, "
+                "undo the quoting that marks incident text as data, or render megabytes of padding"
+            )
     return tuple(dict.fromkeys(field for _, field, _, _ in parsed if field))
 
 

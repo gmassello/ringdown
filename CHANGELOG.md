@@ -21,6 +21,9 @@ Both packages are versioned together at `0.1.0`.
   this database does not know, a recording Twilio does not host, transcription data that will not
   parse, a signature that does not match — now says so.
 - Ceiling 20, on what the browser port of the ledger checks can and cannot promise.
+- An index on `Call.started_at` in the receiver, which is the only column the dashboard orders by,
+  and a per-call cap on the transcript segments a card renders. A card that truncates says so.
+- A visible legend under each ladder on the site, explaining every state it uses.
 - `CONTRIBUTING.md` and this changelog.
 - A `LICENSE` inside `apps/python/ringdown/`, so the package that travels upstream carries one.
 - A table of contents, a `## License` section, and `git clone` / `cd` instructions in the app
@@ -59,6 +62,21 @@ Both packages are versioned together at `0.1.0`.
   `try` covered only the fetch. It now covers everything that recomputes a hash, and the hero foot
   tolerates an empty ledger and a record with no hash, which is exactly the ledger the checks exist
   to paint red.
+- `validate_task_template` accepted a call script that could not be rendered. `Formatter().parse`
+  reports a format spec and a conversion alongside each field name, and only the name was being
+  read, so `{}` reached `str.format` as an `IndexError`, `{name:{severity}}` as a `ValueError`,
+  `{name:{customer_email}}` slipped a field past the allowlist entirely, `{summary!r}` undid the
+  quote neutralisation that marks incident text as data, and `{summary:>999999999}` turned a 4 KB
+  script into a gigabyte of task. None of those was a `TaskError`, so the CLI left its own exit-code
+  contract by traceback. A placeholder now has to be a bare field name.
+- The site left the keyboard focus on the nav link when a view changed, and the jump to the
+  fragment never happened at all — the browser looks for the target while it is still `hidden`, so
+  there is nothing to scroll to and it does not look again. The revealed section now takes the
+  focus, except on a plain visit to the front page, which keeps its own.
+- The seven explanations of the ladder states lived only in a `title` attribute on elements nobody
+  can focus, which means they did not exist for a keyboard, and did not exist at all on a phone.
+  They are written under each ladder now. The verdict gloss and the `instructed` chip had the same
+  problem and carry an accessible name as well.
 - The app README claimed 378 tests; there are 393 (plus 19 in the receiver).
 - `tests/fixtures/README.md` described the 2026-08-20 live run as three calls with two REST
   creates. It was six calls — five over REST, one over MCP — with five creates and five replays,

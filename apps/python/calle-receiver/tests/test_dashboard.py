@@ -2,7 +2,8 @@ import requests
 from sqlmodel import Session
 
 from app.db import get_engine
-from app.models import Call
+from app.models import Call, TranscriptSegment
+from app.routes.dashboard import SEGMENT_LIMIT
 
 AUTH = ("dashboard", "testpass")
 
@@ -24,6 +25,25 @@ def test_dashboard_lists_call_with_transcript(client, create_call):
     assert "dashboard test segment" in resp.text
     assert "<details open>" in resp.text
     assert "1 segments" in resp.text
+
+
+def test_a_transcript_longer_than_the_card_holds_is_cut_and_says_so(client, create_call):
+    create_call("CAlong", from_number="+15550000013")
+    spoken = SEGMENT_LIMIT + 12
+    with Session(get_engine()) as session:
+        for index in range(spoken):
+            session.add(
+                TranscriptSegment(
+                    call_sid="CAlong", track="inbound_track", text=f"segment-{index}-end"
+                )
+            )
+        session.commit()
+
+    resp = client.get("/calls", auth=AUTH)
+
+    assert f"last {SEGMENT_LIMIT} of {spoken} segments" in resp.text
+    assert "segment-0-end" not in resp.text
+    assert f"segment-{spoken - 1}-end" in resp.text
 
 
 def test_dashboard_renders_one_card_per_call(client, create_call):

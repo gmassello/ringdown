@@ -7,7 +7,7 @@ class Call(SQLModel, table=True):
     call_sid: str = Field(primary_key=True)
     from_number: str
     to_number: str
-    started_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    started_at: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)
     ended_at: datetime | None = None
     duration_seconds: int | None = None
     status: str

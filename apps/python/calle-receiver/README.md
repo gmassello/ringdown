@@ -49,6 +49,13 @@ contains no secrets and no phone numbers.
   starts, but the schema is created with `create_all`, which only adds
   missing tables — it never alters existing columns. Deliberate decision for
   the demo; if the schema changes with data in production, bring in Alembic.
+  The index on `Call.started_at` lands the same way: on a fresh database, which
+  on Render is every deploy. An old local `calls.db` has to be deleted to get it.
+- **The dashboard shows the 50 most recent calls and the last 200 segments of
+  each**, with no page after that. There is no other view, so a 51st call is
+  out of reach from the interface — which the ephemeral database above makes
+  close to unreachable in practice. A truncated transcript says so in its own
+  summary rather than quietly showing fewer lines.
 - **The service sleeps after 15 min of inactivity**: `curl` the URL before a
   demo, or the first call times out.
 - The number's webhooks can be pointed without going through the console:
@@ -100,7 +107,7 @@ All three steps are validated (2026-08-16): CALL-E dials Twilio VoIP numbers
 without anti-fraud blocking — `completed` call with dual-channel recording
 and transcription of both tracks.
 
-Unit tests: `uv run pytest` — 19 of them, no Twilio credentials and no outbound calls.
+Unit tests: `uv run pytest` — 26 of them, no Twilio credentials and no outbound calls.
 
 ## Endpoints
 
@@ -110,7 +117,7 @@ Unit tests: `uv run pytest` — 19 of them, no Twilio credentials and no outboun
 | `POST /voice/status` | End of the `<Dial>`: stores final status and duration |
 | `POST /voice/recording` | Stores the `RecordingUrl` (download it with `.mp3` + basic auth SID:TOKEN) |
 | `POST /voice/transcription` | Stores one `TranscriptSegment` per `transcription-content` event |
-| `GET /calls` | HTML dashboard: one card per call with audio player and transcript (5s auto-refresh) |
+| `GET /calls` | HTML dashboard: one card per call with audio player and transcript (5s auto-refresh, skipped while a recording is playing) |
 | `GET /calls/{sid}/recording.mp3` | Recording proxy (adds Twilio auth for the `<audio>` element) |
 
 The `POST /voice*` webhooks validate the `X-Twilio-Signature` header against

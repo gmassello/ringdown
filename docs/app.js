@@ -28,14 +28,23 @@ const setUpTheme = () => {
   });
 };
 
-const showView = (view) => {
+const showView = (view, land) => {
   const wanted = VIEWS.includes(view) ? view : VIEWS[0];
+  let arrived = null;
   for (const section of document.querySelectorAll("[data-view]")) {
     section.hidden = section.dataset.view !== wanted;
+    if (!section.hidden) arrived = section;
   }
   for (const link of document.querySelectorAll("[data-view-link]")) {
     if (link.dataset.viewLink === wanted) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
+  }
+  // the browser tries to scroll to the fragment while the target is still hidden, so it has no
+  // box to scroll to and never retries: without this the whole page changes under a keyboard
+  // user with the focus left behind on the nav link
+  if (land && arrived) {
+    arrived.scrollIntoView({ block: "start" });
+    arrived.focus({ preventScroll: true });
   }
 };
 
@@ -47,9 +56,10 @@ const explainStates = () => {
 };
 
 const setUpRouting = () => {
-  const fromHash = () => showView(location.hash.replace("#", ""));
-  window.addEventListener("hashchange", fromHash);
-  fromHash();
+  const fromHash = (land) => showView(location.hash.replace("#", ""), land);
+  window.addEventListener("hashchange", () => fromHash(true));
+  // a plain visit to the front page keeps its focus and its scroll; a deep link is a jump
+  fromHash(Boolean(location.hash));
 };
 
 const activePanel = () =>
@@ -233,8 +243,10 @@ const renderRecords = (records, changed) => {
         "font-size:0.6875rem;color:var(--color-bad);border:1px solid var(--color-bad);" +
         "border-radius:999px;padding:1px 8px;flex:none";
       flag.textContent = "instructed";
-      flag.title =
+      const instructed =
         "The transcript carried an instruction addressed to the agent. It was not followed.";
+      flag.title = instructed;
+      flag.setAttribute("aria-label", `instructed. ${instructed}`);
       row.append(flag);
     }
     row.append(hash);
@@ -343,7 +355,10 @@ const setUpLedger = async () => {
     const seen = verdictOf(settled);
     verdict.textContent = `${seen.exit} — ${seen.summary}`;
     verdict.style.color = seen.colour;
+    // a title is unreachable by keyboard and absent on touch, so the sentence that explains
+    // the number rides on the accessible name too
     verdict.title = seen.help;
+    verdict.setAttribute("aria-label", `${seen.exit}, ${seen.summary}. ${seen.help}`);
   };
 
   // everything below recomputes a SHA-256 per record, which crypto.subtle refuses outside a
