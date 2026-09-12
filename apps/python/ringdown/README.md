@@ -52,7 +52,7 @@ Python 3.11 or newer, and [uv](https://docs.astral.sh/uv/). No runtime dependenc
 git clone https://github.com/gmassello/ringdown
 cd ringdown/apps/python/ringdown
 uv sync
-uv run pytest -q          # 393 tests, no credentials, no outbound calls
+uv run pytest -q          # 420 tests, no credentials, no outbound calls
 ```
 
 **Every command in this file runs from `apps/python/ringdown/`.**
@@ -441,6 +441,12 @@ Phone numbers are masked everywhere they are written or printed. The raw transcr
 stored: an attempt record keeps only the spans that were actually quoted as evidence, and only
 those that are non-empty. Contact ids are stored in the clear.
 
+A turn is attributed to the recipient or to the agent by one field, and `parse_turns` reads exactly
+two labels for it — `user` and `bot`, in any case. A transcript that names its speakers any other
+way is an `unreadable_response`, not a transcript in which the recipient happened to say nothing:
+guessing would settle the call `unreachable` and write that guess into the ledger as the reason a
+human is asked to call back.
+
 ## Side effects, cancellation, credentials
 
 - At most one CALL-E call per rung, per run. Nothing recurring is created, so there is no
@@ -688,6 +694,18 @@ own call over a second transport. Same technique, different product.
     `incident`, the ledger still keys its records on `incident`, and the exit codes are still named
     for paging. They are accurate for on-call and merely odd elsewhere, and renaming them would
     change the ledger format for no functional gain.
+
+20. The browser port of `chain_checks` in `docs/ledger.js` is pinned by a test that runs both
+    implementations over the same six ledgers and compares every `(ok, label)` pair
+    (`tests/test_site_port.py`, skipped where `docs/` or `node` is absent). That closes the drift
+    the seals could never catch — a missing family of checks does not change a digest. Two gaps
+    are left open on purpose. **`JSON.stringify` cannot reproduce Python's float repr**: `15.0`
+    seals as `15` in the browser, so a single float in any record would paint a red seal over an
+    intact ledger — the worst possible failure for a page whose thesis is detecting tampering.
+    No record carries one today and a test keeps it that way, which is a narrower promise than
+    making the port exact. And the checks Python returns for a ledger it cannot parse have no
+    equivalent in JS: the page already has a graceful branch for a ledger it cannot read, and it
+    is the page, not the ledger, that would be broken.
 
 ## License
 

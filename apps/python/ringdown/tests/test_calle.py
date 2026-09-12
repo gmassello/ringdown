@@ -108,7 +108,8 @@ def test_a_created_call_is_read_back_from_the_placing_channel(incident):
 
 
 def test_a_malformed_call_payload_is_an_unreadable_response_not_a_crash():
-    for body in ([], {"recipients": 5}, {"completion_confidence": "high"}):
+    unplaceable = {"recipients": [{"attempts": [{"transcript_turns": [{"speaker": "human"}]}]}]}
+    for body in ([], {"recipients": 5}, {"completion_confidence": "high"}, unplaceable):
         with pytest.raises(CalleError) as raised:
             _snapshot(body)
         assert raised.value.code == "unreadable_response"

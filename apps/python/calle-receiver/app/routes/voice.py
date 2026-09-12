@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Response
@@ -12,6 +13,7 @@ from app.models import Call, TranscriptSegment
 from app.security import twilio_form
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 def _twiml(vr: VoiceResponse) -> Response:
@@ -22,6 +24,8 @@ def _twiml(vr: VoiceResponse) -> Response:
 def incoming_call(form: FormData = Depends(twilio_form)) -> Response:
     settings = get_settings()
     sid = form.get("CallSid", "")
+    if not sid:
+        logger.warning("a voice webhook arrived with no CallSid; the call is bridged but not stored")
     with Session(get_engine()) as session:
         if sid and session.get(Call, sid) is None:
             session.add(
@@ -69,8 +73,11 @@ def incoming_call(form: FormData = Depends(twilio_form)) -> Response:
 @router.post("/voice/status")
 def call_status(form: FormData = Depends(twilio_form)) -> Response:
     with Session(get_engine()) as session:
-        call = session.get(Call, form.get("CallSid", ""))
-        if call is not None:
+        sid = form.get("CallSid", "")
+        call = session.get(Call, sid)
+        if call is None:
+            logger.warning("status callback for %s, which this database does not know", sid)
+        else:
             call.status = form.get("DialCallStatus") or form.get("CallStatus") or call.status
             call.ended_at = datetime.now(UTC)
             duration = form.get("DialCallDuration") or form.get("CallDuration")
@@ -84,8 +91,13 @@ def call_status(form: FormData = Depends(twilio_form)) -> Response:
 def recording_completed(form: FormData = Depends(twilio_form)) -> Response:
     url = form.get("RecordingUrl", "")
     with Session(get_engine()) as session:
-        call = session.get(Call, form.get("CallSid", ""))
-        if call is not None and is_twilio_recording(url):
+        sid = form.get("CallSid", "")
+        call = session.get(Call, sid)
+        if call is None:
+            logger.warning("recording callback for %s, which this database does not know", sid)
+        elif not is_twilio_recording(url):
+            logger.warning("recording for %s is not hosted by Twilio; the url is dropped", sid)
+        else:
             call.recording_url = url
             session.commit()
     return Response(status_code=204)
@@ -100,6 +112,10 @@ def transcription_event(form: FormData = Depends(twilio_form)) -> Response:
     except json.JSONDecodeError:
         data = None
     if not isinstance(data, dict):
+        logger.warning(
+            "transcription for %s carried data this app cannot read; the segment is dropped",
+            form.get("CallSid", ""),
+        )
         return Response(status_code=204)
     text = data.get("transcript")
     confidence = data.get("confidence")

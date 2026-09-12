@@ -47,10 +47,11 @@ export const fetchLedger = async () => {
   return parseLedger(await response.text());
 };
 
-const incidentOf = (record) =>
-  record.incident != null
-    ? String(record.incident)
-    : String(record.attempt_id ?? "").split("/").slice(0, -2).join("/");
+const incidentOf = (record) => {
+  if (record.incident != null) return String(record.incident);
+  const segments = String(record.attempt_id ?? "").split("/");
+  return segments.slice(0, Math.max(1, segments.length - 2)).join("/");
+};
 
 const verdictV1 = (verdicts) =>
   verdicts.find((verdict) => verdict !== "not_acknowledged") ?? "unacknowledged";
@@ -62,7 +63,15 @@ const corroborationCheck = (number, record) => {
   if (record.verified === true) {
     return { ok: true, label: `${where} corroborated on the second channel`, family: "verification" };
   }
-  const contradicted = (record.total ?? 0) - (record.passed ?? 0) - (record.unresolved ?? 0);
+  const counts = [record.total ?? 0, record.passed ?? 0, record.unresolved ?? 0];
+  if (!counts.every((count) => Number.isInteger(count))) {
+    return {
+      ok: false,
+      label: `record ${number} reports check counts that are not numbers`,
+      family: "verification",
+    };
+  }
+  const contradicted = counts[0] - counts[1] - counts[2];
   if (contradicted > 0) {
     return { ok: false, label: `${where} contradicted on the second channel`, family: "verification" };
   }
@@ -118,6 +127,15 @@ const verificationChecks = (records) =>
     .filter(({ record }) => record.type === "verification")
     .map(({ record, number }) => corroborationCheck(number, record));
 
+const notifiedChecks = (records) =>
+  numbered(records)
+    .filter(({ record }) => record.type === "notified" && !record.delivered)
+    .map(({ record, number }) => ({
+      ok: null,
+      label: `record ${number} note to ${record.host} was not delivered`,
+      family: "notified",
+    }));
+
 const verdictChecks = (records) => {
   const checks = [];
   const verdicts = new Map();
@@ -134,7 +152,7 @@ const verdictChecks = (records) => {
       verdicts.delete(incident);
       checks.push({
         ok: null,
-        label: `record ${number} was written by schema ${schema}, which this page cannot read`,
+        label: `record ${number} was written by schema ${schema}, which this build cannot read`,
         family: "verdict",
       });
       continue;
@@ -160,6 +178,7 @@ export const chainChecks = async (records) => [
   ...positionChecks(records),
   ...orphanChecks(records),
   ...verificationChecks(records),
+  ...notifiedChecks(records),
   ...verdictChecks(records),
 ];
 

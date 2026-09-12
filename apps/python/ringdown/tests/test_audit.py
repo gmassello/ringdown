@@ -15,6 +15,7 @@ from ringdown.audit import (
     chain_checks,
     head,
     intent_record,
+    notified_record,
     sealed,
     verdict_record,
     verification_record,
@@ -52,6 +53,29 @@ def read_lines(path) -> list[dict]:
 
 def write_back(path, records) -> None:
     path.write_text("".join(canonical_json(record) + "\n" for record in records))
+
+
+def test_no_record_carries_a_float_the_browser_port_cannot_reseal():
+    attempt = an_attempt()
+    records = [
+        intent_record("inc-1", attempt.attempt_id, attempt.key, LADDER[0]),
+        attempt_record(attempt, "inc-1"),
+        verdict_record("inc-1", LadderResult("acknowledged", (attempt,))),
+        verification_record("inc-1", SAW_IT, rest_host="rest.example", mcp_host="mcp.example"),
+        notified_record("inc-1", host="api.pagerduty.com", delivered=True, detail="http 201"),
+    ]
+
+    floats = [
+        (record["type"], name)
+        for record in records
+        for name, value in record.items()
+        if isinstance(value, float)
+    ]
+
+    assert not floats, (
+        f"{floats} would be sealed as 15.0 by Python and as 15 by docs/ledger.js, so the site "
+        "would paint a red seal over an intact ledger. See ceiling 20."
+    )
 
 
 def test_a_run_writes_one_attempt_record_a_verdict_and_a_verification(tmp_path):

@@ -244,7 +244,7 @@ const renderRecords = (records, changed) => {
 
 const HASH_PREFIX = "sha256:".length;
 
-const shortHash = (hash) => hash.slice(0, 14) + "…";
+const shortHash = (hash) => (hash ? String(hash).slice(0, 14) + "…" : "none");
 
 const recordLabel = (record) =>
   record.type === "verdict" ? `verdict ${record.verdict}` : record.type;
@@ -272,7 +272,7 @@ const verdictOf = (checks) => {
       exit: "exit 40",
       summary: "the ledger does not verify",
       colour: "var(--color-bad)",
-      help: "The second channel contradicted the run. Treat the incident as unowned.",
+      help: "A link, a seal, a position or a recorded verdict does not hold, so nothing in this file is evidence of anything.",
     };
   }
   if (checks.some((check) => check.ok === null)) {
@@ -280,14 +280,14 @@ const verdictOf = (checks) => {
       exit: "exit 45",
       summary: "unproven, not tampered with",
       colour: "var(--color-neutral-400)",
-      help: "Nothing was contradicted, but nothing could be corroborated either.",
+      help: "Nothing in the chain is broken, but something in it was never confirmed.",
     };
   }
   return {
     exit: "exit 0",
     summary: "the ledger verifies",
     colour: "var(--color-accent-300)",
-    help: "Somebody acknowledged, with an owner and an ETA, and the second channel agreed.",
+    help: "Every link, seal and position holds, and each recorded verdict follows from the attempts under it. What the ladder settled is in the verdict record itself.",
   };
 };
 
@@ -305,14 +305,14 @@ const renderHeroLedger = (records) => {
     type.style.cssText = "flex:1;min-width:0;color:var(--color-text)";
     type.textContent = recordLabel(record);
     const hash = document.createElement("span");
-    hash.textContent = record.hash.slice(HASH_PREFIX, HASH_PREFIX + 7);
+    hash.textContent = String(record.hash ?? "").slice(HASH_PREFIX, HASH_PREFIX + 7);
     row.append(seq, type, hash);
     host.append(row);
   }
 };
 
 const renderHeroFoot = (verdict, records) => {
-  const head = records[records.length - 1];
+  const head = records[records.length - 1] ?? {};
   document.getElementById("hero-ledger-foot").textContent =
     `${verdict.exit} · ${records.length} records · head ${shortHash(head.hash)}`;
 };
@@ -322,22 +322,19 @@ const setUpLedger = async () => {
   const body = document.getElementById("ledger-body");
   const tamperButton = document.getElementById("tamper-btn");
   const restoreButton = document.getElementById("restore-btn");
+  const verdict = document.getElementById("ledger-verdict");
 
-  let committed;
-  try {
-    committed = await fetchLedger();
-  } catch (error) {
+  const giveUp = (error) => {
     // #ledger-status is a live region, so replacing the progress line announces the failure
-    status.textContent = `Could not fetch the ledger (${error.message}). It is committed at examples/ledger.example.jsonl.`;
+    status.hidden = false;
+    status.textContent = `Could not verify the ledger here (${error.message}). It is committed at examples/ledger.example.jsonl, and the CLI verifies it offline.`;
     status.style.color = "var(--color-bad)";
+    body.hidden = true;
     tamperButton.disabled = true;
     // an empty 300px card promising "the proof it leaves behind" undercuts the claim harder
-    // than showing nothing; the explanation lives in the ledger view, which says why
+    // than showing half a verified ledger; the line above is the only thing left standing
     document.getElementById("hero-ledger").hidden = true;
-    return;
-  }
-
-  const verdict = document.getElementById("ledger-verdict");
+  };
 
   const show = async (records, changed, checks) => {
     const settled = checks ?? (await chainChecks(records));
@@ -349,15 +346,24 @@ const setUpLedger = async () => {
     verdict.title = seen.help;
   };
 
-  // the hero is above the fold and needs no crypto, so it paints before the ledger
-  // view, which is hidden on load and costs a SHA-256 per record to fill
-  renderHeroLedger(committed);
-  const checks = await chainChecks(committed);
-  renderHeroFoot(verdictOf(checks), committed);
+  // everything below recomputes a SHA-256 per record, which crypto.subtle refuses outside a
+  // secure context, so the whole body runs under one catch and not just the fetch
+  let committed;
+  try {
+    committed = await fetchLedger();
+    // the hero is above the fold and paints first, but its foot carries the verdict, which
+    // costs the same SHA-256 per record the ledger view does
+    renderHeroLedger(committed);
+    const checks = await chainChecks(committed);
+    renderHeroFoot(verdictOf(checks), committed);
 
-  status.hidden = true;
-  body.hidden = false;
-  await show(committed, new Set(), checks);
+    status.hidden = true;
+    body.hidden = false;
+    await show(committed, new Set(), checks);
+  } catch (error) {
+    giveUp(error);
+    return;
+  }
 
   const swap = async (records, changed, tampered) => {
     tamperButton.hidden = tampered;
@@ -368,20 +374,24 @@ const setUpLedger = async () => {
   };
 
   tamperButton.addEventListener("click", async () => {
-    const rewritten = await tamper(committed);
-    const changed = new Set(
-      rewritten
-        .filter((record, index) => record.hash !== committed[index].hash)
-        .map((record) => record.seq),
-    );
-    await swap(rewritten, changed, true);
+    try {
+      const rewritten = await tamper(committed);
+      const changed = new Set(
+        rewritten
+          .filter((record, index) => record.hash !== committed[index].hash)
+          .map((record) => record.seq),
+      );
+      await swap(rewritten, changed, true);
+    } catch (error) {
+      giveUp(error);
+    }
   });
 
-  restoreButton.addEventListener("click", () => swap(committed, new Set(), false));
+  restoreButton.addEventListener("click", () => swap(committed, new Set(), false).catch(giveUp));
 };
 
 setUpTheme();
 explainStates();
 setUpRouting();
 setUpRun();
-setUpLedger();
+setUpLedger().catch((error) => console.error("the ledger view could not be set up", error));

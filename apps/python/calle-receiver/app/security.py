@@ -1,3 +1,4 @@
+import logging
 import secrets
 
 from fastapi import Depends, HTTPException, Request
@@ -8,6 +9,7 @@ from twilio.request_validator import RequestValidator
 from app.config import get_settings
 
 _basic = HTTPBasic()
+logger = logging.getLogger(__name__)
 
 
 def dashboard_auth(credentials: HTTPBasicCredentials = Depends(_basic)) -> None:
@@ -25,5 +27,6 @@ async def twilio_form(request: Request) -> FormData:
         url = settings.url_for(request.url.path) + query
         signature = request.headers.get("X-Twilio-Signature", "")
         if not RequestValidator(settings.twilio_auth_token).validate(url, form, signature):
+            logger.warning("signature does not match a request Twilio signed for %s", url)
             raise HTTPException(status_code=403, detail="Invalid Twilio signature")
     return form

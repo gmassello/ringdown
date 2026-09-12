@@ -10,7 +10,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="412 tests" src="https://img.shields.io/badge/tests-412-2f6f4e">
+  <img alt="445 tests" src="https://img.shields.io/badge/tests-445-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -143,7 +143,7 @@ setup are in the [operational manual](apps/python/ringdown/README.md).
 > rather than described: two flags resolving to one non-loopback host exit 30, on loopback the run
 > says so out loud, and the ledger records both hostnames either way.
 
-Seven exit codes:
+Eight exit codes:
 
 | Exit | Meaning |
 | ---: | --- |
@@ -154,6 +154,7 @@ Seven exit codes:
 | `30` | usage error |
 | `40` | the second channel contradicts the recorded verdict |
 | `45` | the second channel could not be reached |
+| `50` | a call was placed and the ledger could not be written |
 
 Precedence is the interesting part: `40` overrides `0`, `10`, `20` and `45` alike, so a decline the
 second channel does not support exits 40, not 10. And `45` only lands when nothing was contradicted
@@ -273,7 +274,7 @@ failure is unsafe. The full argument, one project at a time, is in
 - The ladder never re-calls, and retries would need another key and another record.
 - The provider does not dial every country, and Ringdown does not preflight the list.
 
-The [app README](apps/python/ringdown/README.md#known-ceilings) has all nineteen, unvarnished.
+The [app README](apps/python/ringdown/README.md#known-ceilings) has all twenty, unvarnished.
 
 </details>
 

@@ -155,6 +155,14 @@ def test_transcription_malformed_data_is_ignored(client, create_call):
         assert segments == []
 
 
+def test_a_callback_for_a_call_nobody_stored_leaves_a_trace(client, caplog):
+    with caplog.at_level("WARNING"):
+        client.post("/voice/status", data={"CallSid": "CAforgotten", "CallStatus": "completed"})
+
+    assert "CAforgotten" in caplog.text
+    assert "does not know" in caplog.text
+
+
 def test_no_handler_runs_on_the_event_loop():
     import inspect
 
