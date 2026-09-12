@@ -55,6 +55,7 @@ from ringdown.incident import (
 )
 from ringdown.pagerduty import LIVE_URLS as PAGERDUTY_LIVE, LIVE_US, note_text, post_note
 from ringdown.script import call_payload, call_task, idempotency_key
+from ringdown.suggest import MODEL, suggest_mapping
 from ringdown.checks import Check, all_checks, render_blocks
 from ringdown.verify import verify_ladder
 
@@ -93,6 +94,10 @@ def _parser() -> argparse.ArgumentParser:
     adapt_command.add_argument("--payload", type=Path, required=True)
     adapt_command.add_argument("--mapping", type=Path, required=True)
     adapt_command.add_argument("--out", type=Path)
+
+    suggest = commands.add_parser("suggest-mapping")
+    suggest.add_argument("--payload", type=Path, required=True)
+    suggest.add_argument("--out", type=Path)
     return parser
 
 
@@ -245,19 +250,42 @@ def verify(args: argparse.Namespace) -> int:
     return reconcile(EXIT_ACKNOWLEDGED, checks)
 
 
-def adapt_command(args: argparse.Namespace) -> int:
-    mapped = adapt(read_json(args.payload, "payload"), read_json(args.mapping, "field mapping"))
-    parse_incident(mapped)
-    rendered = json.dumps(mapped, indent=2, sort_keys=True)
-    if args.out is None:
+def _rendered(body: dict, out: Path | None, *notes: str) -> int:
+    rendered = json.dumps(body, indent=2, sort_keys=True)
+    if out is None:
         emit(rendered)
-        return EXIT_ACKNOWLEDGED
-    args.out.write_text(rendered + "\n")
-    emit(f"wrote {args.out}")
+    else:
+        out.write_text(rendered + "\n")
+        emit(f"wrote {out}", *notes)
     return EXIT_ACKNOWLEDGED
 
 
-COMMANDS = {"preview": preview, "run": run, "verify": verify, "adapt": adapt_command}
+def adapt_command(args: argparse.Namespace) -> int:
+    mapped = adapt(read_json(args.payload, "payload"), read_json(args.mapping, "field mapping"))
+    parse_incident(mapped)
+    return _rendered(mapped, args.out)
+
+
+def suggest_command(args: argparse.Namespace) -> int:
+    api_key = os.environ.get("GEMINI_API_KEY", "")
+    if not api_key:
+        emit("GEMINI_API_KEY is not set in the environment; refusing to guess a mapping")
+        return EXIT_USAGE
+    payload = read_json(args.payload, "payload")
+    emit(f"asking {MODEL} for a mapping; {args.payload} leaves this machine")
+    mapping = suggest_mapping(payload, api_key)
+    return _rendered(
+        mapping, args.out, "read it before you dial with it: the model chose those paths."
+    )
+
+
+COMMANDS = {
+    "preview": preview,
+    "run": run,
+    "verify": verify,
+    "adapt": adapt_command,
+    "suggest-mapping": suggest_command,
+}
 
 
 def main(argv: Sequence[str] | None = None) -> int:

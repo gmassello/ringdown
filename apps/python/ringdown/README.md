@@ -24,6 +24,8 @@ agent that audits itself through the same channel it wrote with has proved nothi
 - [The rotation file](#the-rotation-file)
 - [Adapting an alert payload](#adapting-an-alert-payload)
   - [A worked example: PagerDuty](#a-worked-example-pagerduty)
+  - [A second worked example: Opsgenie](#a-second-worked-example-opsgenie)
+  - [Asking a model for the mapping](#asking-a-model-for-the-mapping)
 - [Telling PagerDuty what happened](#telling-pagerduty-what-happened)
 - [The ledger](#the-ledger)
 - [Side effects, cancellation, credentials](#side-effects-cancellation-credentials)
@@ -52,7 +54,7 @@ Python 3.11 or newer, and [uv](https://docs.astral.sh/uv/). No runtime dependenc
 git clone https://github.com/gmassello/ringdown
 cd ringdown/apps/python/ringdown
 uv sync
-uv run pytest -q          # 427 tests, no credentials, no outbound calls
+uv run pytest -q          # 442 tests, no credentials, no outbound calls
 ```
 
 **Every command in this file runs from `apps/python/ringdown/`.**
@@ -341,6 +343,73 @@ Two things the payload cannot give, and neither is papered over:
 - **Summary.** The v3 payload carries `title` and no long-form description, so `summary` — the
   sentence actually read aloud — is a literal in the mapping. A path there would have to invent one.
 
+### A second worked example: Opsgenie
+
+The second vendor is where the claim gets tested, because Opsgenie hands over *less* than PagerDuty
+does. [`examples/opsgenie.example.json`](examples/opsgenie.example.json) is an alert `Create` action
+in the shape [Atlassian documents](https://support.atlassian.com/opsgenie/docs/opsgenie-edge-connector-alert-action-data/)
+— values rewritten for this repo, keys untouched — and that payload has no `priority`, no
+`description` and no link back to the alert.
+
+```bash
+python -m ringdown adapt --payload examples/opsgenie.example.json \
+                         --mapping examples/opsgenie-mapping.example.json \
+                         --out /tmp/incident.json
+python -m ringdown preview --incident /tmp/incident.json --rotation examples/rotation.example.json
+```
+
+Same adapter, same command, no second code path:
+[`examples/opsgenie-mapping.example.json`](examples/opsgenie-mapping.example.json) absorbs all three
+gaps in the mapping file, and each one shows a different move.
+
+- **Severity** comes from `$.alert.tags[0]`, the index syntax the Alertmanager example already
+  used. Opsgenie has no priority field in this payload, so the convention is to tag the alert `p2`
+  and let the tag carry it. Tag something that is not a severity token and the load fails — the
+  alert is refused, not dialled with a severity nobody chose.
+- **Summary** is a literal, for the same reason it is one under PagerDuty: there is no long-form
+  text to point at, and a path would have to invent one.
+- **`runbook_url`** is simply absent from the mapping. It is optional, the payload has no URL, and
+  an unresolvable path would have been omitted anyway.
+
+The service name comes from `$.integrationName` rather than from inside the alert, which is the
+whole point of a mapping file: the field the engineer needs to hear is not always where the previous
+vendor kept it.
+
+### Asking a model for the mapping
+
+Both mapping files above were written by hand, and writing one means reading a vendor's payload
+until you find where it kept the thing the engineer has to hear. That is the one job here a language
+model is actually good at, and it is the one job where being wrong is cheap: the answer is a config
+file a human reads before anything dials.
+
+```bash
+export GEMINI_API_KEY=...
+python -m ringdown suggest-mapping --payload examples/opsgenie.example.json \
+                                   --out /tmp/mapping.json
+```
+
+It sends the payload to Gemini with the adapter's rules — `$.key` and `[0]`, literals for what the
+payload does not carry, the eight accepted severity tokens — and gets a mapping back. Then, before
+you ever see it, **the suggestion is run**: `adapt` executes it against the real payload and the
+incident loader validates the result. A mapping that points at a field that is not there, or names a
+severity that does not exist, never reaches the disk — you get the loader's error instead, the same
+one you would have got by writing it yourself.
+
+So the model writes a draft and the deterministic path decides whether the draft is admissible. It
+proposes paths; it does not get to say what a valid incident is. Three properties hold:
+
+- **No key, no call.** Without `GEMINI_API_KEY` the subcommand refuses and exits 30 without opening
+  a socket. Nothing in `preview`, `run` or `verify` reaches for a model.
+- **The key is pinned to one host.** There is no flag to point this anywhere: the endpoint is the
+  constant `https://generativelanguage.googleapis.com`, held to it by the same `assert_trusted_url`
+  that keeps the CALL-E API key off the MCP endpoint. The key travels in a header, never in a query
+  string, and a redirect is refused rather than followed.
+- **The alert payload leaves your network.** That is the actual cost of this subcommand and it is
+  the reason it is a separate, opt-in command rather than a fallback inside `adapt`. Run it on an
+  example payload, not on one carrying customer data.
+
+What the model still cannot be trusted with is whether the mapping is *right* — see ceiling 21.
+
 ## Telling PagerDuty what happened
 
 Once the verdict has settled, `run --pagerduty-note` writes a note on the PagerDuty incident saying
@@ -459,7 +528,9 @@ human is asked to call back.
 - At most one CALL-E call per rung, per run. Nothing recurring is created, so there is no
   schedule to clean up.
 - `preview`, `verify` and `adapt` place no calls and read no credentials. `run` refuses to do
-  anything without the exact confirmation phrase.
+  anything without the exact confirmation phrase. `suggest-mapping` places no calls either, but it
+  is the one other subcommand that reads a credential and opens a socket — to Gemini, never to the
+  provider — and it refuses to run without `GEMINI_API_KEY`.
 - **There is no way to cancel a call already in flight.** The provider exposes no operator-side
   cancel, so Ctrl-C stops the local waiter and nothing else. What is cancellable is the ladder:
   the next rung is never dialled. The ledger is written as the ladder walks, not at the end, so a
@@ -470,8 +541,8 @@ human is asked to call back.
   live URL. It is never written to the ledger, never logged, and never sent anywhere else. A run
   against a local fake carries `RINGDOWN_FAKE_API_KEY` instead, so a throwaway value is the only
   thing that ever travels over plaintext loopback.
-- `run` persists only to the file named by `--ledger`, and `adapt --out` writes the file you name.
-  Nothing else is written anywhere. The demo writes under `demo/out/` and regenerates
+- `run` persists only to the file named by `--ledger`; `adapt --out` and `suggest-mapping --out`
+  write the file you name. Nothing else is written anywhere. The demo writes under `demo/out/` and regenerates
   `examples/ledger.example.jsonl`.
 
 ## Threat model
@@ -529,11 +600,19 @@ transport that never saw the write, and re-derived again from the ledger by `ver
 anywhere on that path would be a thing to trust, and the point of the app is to need less trust, not
 more.
 
-The same reasoning rules out the obvious extra: a model that narrates the outcome after the fact,
-deciding nothing. The prose a human reads already exists and is deterministic — the PagerDuty note
-quotes the spans, names the settled exit code and cites the ledger head — so a generated retelling
-would add an API key, a failure mode and a source of drift in exchange for restating what is already
-stated. It was considered and dropped on purpose.
+That still leaves the reasonable question of where a second model *could* go, and there is exactly
+one place: `suggest-mapping`, which asks Gemini to draft the field mapping for a vendor payload. It
+is on the other side of the line, and the line is not "before the call" — it is **whether anything
+downstream has to believe the model**. The mapping is config, written once, read by a human, and its
+output is executed and validated by the same loader that would have rejected a hand-written mapping.
+Delete the model and you are back to writing the file yourself; delete it from the verdict path and
+there is no verdict at all. That asymmetry is the whole rule.
+
+The obvious extra is still out: a model that narrates the outcome after the fact, deciding nothing.
+The prose a human reads already exists and is deterministic — the PagerDuty note quotes the spans,
+names the settled exit code and cites the ledger head — so a generated retelling would add an API
+key, a failure mode and a source of drift in exchange for restating what is already stated. It was
+considered and dropped on purpose.
 
 ## The defence
 
@@ -713,6 +792,14 @@ own call over a second transport. Same technique, different product.
     making the port exact. And the checks Python returns for a ledger it cannot parse have no
     equivalent in JS: the page already has a graceful branch for a ledger it cannot read, and it
     is the page, not the ledger, that would be broken.
+
+21. A suggested mapping is checked for being *executable*, never for being *right*. `adapt` plus the
+    incident loader will catch a path that resolves to nothing and a severity outside the accepted
+    tokens, but a mapping that reads `$.alert.username` into `service` produces a perfectly valid
+    incident that wakes someone up to hear the wrong sentence. Nothing downstream can tell the
+    difference, because at that point there is no difference: it is a well-formed incident. The
+    mapping file is therefore reviewed by a human before it dials, which is why `suggest-mapping`
+    writes a file and stops rather than feeding `run` directly.
 
 ## License
 
