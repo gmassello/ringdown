@@ -411,9 +411,10 @@ proposes paths; it does not get to say what a valid incident is. Three propertie
 What the model still cannot be trusted with is whether the mapping is *right* — see ceiling 21.
 
 The tests for this path answer from a loopback HTTP server, which proves what this repository
-believes the Gemini contract to be — not the contract. So the repository's `deploy` workflow carries
-`GEMINI_API_KEY` as a repository secret and, on every run, asks the live API for a mapping over
-`examples/alertmanager.example.json` and then dials with it: `adapt`, then `preview`. The model never
+believes the Gemini contract to be — not the contract. So the repository's `deploy` workflow holds a
+Google API key as a repository secret, hands it to the job as `GEMINI_API_KEY`, and on every run
+asks the live API for a mapping over `examples/alertmanager.example.json` and then dials with it:
+`adapt`, then `preview`. The model never
 sees the mapping written by hand for that payload, so a pass means the prompt still works with no
 worked example, and a change on Google's side surfaces there rather than the first time you need it.
 That job never gates anything else — it says whether the contract still holds, and nothing in

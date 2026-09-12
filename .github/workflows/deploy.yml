@@ -32,7 +32,7 @@ jobs:
       # skips itself where node is absent. The gate is only a gate if it actually runs.
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - run: uv sync
         working-directory: apps/python/ringdown
@@ -55,7 +55,9 @@ jobs:
   gemini:
     runs-on: ubuntu-latest
     env:
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      # The repository keeps one secret name for Google across projects; the CLI reads
+      # GEMINI_API_KEY, so the mapping happens here rather than in two places in the app.
+      GEMINI_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
