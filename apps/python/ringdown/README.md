@@ -26,7 +26,8 @@ agent that audits itself through the same channel it wrote with has proved nothi
   - [A worked example: PagerDuty](#a-worked-example-pagerduty)
   - [A second worked example: Opsgenie](#a-second-worked-example-opsgenie)
   - [Asking a model for the mapping](#asking-a-model-for-the-mapping)
-- [Telling PagerDuty what happened](#telling-pagerduty-what-happened)
+- [Telling the alert system what happened](#telling-the-alert-system-what-happened)
+  - [Opsgenie, the same way](#opsgenie-the-same-way)
 - [The ledger](#the-ledger)
 - [Side effects, cancellation, credentials](#side-effects-cancellation-credentials)
 - [Threat model](#threat-model)
@@ -54,7 +55,7 @@ Python 3.11 or newer, and [uv](https://docs.astral.sh/uv/). No runtime dependenc
 git clone https://github.com/gmassello/ringdown
 cd ringdown/apps/python/ringdown
 uv sync
-uv run pytest -q          # 486 tests, no credentials, no outbound calls
+uv run pytest -q          # 498 tests, no credentials, no outbound calls
 ```
 
 Seven of those tests read the project site and skip where `docs/` is absent, which is the case in
@@ -271,8 +272,8 @@ already rang. It replaces 30 for that case — a ledger that cannot be opened, r
 a call exists is an infrastructure failure, not an operator mistake, and collapsing the two would
 tell a scheduler that no phone rang. The run prints the verdict and the attempts it got to before
 exiting, because that output is the only surviving evidence. A ledger that is unusable *before* the
-first call still exits 30: nothing was placed and the input file is simply bad. The PagerDuty note
-is the one writer exempt from this — it is best effort by design, so a note that cannot be posted or
+first call still exits 30: nothing was placed and the input file is simply bad. The note written
+back to the alert system is the one writer exempt from this — it is best effort by design, so a note that cannot be posted or
 recorded is reported and the run still exits on its own verdict.
 
 ## The incident file
@@ -479,7 +480,7 @@ worked example, and a change on Google's side surfaces there rather than the fir
 That job never gates anything else — it says whether the contract still holds, and nothing in
 `preview`, `run` or `verify` depends on the answer.
 
-## Telling PagerDuty what happened
+## Telling the alert system what happened
 
 Once the verdict has settled, `run --pagerduty-note` writes a note on the PagerDuty incident saying
 who was called, what they said, and where the evidence lives:
@@ -529,7 +530,53 @@ source of truth, and the note only points at it.
 or loopback. Any other host is refused before a socket opens, so the token cannot leave for somewhere
 else. Every delivery, successful or not, appends a `notified` record to the ledger.
 
-This leg has been exercised against a local server, never against PagerDuty itself.
+### Opsgenie, the same way
+
+`run --opsgenie-note` writes the same words to
+[an Opsgenie alert](https://docs.opsgenie.com/docs/alert-api#add-note-to-alert), because the note is
+composed before any vendor is chosen:
+
+```bash
+export OPSGENIE_API_KEY=...
+python -m ringdown run --incident /tmp/incident.json --rotation examples/rotation.example.json \
+                       --ledger ledger.jsonl --confirm 'place real calls' --opsgenie-note
+```
+
+A vendor is a row in a table — pinned regions, path, the shape of the `Authorization` header, the
+shape of the body — and nothing else. The text, the ledger record, the exit code and the refusal to
+guess a URL are shared, which is why the second one cost no new code path to get wrong:
+
+| | PagerDuty | Opsgenie |
+|---|---|---|
+| pinned to | `api.pagerduty.com`, `api.eu.pagerduty.com` | `api.opsgenie.com`, `api.eu.opsgenie.com` |
+| path | `/incidents/{id}/notes` | `/v2/alerts/{id}/notes?identifierType=id` |
+| authorization | `Token token=…` | `GenieKey …` |
+| body | `{"note": {"content": …}}` | `{"note": …, "source": "Ringdown"}` |
+| credentials | `PAGERDUTY_TOKEN`, `PAGERDUTY_FROM` | `OPSGENIE_API_KEY` |
+
+Opsgenie needs no second credential because it attributes the note to the key's owner rather than to
+a named user, and Ringdown does not fill in its optional `user` field for the same reason it will not
+send PagerDuty's `From` on anything but a note.
+
+**And Opsgenie is where refusing to acknowledge costs the most.** PagerDuty's acknowledgement is
+awkward — it needs a `From` header naming a person who did not act. Opsgenie's is
+`POST /v2/alerts/{id}/acknowledge` with nothing in the body: one line, no impersonation, and it would
+have looked like a feature. It is exactly the system where the shortcut was easiest, and it is not
+taken, because suppressing Opsgenie's own escalation on the strength of a phone call is the
+operator's decision and not this tool's.
+
+The `id` the note is written against is the one the alert payload carried, so the mapping that read
+the incident in is what points the note back — `$.event.data.id` for PagerDuty,
+`$.alert.alertId` for Opsgenie. Nothing checks that an id belongs to the vendor being written to; see
+ceiling 18.
+
+Alertmanager is read but never written. It is not an oversight and not a queue of work: an
+Alertmanager alert has nowhere to put a note. The only thing its API accepts about an existing alert
+is a silence, and silencing a page because somebody said "I've got it" on the phone is the same state
+change this whole section exists to refuse. Three systems are read; two have somewhere to write back;
+the third is named rather than left blank.
+
+This leg has been exercised against a local server, never against PagerDuty or Opsgenie themselves.
 
 ## The ledger
 
@@ -636,6 +683,11 @@ subcommand exits 30 without opening a socket when the key is absent. The payload
 your network, which is the one cost here that no pin removes, and the reason drafting a mapping is a
 separate opt-in subcommand rather than a fallback inside `adapt`.
 
+The note written back to an alert system puts the incident `id` in a URL path, and that id came out
+of an alert payload. It is percent-encoded with nothing left safe, so an id carrying `/`, `?` or `..`
+cannot reshape the request into a different endpoint on a host that is already trusted and already
+holds the credential. The pin decides the host; the encoding decides that the path stays the path.
+
 Webhooks are not used. The provider's deliveries carry no secret, no timestamp and no signature,
 and an unsigned delivery proves nothing about its sender, so Ringdown polls instead of trusting
 one.
@@ -693,7 +745,7 @@ Delete the model and you are back to writing the file yourself; delete it from t
 there is no verdict at all. That asymmetry is the whole rule.
 
 The obvious extra is still out: a model that narrates the outcome after the fact, deciding nothing.
-The prose a human reads already exists and is deterministic — the PagerDuty note quotes the spans,
+The prose a human reads already exists and is deterministic — the note quotes the spans,
 names the settled exit code and cites the ledger head — so a generated retelling would add an API
 key, a failure mode and a source of drift in exchange for restating what is already stated. It was
 considered and dropped on purpose.
@@ -730,8 +782,12 @@ own call over a second transport. Same technique, different product.
 2. A verdict of `unknown` is never verified — see [Exit codes](#exit-codes).
 3. No inbound webhooks, because they are unsigned. The provider's deliveries carry no secret, no
    timestamp and no signature, so `adapt` reads a payload the operator hands it on disk and nothing
-   is accepted over the network. The outbound direction is now real but narrow — see
-   [Telling PagerDuty what happened](#telling-pagerduty-what-happened).
+   is accepted over the network. The outbound direction is real for the two systems that have
+   somewhere to receive it — see
+   [Telling the alert system what happened](#telling-the-alert-system-what-happened). The third
+   payload shape this app reads, Alertmanager, has nowhere: its API takes silences, not notes, and a
+   silence is a state change Ringdown will not make. So the asymmetry is two written out of three
+   read, on purpose.
 4. No cancellation of a call in flight.
 5. Two runners are not prevented. The lock on the ledger is taken per append and only serialises
    writers to that file; it is not a run lock and it is not distributed. What stops a second run
@@ -847,15 +903,18 @@ own call over a second transport. Same technique, different product.
     person simply said the thing. Distinguishing that from an impersonator who says the same words
     is identity verification, which a phone call does not provide and this app does not claim.
 
-18. The PagerDuty note is written once, with no retry and no queue. If PagerDuty is down, rate
-    limits the request, or refuses the `From` user, the note is lost and the run still exits on its
-    own verdict — the ledger keeps the evidence and the incident does not. It also assumes the
-    incident `id` is PagerDuty's own, which only holds when the incident entered through that
-    mapping; pointing it at an incident id from anywhere else produces a 404 that is reported and
-    otherwise ignored. And it has never run against PagerDuty: the leg is exercised against a local
-    server, so what is proven is the request this app builds, not the response their API gives it.
-    A note that does not arrive is not silent, though: the failure is appended to the ledger and
-    `verify` reports it as unresolved.
+18. The note is written once, with no retry and no queue. If the vendor is down, rate limits the
+    request, or refuses the `From` user, the note is lost and the run still exits on its own verdict
+    — the ledger keeps the evidence and the incident does not. It also assumes the incident `id`
+    belongs to the vendor being written to, and **nothing checks that**: the flag picks the
+    destination and the mapping picked the id, so `--opsgenie-note` on an incident that entered
+    through the PagerDuty mapping posts a PagerDuty id to Opsgenie and earns a 404 that is reported
+    and otherwise ignored. Opsgenie adds one more inch of distance between the record and the truth:
+    it answers `202 Accepted`, which is acceptance and not durability, so `delivered` there means the
+    far end took the request, not that a note exists. And neither leg has ever run against the real
+    API: both are exercised against a local server, so what is proven is the request this app builds,
+    not the response theirs gives it. A note that does not arrive is not silent, though: the failure
+    is appended to the ledger and `verify` reports it as unresolved.
 
 19. The call script is configurable; the shape of the commitment is not. Ringdown settles a call as
     acknowledged only when somebody names a number of minutes: `classify` returns `no_eta` before it

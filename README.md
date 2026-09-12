@@ -10,7 +10,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="486 tests" src="https://img.shields.io/badge/tests-486-2f6f4e">
+  <img alt="498 tests" src="https://img.shields.io/badge/tests-498-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -129,7 +129,7 @@ flowchart TD
     VERDICT --> LEDGER[("ledger.jsonl<br/>attempt · verdict · verification, SHA-256 chained")]
     AUDIT --> LEDGER
     CALLE -.->|"MCP · second transport"| AUDIT
-    VERDICT --> NOTE["pagerduty-note<br/>quotes what was said · never an acknowledgement"]
+    VERDICT --> NOTE["note back<br/>PagerDuty · Opsgenie<br/>quotes what was said · never an acknowledgement"]
 ```
 
 - **The ladder is resolved before anything dials.** A shift covering the current moment holds its
@@ -150,8 +150,12 @@ flowchart TD
   arrive through `adapt` and neither cost a line in the adapter: the mapping is paths into the
   payload and literals for what it does not carry. Opsgenie is the one that tests the claim, because
   its `Create` payload has no priority, no description and no alert URL, and the file absorbs all
-  three. When the verdict settles, `run --pagerduty-note` writes it back as a note quoting what the
-  engineer said — a note, never an acknowledgement.
+  three. When the verdict settles, `run --pagerduty-note` or `--opsgenie-note` writes it back as a
+  note quoting what the engineer said — a note, never an acknowledgement, and the same words either
+  way, because a vendor is a row in a table and not a code path. Opsgenie is where that restraint
+  costs something: acknowledging there is a one-line POST with no impersonation, and it is still not
+  taken. Alertmanager is read and never written, because an Alertmanager alert has nowhere to put a
+  note and the only thing its API would accept is a silence.
 - **A model may write that file. It never writes the verdict.** `suggest-mapping` asks Gemini to
   draft the mapping for a payload nobody has mapped yet, and then runs the draft: `adapt` executes
   it and the incident loader validates the result before it reaches disk. A rejected draft goes back
