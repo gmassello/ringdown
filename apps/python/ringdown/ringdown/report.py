@@ -90,6 +90,11 @@ def reason_prose(attempt: Attempt, policy: Policy) -> tuple[str, ...]:
             f"label {snapshot.confidence_label} carried a score of "
             f"{snapshot.confidence_score}, below the {policy.min_confidence} floor",
         )
+    if attempt.reason == "callback_requested" and attempt.extraction is not None:
+        return (
+            f"asked to be called back in {attempt.extraction.callback_minutes} minutes,",
+            "which is a request to be called again, not a commitment to the incident",
+        )
     if attempt.reason == "no_eta":
         return (
             "the call completed and the provider was confident,",
@@ -145,7 +150,10 @@ def _span_lines(attempt: Attempt) -> list[str]:
         else extraction.disposition
     )
     eta = _quoted(extraction.eta_span) if extraction.eta_span else "absent"
-    return [_span("disposition", disposition), _span("eta", eta)]
+    lines = [_span("disposition", disposition), _span("eta", eta)]
+    if extraction.callback_span:
+        lines.append(_span("callback", _quoted(extraction.callback_span)))
+    return lines
 
 
 def _outcome_lines(attempt: Attempt, policy: Policy) -> list[str]:

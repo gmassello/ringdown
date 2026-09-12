@@ -54,7 +54,7 @@ Python 3.11 or newer, and [uv](https://docs.astral.sh/uv/). No runtime dependenc
 git clone https://github.com/gmassello/ringdown
 cd ringdown/apps/python/ringdown
 uv sync
-uv run pytest -q          # 449 tests, no credentials, no outbound calls
+uv run pytest -q          # 469 tests, no credentials, no outbound calls
 ```
 
 Seven of those tests read the project site and skip where `docs/` is absent, which is the case in
@@ -74,7 +74,7 @@ Locally, the demo needs no account either:
 uv run python -m demo.run_local
 ```
 
-Seven scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
+Eight scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
 nothing rings — the demo supplies its own throwaway key. `demo/EXPECTED.md` holds the full
 narrated output; this is scenario 2:
 
@@ -191,6 +191,29 @@ All of it is proven against the fake, and against the live provider none of it h
 first thing to read in [Known ceilings](#known-ceilings). The live MCP surface indexes calls by a
 `run_id` that only its own placement tool hands out, and no identifier a REST-placed call exposes
 resolves to one, so there is no run to read. Live, every verdict settles at exit 45.
+
+## Asking to be called back
+
+"I can't right now, call me back in ten minutes" is not an acknowledgement and Ringdown does not
+record it as one: the attempt settles `not_acknowledged`, with the reason `callback_requested` and
+the words that carried the request quoted in the ledger beside the minutes asked for. Nobody owns
+the incident yet, and the exit code says so.
+
+What changes is where the ladder goes next. Instead of stepping past that person, it waits and
+calls the same person once more — but only if the wait fits. The minutes asked for, plus one more
+call, have to fit inside what is left of `ladder_timeout_seconds`. Ask for ninety minutes on a
+fifteen-minute ladder and the next rung rings immediately, with the request recorded rather than
+granted. The wait competes against the escalation rather than suspending it, which is the whole
+point: an incident that cannot wait does not wait.
+
+The second call is a second call, not a retry. The attempt number lives inside the hashed payload,
+so it produces its own idempotency key, its own `intent` and `attempt` records, and its own
+`ringdown_attempt_id` for the provider to echo back. One rung can ring at most twice, ever: a
+person who keeps asking for more time is escalated past on the second ask.
+
+The agent never offers this. The call script still forbids promising a callback, because a promise
+Ringdown cannot keep across a crash is worse than no promise. This is only Ringdown hearing
+something the recipient volunteered, and acting on it inside one run.
 
 ## Exit codes
 
@@ -686,15 +709,21 @@ own call over a second transport. Same technique, different product.
    therefore stable across processes — provided the provider honours it. Their records may
    interleave in a shared ledger without breaking the audit: `verify` re-derives each verdict from
    the attempts of its own incident, not from whatever preceded it in the file.
-6. The ladder never re-calls. If that is ever added it needs another idempotency key and another
-   record, never a silent retry.
-7. Re-escalation when an ETA expires is documented, not implemented. Recurrence belongs to the
-   host scheduler.
+6. The ladder re-calls exactly once per rung, and only when the recipient asked it to. That second
+   call is a second call in every sense: its own attempt number inside the hashed payload, its own
+   idempotency key, its own `intent` and `attempt` records. There is still no silent retry, and no
+   path that dials the same key twice meaning two different calls.
+7. Re-escalation when an ETA expires is still not implemented, and a callback is not it. Ringdown
+   honours a request to be called back only *within one process and one ladder*: nothing survives
+   the run. If the process dies during the wait, the ledger holds the request and the words that
+   carried it, and calling back is the host scheduler's job, as it always was.
 8. The confidence label allowlist can start failing if the provider adds a new label. It fails
    closed, which is why the score is the primary check.
 9. `ladder_timeout_seconds` is a global deadline checked between rungs: once it expires no new
    rung is started, but a call already in flight is never cut short — its real bound stays
-   `per_call_timeout_seconds`.
+   `per_call_timeout_seconds`. A callback waits against that same deadline, which is what stops a
+   long request from eating the escalation: the wait is honoured only if the minutes asked for plus
+   one more call still fit inside what is left.
 10. Disposition and ETA extraction are English-only phrase lists and regexes, and so is the call
     script check: a script in another language is refused because it cannot contain the English
     sentence the extractor looks for. Translating the call means translating the extractor with it.
@@ -752,7 +781,7 @@ own call over a second transport. Same technique, different product.
     supported set at load time is a preflight this app does not do.
 15. Almost every artefact in this repository was produced with one channel wearing two names.
     The demo points both flags at a single `FakeCalleServer` — same process, same port, one
-    transcript in memory — so the seven scenarios, the committed ledger and most of the suite
+    transcript in memory — so the eight scenarios, the committed ledger and most of the suite
     verify against the server that placed the call. Ringdown refuses that collision off
     loopback, announces it on loopback and records both hostnames either way, so the gap is
     visible rather than hidden. The exception is now real: [`tests/fixtures/`](tests/fixtures/)
@@ -834,6 +863,12 @@ own call over a second transport. Same technique, different product.
     difference, because at that point there is no difference: it is a well-formed incident. The
     mapping file is therefore reviewed by a human before it dials, which is why `suggest-mapping`
     writes a file and stops rather than feeding `run` directly.
+
+22. The rotation is resolved once, when the ladder starts. A callback is placed to the person that
+    resolution named, not to whoever is on call when the wait ends — so a callback that straddles a
+    shift change rings the person going off shift. The window is bounded by the ladder deadline
+    rather than open-ended, which is what keeps this small, but it is a real edge and the fix is to
+    re-resolve the rotation at callback time.
 
 ## License
 

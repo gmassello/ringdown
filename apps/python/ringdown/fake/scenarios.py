@@ -164,3 +164,20 @@ def second_channel_speaks_another_dialect(name: str, first_name: str) -> FakeSce
         "result": {"call_id": None, "call_ids": [], "transcript": None},
     }
     return replace(answer_ack(name, first_name), mcp_overrides=documented)
+
+
+def asks_for_callback(
+    name: str,
+    first_name: str,
+    ask: str = "i can't right now, call me back in ten minutes",
+    later: FakeScenario | None = None,
+) -> FakeScenario:
+    return FakeScenario(
+        turns=_opening(name)
+        + [
+            turn("user", f"yes, this is {first_name}"),
+            turn("bot", DETAIL),
+            turn("user", ask),
+        ],
+        on_second_call=answer_ack(name, first_name) if later is None else later,
+    )

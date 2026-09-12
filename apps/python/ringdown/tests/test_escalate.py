@@ -274,3 +274,86 @@ def test_a_settled_attempt_without_its_evidence_is_unrepresentable():
             reason="committed",
             call_id="c1",
         )
+
+
+def test_a_request_to_be_called_back_returns_to_the_same_person_instead_of_escalating(
+    serving, rest_client
+):
+    server = serving({ALICE.phone: scenarios.asks_for_callback(ALICE.name, "alice")})
+    waited: list[float] = []
+
+    result = run_ladder(
+        rest_client(server), an_incident(policy=FAST), LADDER, pause=waited.append
+    )
+
+    assert result.verdict == "acknowledged"
+    assert [a.verdict for a in result.attempts] == ["not_acknowledged", "acknowledged"]
+    assert result.attempts[0].reason == "callback_requested"
+    assert [a.rung.contact.id for a in result.attempts] == [ALICE.id, ALICE.id]
+    assert waited == [600.0]
+
+
+def test_the_call_back_is_a_second_call_with_its_own_idempotency_key(serving, rest_client):
+    server = serving({ALICE.phone: scenarios.asks_for_callback(ALICE.name, "alice")})
+
+    result = run_ladder(
+        rest_client(server), an_incident(policy=FAST), LADDER, pause=lambda _: None
+    )
+
+    keys = [a.key for a in result.attempts]
+    assert len(keys) == len(set(keys))
+    assert [a.attempt_id for a in result.attempts] == [
+        "inc-2026-08-09-0113/primary/1",
+        "inc-2026-08-09-0113/primary/2",
+    ]
+    assert len(server.created) == 2
+
+
+def test_more_minutes_than_the_ladder_has_left_escalates_instead_of_waiting(
+    serving, rest_client
+):
+    asking = scenarios.asks_for_callback(
+        ALICE.name, "alice", "i can't right now, call me back in 90 minutes"
+    )
+    server = serving({ALICE.phone: asking, BEN.phone: scenarios.answer_ack(BEN.name, "ben")})
+    waited: list[float] = []
+
+    result = run_ladder(
+        rest_client(server), an_incident(policy=FAST), LADDER, pause=waited.append
+    )
+
+    assert waited == []
+    assert result.verdict == "acknowledged"
+    assert [a.rung.contact.id for a in result.attempts] == [ALICE.id, BEN.id]
+    assert result.attempts[0].reason == "callback_requested"
+
+
+def test_a_second_request_from_the_same_person_escalates_rather_than_waiting_again(
+    serving, rest_client
+):
+    stalling = scenarios.asks_for_callback(ALICE.name, "alice")
+    stalling.on_second_call = scenarios.asks_for_callback(ALICE.name, "alice")
+    server = serving({ALICE.phone: stalling, BEN.phone: scenarios.answer_ack(BEN.name, "ben")})
+    waited: list[float] = []
+
+    result = run_ladder(
+        rest_client(server), an_incident(policy=FAST), LADDER, pause=waited.append
+    )
+
+    assert waited == [600.0]
+    assert [a.rung.contact.id for a in result.attempts] == [ALICE.id, ALICE.id, BEN.id]
+    assert result.verdict == "acknowledged"
+
+
+def test_a_request_to_be_called_back_that_nobody_spoke_is_not_honoured(serving, rest_client):
+    server = serving(
+        {
+            ALICE.phone: scenarios.ambiguous_yes(ALICE.name, "alice"),
+            BEN.phone: scenarios.answer_ack(BEN.name, "ben"),
+        }
+    )
+    waited: list[float] = []
+
+    run_ladder(rest_client(server), an_incident(policy=FAST), LADDER, pause=waited.append)
+
+    assert waited == []

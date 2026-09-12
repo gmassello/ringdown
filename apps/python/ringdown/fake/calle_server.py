@@ -53,6 +53,7 @@ class FakeScenario:
     turns: list[dict[str, Any]] = field(default_factory=list)
     faults: dict[str, list[Fault]] = field(default_factory=dict)
     mcp_overrides: dict[str, Any] | None = field(default_factory=dict)
+    on_second_call: "FakeScenario | None" = None
 
 
 @dataclass
@@ -98,6 +99,12 @@ def stamp(moment: datetime) -> str:
     return moment.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def scenario_for(scenario: FakeScenario, payload: dict[str, Any]) -> FakeScenario:
+    attempt = payload.get("metadata", {}).get("ringdown_attempt_id", "")
+    later = scenario.on_second_call
+    return later if later is not None and str(attempt).endswith("/2") else scenario
+
+
 class FakeCalle:
     def __init__(self, scenarios: dict[str, FakeScenario]) -> None:
         self.scenarios = scenarios
@@ -132,7 +139,7 @@ class FakeCalle:
             record = CallRecord(
                 id=f"call_fake{len(self.calls) + 1}",
                 payload=payload,
-                scenario=self.scenarios[phone],
+                scenario=scenario_for(self.scenarios[phone], payload),
                 created_at=datetime.now(UTC),
             )
             self.calls[record.id] = record

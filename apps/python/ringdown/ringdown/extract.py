@@ -50,6 +50,17 @@ ACKNOWLEDGE = (
     "i'm picking this up",
 )
 
+CALLBACK = (
+    "call me back",
+    "call me again",
+    "call me in",
+    "call back in",
+    "ring me back",
+    "try me again",
+    "try me in",
+    "come back to me",
+)
+
 OWNER = (
     re.compile(r"\bthis is ([a-z][a-z'\-]+)"),
     re.compile(r"\b([a-z][a-z'\-]+) speaking\b"),
@@ -104,6 +115,8 @@ class Extraction:
     owner_span: str
     eta_minutes: int | None
     eta_span: str
+    callback_minutes: int | None = None
+    callback_span: str = ""
 
 
 def normalise(text: str) -> str:
@@ -172,6 +185,17 @@ def find_eta(turns: Sequence[Turn]) -> tuple[int | None, str]:
     return None, ""
 
 
+def find_callback(spoken: Sequence[tuple[Turn, str]]) -> tuple[int | None, str]:
+    for turn, text in spoken:
+        asked = min((text.find(phrase) for phrase in CALLBACK if phrase in text), default=None)
+        if asked is None:
+            continue
+        minutes = _minutes_in_normalised(text[asked:])
+        if minutes is not None and minutes >= 1:
+            return minutes, turn.text
+    return None, ""
+
+
 def find_owner(spoken: Sequence[tuple[Turn, str]]) -> tuple[str, str]:
     for turn, text in spoken:
         for pattern in OWNER:
@@ -201,4 +225,7 @@ def extract(turns: Sequence[Turn]) -> Extraction:
 
     if not spoken:
         return Extraction("unreachable", "", "", "", None, "")
-    return Extraction("unclear", "", owner, owner_span, eta_minutes, eta_span)
+    callback_minutes, callback_span = find_callback(spoken)
+    return Extraction(
+        "unclear", "", owner, owner_span, eta_minutes, eta_span, callback_minutes, callback_span
+    )

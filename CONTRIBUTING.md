@@ -9,7 +9,7 @@ a matrix that fails if a third `apps/python/*/pyproject.toml` shows up.
 ```bash
 cd apps/python/ringdown        # or apps/python/calle-receiver
 uv sync
-uv run pytest                  # ringdown: 449 · receiver: 26
+uv run pytest                  # ringdown: 469 · receiver: 29
 ```
 
 **Ringdown has zero runtime dependencies** — `dependencies = []`, standard library only,
@@ -25,7 +25,7 @@ move, not a one-line edit:
 cd apps/python/ringdown && uv run python -m demo.run_local
 ```
 
-That runs seven scenarios against `fake/calle_server.py` on loopback and **rewrites**
+That runs eight scenarios against `fake/calle_server.py` on loopback and **rewrites**
 `examples/ledger.example.jsonl`. Then:
 
 1. Reconcile `demo/EXPECTED.md` by hand — `tests/test_demo.py` asserts the demo still prints every
@@ -38,7 +38,7 @@ That runs seven scenarios against `fake/calle_server.py` on loopback and **rewri
 ## Layering is enforced, not conventional
 
 `tests/test_layering.py` fails if the pure modules (`extract`, `dispositions`, `calls`, `checks`,
-`canonical`, `incident`, `script`, `adapter`, `exits`) or `audit` pull in `urllib.request`; if
+`canonical`, `incident`, `script`, `adapter`, `exits`, `task`) or `audit` pull in `urllib.request`; if
 `audit` imports `escalate` or `calle`; or if `report` imports `calle` or `dispositions`. Adding a
 layer means adding it to `FORBIDDEN`/`PURE` there.
 
@@ -59,7 +59,7 @@ add one.
 ## Documentation is load-bearing
 
 `apps/python/ringdown/README.md` and `demo/EXPECTED.md` are tested or referenced, not decorative.
-When behaviour changes, **update the nineteen known ceilings rather than deleting them** — the
+When behaviour changes, **update the twenty-two known ceilings rather than deleting them** — the
 honesty about what does not work is the point.
 
 ## Two checkouts

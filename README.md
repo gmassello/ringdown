@@ -10,7 +10,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="449 tests" src="https://img.shields.io/badge/tests-449-2f6f4e">
+  <img alt="469 tests" src="https://img.shields.io/badge/tests-469-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -87,11 +87,11 @@ drops to the next rung, and the backup commits.
 cd apps/python/ringdown && uv sync && uv run python -m demo.run_local
 ```
 
-Seven scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
+Eight scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
 nothing rings — the demo supplies its own throwaway key.
 
 <details>
-<summary><b>The seven scenarios</b> — what each one is there to break</summary>
+<summary><b>The eight scenarios</b> — what each one is there to break</summary>
 
 | # | Scenario | The point |
 |---|---|---|
@@ -102,6 +102,7 @@ nothing rings — the demo supplies its own throwaway key.
 | 4b | The replay is ambiguous too | Neither create says whether a call exists, so Ringdown stops instead of guessing |
 | 5 | An explicit decline | That is an answer, not a failure — Ben and Carla never ring |
 | 6 | The verdict does not reconcile | The placing channel reports a clean acknowledgement; the second channel does not |
+| 7 | Asking to be called back later | A request, not a commitment: recorded with its words, and granted only if the wait fits |
 
 The demo ends by verifying the ledger it wrote, then tampering with the verdict, resealing the
 record, relinking every record after it — and verifying again, which still fails. Full narrated
@@ -305,7 +306,7 @@ failure is unsafe. The full argument, one project at a time, is in
   hash.
 - **Almost every artefact in this repository was produced with one channel wearing two names.** The
   demo points both flags at a single fake: same process, same port, one transcript in memory. The
-  seven scenarios, the committed ledger and nearly the whole suite verify against the server that
+  eight scenarios, the committed ledger and nearly the whole suite verify against the server that
   placed the call. The exception is `tests/fixtures/`, parsed by tests that never touch the fake —
   and one of those shapes proves the parser is wrong. It is the only thing here confirmed by
   something other than itself.
@@ -315,10 +316,11 @@ failure is unsafe. The full argument, one project at a time, is in
   minutes. That is strictly more than "notification sent", and strictly less than a resolution.
 - A verdict of `unknown` is never verified — there may be a live call.
 - A call already in flight cannot be cancelled. What is cancellable is the ladder.
-- The ladder never re-calls, and retries would need another key and another record.
+- The ladder re-calls once per rung, and only when asked to: a second call carries its own key
+  and its own records, and the wait has to fit inside the time the ladder has left.
 - The provider does not dial every country, and Ringdown does not preflight the list.
 
-The [app README](apps/python/ringdown/README.md#known-ceilings) has all twenty-one, unvarnished.
+The [app README](apps/python/ringdown/README.md#known-ceilings) has all twenty-two, unvarnished.
 
 </details>
 

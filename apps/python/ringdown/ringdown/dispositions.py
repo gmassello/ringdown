@@ -15,6 +15,7 @@ class Grounded:
     disposition: bool
     owner: bool
     eta: bool
+    callback: bool = False
 
 
 @dataclass(frozen=True)
@@ -35,6 +36,7 @@ def ground(extraction: Extraction, turns: Sequence[Turn]) -> Grounded:
         disposition=ground_span(extraction.disposition_span, turns),
         owner=ground_span(extraction.owner_span, turns),
         eta=ground_span(extraction.eta_span, turns),
+        callback=ground_span(extraction.callback_span, turns),
     )
 
 
@@ -63,6 +65,8 @@ def classify(
         return Assessment("not_acknowledged", "task_not_completed")
     if extraction.disposition in ("unreachable", "wrong_person"):
         return Assessment("not_acknowledged", extraction.disposition)
+    if extraction.callback_minutes is not None and grounded.callback:
+        return Assessment("not_acknowledged", "callback_requested")
     if extraction.eta_minutes is None:
         return Assessment("not_acknowledged", "no_eta")
     if not 1 <= extraction.eta_minutes <= policy.max_eta_minutes:

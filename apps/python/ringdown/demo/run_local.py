@@ -119,6 +119,18 @@ SCENARIOS: list[tuple[str, str, Scenarios]] = [
         "The placing channel reports a clean acknowledgement. The second channel does not.",
         {ALICE: scenarios.channel_mismatch("Alice Okafor", "alice")},
     ),
+    (
+        "Scenario 7 - Asking to be called back later is not taking the incident",
+        "Alice asks for more minutes than this ladder has left, so Ben rings now and the "
+        "request is recorded with the words that made it. A shorter ask is called back "
+        "instead; the demo cannot show that one, because it would have to wait.",
+        {
+            ALICE: scenarios.asks_for_callback(
+                "Alice Okafor", "alice", "i can't right now, call me back in 90 minutes"
+            ),
+            BEN: scenarios.answer_ack("Ben Mensah", "ben", "i can be on it in twenty minutes"),
+        },
+    ),
 ]
 
 

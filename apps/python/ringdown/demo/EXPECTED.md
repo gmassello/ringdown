@@ -330,6 +330,65 @@ exit 40
 
 ---
 
+## Scenario 7 — Asking to be called back later is not taking the incident
+
+Alice asks to be called back in ninety minutes. That is a request, not a commitment, so the
+attempt settles `not_acknowledged` and the ladder keeps its own clock: ninety minutes does not
+fit inside the time this ladder has left, so Ben rings **now** rather than in an hour and a half.
+
+What is new is that the request is no longer thrown away. The minutes and the words that carried
+them are written to the ledger, so whoever reads it afterwards can see that Alice answered and
+what she asked for.
+
+A shorter ask is honoured instead: the ladder waits and calls the same person a second time, with
+its own idempotency key and its own pair of records. That path is covered by the tests and not by
+this demo, because showing it would mean waiting ten real minutes.
+
+```text
+[1/3] primary  Alice Okafor  +1********00
+      idempotency key rd-inc-2026-08-09-0113-primary-1-fa4c8e3b3de0
+      call call_fake1  status completed  confidence 0.94 high
+      not acknowledged (callback_requested)  asked to be called back in 90 minutes,
+                                             which is a request to be called again, not a commitment to the incident
+        disposition  unclear
+        eta          absent
+        callback     "i can't right now, call me back in 90 minutes"
+
+[2/3] secondary  Ben Mensah  +1********01
+      idempotency key rd-inc-2026-08-09-0113-secondary-1-fcff0fabef7e
+      call call_fake2  status completed  confidence 0.94 high
+      acknowledged  owner Ben Mensah  eta 20 minutes
+        disposition  "yes, i am taking this incident right now"
+        owner        "yes, this is ben"
+        eta          "i can be on it in twenty minutes"
+
+verdict acknowledged  owner b.mensah  eta 20 minutes
+
+# Verification of inc-2026-08-09-0113 attempt 1 (a.okafor) on the second channel: the run reports no acknowledgement
+- [x] run for Alice Okafor reports no acknowledgement
+
+# Verification of inc-2026-08-09-0113 attempt 2 (b.mensah) on the second channel: the second channel serves the same run
+- [x] second channel returned a run for call call_fake2
+- [x] run reports call id call_fake2
+- [x] run echoes the attempt id inc-2026-08-09-0113/secondary/1 we sent
+- [x] run reached Ben Mensah at +1********01
+- [x] run status COMPLETED maps to the recorded completed
+- [x] the run finished inside the escalation window
+
+# Verification of inc-2026-08-09-0113 attempt 2 (b.mensah) on the second channel: the acknowledgement holds
+- [x] re-extracting the second channel transcript gives disposition acknowledged
+- [x] the recorded disposition span is spoken by the recipient
+- [x] the recorded owner Ben Mensah is spoken by the recipient
+- [x] the recorded ETA of 20 minutes is spoken by the recipient
+
+verified 11/11
+
+ledger 6 records  head sha256:6485…  calls placed 2
+exit 0
+```
+
+---
+
 ## The ledger check the demo runs last
 
 Scenario 3 writes its ledger to `examples/ledger.example.jsonl`, and that file is committed

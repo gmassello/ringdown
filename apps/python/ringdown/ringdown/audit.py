@@ -62,10 +62,11 @@ def attempt_record(attempt: Attempt, incident_id: str) -> dict:
                 ("disposition", extraction.disposition_span),
                 ("owner", extraction.owner_span),
                 ("eta", extraction.eta_span),
+                ("callback", extraction.callback_span),
             )
             if span
         }
-    return {
+    record = {
         "type": "attempt",
         "incident": incident_id,
         "attempt_id": attempt.attempt_id,
@@ -79,6 +80,9 @@ def attempt_record(attempt: Attempt, incident_id: str) -> dict:
         "eta_minutes": extraction.eta_minutes if extraction else None,
         "instructed": attempt.instructed,
     }
+    if extraction is not None and extraction.callback_minutes is not None:
+        record["callback_minutes"] = extraction.callback_minutes
+    return record
 
 
 def verdict_record(incident_id: str, result: LadderResult) -> dict:

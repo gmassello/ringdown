@@ -205,3 +205,48 @@ def test_a_flagged_injection_never_supplies_a_disposition(text):
 
     assert result.disposition == "unclear"
     assert result.disposition_span == ""
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("call me back in ten minutes", 10),
+        ("i can't right now, call me back in ten minutes", 10),
+        ("not at my laptop, try me in 5 min", 5),
+        ("ring me back in half an hour", 30),
+        ("call me in twenty five minutes", 25),
+        ("call me back later", None),
+        ("call me back in zero minutes", None),
+        ("i have been on calls for twenty minutes", None),
+        ("give me fifteen minutes", None),
+    ],
+)
+def test_a_request_to_be_called_back_is_read_only_when_it_names_minutes(text, expected):
+    assert extract(said("hello", text)).callback_minutes == expected
+
+
+def test_the_agent_offering_to_call_back_is_not_the_recipient_asking_for_it():
+    offer = Turn("bot", "Should I call you back in ten minutes?")
+
+    assert extract((offer,) + said("hello")).callback_minutes is None
+
+
+def test_an_acknowledgement_with_an_eta_is_not_a_request_to_be_called_back():
+    result = extract(asked("yes, this is alice", "yes, i am taking this incident right now",
+                           "give me fifteen minutes"))
+
+    assert result.disposition == "acknowledged"
+    assert result.callback_minutes is None
+
+
+def test_an_explicit_decline_stays_a_decline_even_when_it_names_a_later_time():
+    result = extract(said("i am not taking this, call me back in ten minutes"))
+
+    assert result.disposition == "declined"
+    assert result.callback_minutes is None
+
+
+def test_the_callback_span_is_the_verbatim_turn_that_asked_for_it():
+    spoken = "i can't right now, call me back in ten minutes"
+
+    assert extract(said("hello", spoken)).callback_span == spoken

@@ -17,7 +17,7 @@ HTTP). Do not add one. The receiver may use its FastAPI/SQLModel/Twilio stack.
 ```bash
 cd apps/python/ringdown        # or apps/python/calle-receiver
 uv sync
-uv run pytest                  # ringdown: 449 tests · receiver: 26
+uv run pytest                  # ringdown: 469 tests · receiver: 29
 uv run pytest tests/test_verify.py -k grounding    # one file / one test
 ```
 
@@ -27,7 +27,7 @@ Ringdown demo, and the thing to run after touching the ladder, the report or the
 cd apps/python/ringdown && uv sync && uv run python -m demo.run_local
 ```
 
-It runs seven scenarios against `fake/calle_server.py` on loopback and **rewrites
+It runs eight scenarios against `fake/calle_server.py` on loopback and **rewrites
 `examples/ledger.example.jsonl`**. `tests/test_demo.py` asserts that the committed ledger is byte-identical
 to what the demo writes, and that the demo still prints every block quoted in `demo/EXPECTED.md`,
 in order. So a change to output formatting or ledger content means: run the demo, reconcile
@@ -54,7 +54,7 @@ idempotency key, the spoken task) → `escalate.py` (`run_ladder`, one rung at a
 
 Layering is **enforced by `tests/test_layering.py`**, not by convention:
 - the pure modules (`extract`, `dispositions`, `calls`, `checks`, `canonical`, `incident`,
-  `script`, `adapter`, `exits`) and `audit` must not pull in `urllib.request` — importing them must
+  `script`, `adapter`, `exits`, `task`) and `audit` must not pull in `urllib.request` — importing them must
   not touch the network stack;
 - `audit` must not import `escalate` or `calle`: reading a ledger never loads the provider client;
 - `report` must not import `calle` or `dispositions`.
@@ -98,7 +98,7 @@ prove, so it is a decision, not a patch — see ceiling 12 in `apps/python/ringd
 
 ## Documentation is load-bearing
 
-`apps/python/ringdown/README.md` (setup, exit codes, file formats, threat model, twenty known
+`apps/python/ringdown/README.md` (setup, exit codes, file formats, threat model, twenty-two known
 ceilings) and `demo/EXPECTED.md` are tested or referenced, not decorative. When behaviour changes,
 update the ceilings rather than deleting them — the honesty about what does not work is the point,
 and a live run currently always settles at exit 45.
@@ -106,7 +106,7 @@ and a live run currently always settles at exit 45.
 ## The other checkout
 
 `apps/python/ringdown/` and `skills/incident-escalation-call/` also live, byte-identical, in the
-fork at `~/Documents/awesome-phone-call-agents` (branch `feat/incident-escalation-call`, the
+fork at `~/Documents/awesome-phone-call-agents` (branch `feat/ringdown-pagerduty-scripts-and-mapping-drafts`, the
 upstream PR). There is no submodule and no sync script: mirror by hand before committing, and diff
 with `-x .venv -x __pycache__ -x .pytest_cache -x out`. Only those two paths travel upstream — the
 root `README.md`, `docs/` and `apps/python/calle-receiver/` stay here.
