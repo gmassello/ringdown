@@ -55,6 +55,16 @@ const explainStates = () => {
   }
 };
 
+// one copy of the text in the markup, one per deep view on the page, and an id that stays unique
+const placePrimer = () => {
+  const primer = document.getElementById("primer");
+  for (const view of ["run", "receiver"]) {
+    const copy = primer.cloneNode(true);
+    copy.removeAttribute("id");
+    document.querySelector(`[data-view="${view}"] .shell`).prepend(copy);
+  }
+};
+
 const setUpRouting = () => {
   const fromHash = (land) => showView(location.hash.replace("#", ""), land);
   window.addEventListener("hashchange", () => fromHash(true));
@@ -407,6 +417,7 @@ const setUpLedger = async () => {
 
 setUpTheme();
 explainStates();
+placePrimer();
 setUpRouting();
 setUpRun();
 setUpLedger().catch((error) => console.error("the ledger view could not be set up", error));

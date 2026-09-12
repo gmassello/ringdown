@@ -24,6 +24,13 @@ Both packages are versioned together at `0.1.0`.
 - An index on `Call.started_at` in the receiver, which is the only column the dashboard orders by,
   and a per-call cap on the transcript segments a card renders. A card that truncates says so.
 - A visible legend under each ladder on the site, explaining every state it uses.
+- An *In plain words* section, first thing in the root README, and a *What Ringdown does* card at
+  the top of `#ledger`, `#run` and `#receiver` on the site: what the system does, in language that
+  assumes no on-call vocabulary. The site shows one view at a time, so a deep link to any of the
+  three — `#ledger` is the one this README hands out — used to open on a heading like "The chain
+  closes cleanly. The check still fails." with no context at all, and with no way back to the
+  overview. The card lives once in the markup and `placePrimer` clones it into the other two, so
+  the text has one home; it carries the first link back to `#overview` those views have had.
 - `CONTRIBUTING.md` and this changelog.
 - A `LICENSE` inside `apps/python/ringdown/`, so the package that travels upstream carries one.
 - A table of contents, a `## License` section, and `git clone` / `cd` instructions in the app

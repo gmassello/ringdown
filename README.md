@@ -34,6 +34,20 @@
 
 ---
 
+## In plain words
+
+Software breaks at three in the morning, and somebody has to wake up. Every on-call tool sends a
+push, an SMS or an email at that point and treats the sending as the job done. Ringdown places a
+phone call instead — a real one, to the person whose shift covers this moment — and asks two
+things: who is taking this, and in how many minutes.
+
+A voice that says *"yeah, sure, I'll take a look at some point"* answers neither, so that call is
+not an acknowledgement and the next person on the list gets dialled. When somebody does commit,
+their name and the number of minutes are quoted from what they actually said out loud, written to a
+file where a later edit cannot hide, and then checked a second time over a different connection —
+one that never placed the call and has no reason to agree. What comes out the end is not
+"notification sent". It is a named human, a number of minutes, and the evidence for both.
+
 ## "Notification sent" proves nothing
 
 The push arrived at a phone on silent, the email landed in a folder, the SMS was half-read at 03:00

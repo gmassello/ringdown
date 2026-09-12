@@ -561,6 +561,14 @@
 
 <section id="ledger" data-view="ledger" tabindex="-1" hidden>
   <div class="shell" style="padding-block:clamp(40px,6vw,80px) clamp(60px,8vw,110px)">
+    <!-- the site shows one view at a time, so a deep link to any view but the overview lands with
+         no context at all. app.js clones this into the other two. -->
+    <div class="card" id="primer" style="margin-bottom:clamp(32px,4vw,48px)">
+      <div class="kicker" style="margin-bottom:12px">What Ringdown does</div>
+      <p style="color:var(--color-neutral-400);max-width:70ch;margin:0">Software breaks at three in the morning, and somebody has to wake up. Every on-call tool sends a push, an SMS or an email at that point and treats the sending as the job done. Ringdown places a phone call instead &mdash; a real one, to the person whose shift covers this moment &mdash; and asks two things: who is taking this, and in how many minutes. A yes without a number of minutes answers only one of them, so that call is not an acknowledgement and the next person on the list gets dialled. Everything the agent decides is quoted from what somebody said out loud, and every run leaves a record that can be checked afterwards.</p>
+      <a class="tap-target" href="#overview" style="display:inline-block;margin-top:16px">The whole story &rarr;</a>
+    </div>
+
     <div>
       <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:20px;margin-bottom:12px">
         <div style="margin-right:auto">
