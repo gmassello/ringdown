@@ -13,7 +13,7 @@ const showTheme = (theme) => {
   );
 };
 
-const currentTheme = () => document.documentElement.dataset.rdTheme || "dark";
+const currentTheme = () => document.documentElement.dataset.rdTheme || "light";
 
 const setUpTheme = () => {
   showTheme(currentTheme());
@@ -36,6 +36,13 @@ const showView = (view) => {
   for (const link of document.querySelectorAll("[data-view-link]")) {
     if (link.dataset.viewLink === wanted) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
+  }
+};
+
+const explainStates = () => {
+  for (const element of document.querySelectorAll("[data-help]")) {
+    const help = STATE_HELP[element.dataset.help];
+    if (help) element.title = help;
   }
 };
 
@@ -109,7 +116,32 @@ const setUpRun = () => {
   }
 };
 
-const GLYPH = { true: "[x]", false: "[!]", null: "[?]" };
+const MARK = {
+  true: ["[x]", "This check passed."],
+  false: ["[!]", "This check was contradicted: the ledger says one thing and re-deriving it says another."],
+  null: ["[?]", "This check went unanswered — the second channel could not be read. Unanswered is not the same as contradicted."],
+};
+
+const STATE_HELP = {
+  acknowledged:
+    "The person gave their name, said they were taking it, and named a number of minutes. All three had to be quoted from what they actually said.",
+  no_eta:
+    "They agreed, but never named a number of minutes. Without a clock there is no commitment, so the ladder moves on.",
+  no_answer: "The provider reported the call as failed, so there is no transcript to read.",
+  voicemail: "Ringdown hangs up without leaving a message.",
+  low_confidence:
+    "The provider's own confidence in the transcription was below the policy floor, so nothing in it is trusted.",
+  dialling: "The call is placed and ringing. Nothing is recorded until it settles.",
+  "on the call": "The call connected and is in progress.",
+};
+
+const RECORD_HELP = {
+  intent: "Written before the call is placed. An intent with no attempt after it is the shape that says a call may exist.",
+  attempt: "One rung of the ladder, after it settled: the verdict, the reason, and the spans the recipient actually spoke.",
+  verdict: "The outcome of the whole ladder. verify re-derives it from the attempts instead of trusting what is written here.",
+  verification: "The result of re-reading the call on the second channel, which never saw the write.",
+  notified: "A note Ringdown tried to write back on the incident in PagerDuty. It records whether it arrived.",
+};
 
 const checkRow = (ok, label) => {
   const row = document.createElement("div");
@@ -117,7 +149,7 @@ const checkRow = (ok, label) => {
     "check" + (ok === false ? " check-fail" : ok === null ? " check-unresolved" : "");
   const mark = document.createElement("span");
   mark.className = "check-mark";
-  mark.textContent = GLYPH[String(ok)];
+  [mark.textContent, mark.title] = MARK[String(ok)];
   const text = document.createElement("span");
   text.textContent = label;
   row.append(mark, text);
@@ -194,10 +226,15 @@ const renderRecords = (records, changed) => {
     type.style.cssText = "font-family:var(--font-heading);flex:1;min-width:0";
     type.textContent =
       record.type === "verdict" ? `verdict ${record.verdict}` : record.type;
-    const hash = document.createElement("span");
+    if (RECORD_HELP[record.type]) type.title = RECORD_HELP[record.type];
+    const hash = document.createElement("button");
     hash.className = "mono";
-    hash.style.cssText = "font-size:11.5px;color:var(--color-neutral-600)";
-    hash.textContent = record.hash.slice(0, 14) + "…";
+    hash.style.cssText =
+      "font-size:11.5px;color:var(--color-neutral-600);cursor:pointer;flex:none;" +
+      "background:none;border:0;padding:0;font-family:inherit";
+    hash.textContent = shortHash(record.hash);
+    hash.title = `${record.hash}\n\nClick to copy.`;
+    hash.addEventListener("click", () => copyHash(hash, record.hash));
     row.append(seq, type);
     if (record.instructed === true) {
       const flag = document.createElement("span");
@@ -215,16 +252,40 @@ const renderRecords = (records, changed) => {
   }
 };
 
+const shortHash = (hash) => hash.slice(0, 14) + "…";
+
+const copyHash = async (element, value) => {
+  try {
+    await navigator.clipboard.writeText(value);
+    element.textContent = "copied";
+  } catch (error) {
+    element.textContent = "copy refused";
+  }
+  setTimeout(() => {
+    element.textContent = shortHash(value);
+  }, 1200);
+};
+
 const verdictLine = (checks) => {
-  const contradicted = checks.filter((check) => check.ok === false).length;
-  const unresolved = checks.filter((check) => check.ok === null).length;
-  if (contradicted > 0) {
-    return ["exit 40 — the ledger does not verify", "var(--color-bad)"];
+  if (checks.some((check) => check.ok === false)) {
+    return [
+      "exit 40 — the ledger does not verify",
+      "var(--color-bad)",
+      "The second channel contradicted the run. Treat the incident as unowned.",
+    ];
   }
-  if (unresolved > 0) {
-    return ["exit 45 — unproven, not tampered with", "var(--color-neutral-400)"];
+  if (checks.some((check) => check.ok === null)) {
+    return [
+      "exit 45 — unproven, not tampered with",
+      "var(--color-neutral-400)",
+      "Nothing was contradicted, but nothing could be corroborated either.",
+    ];
   }
-  return ["exit 0 — the ledger verifies", "var(--color-accent-300)"];
+  return [
+    "exit 0 — the ledger verifies",
+    "var(--color-accent-300)",
+    "Somebody acknowledged, with an owner and an ETA, and the second channel agreed.",
+  ];
 };
 
 const setUpLedger = async () => {
@@ -246,10 +307,11 @@ const setUpLedger = async () => {
     const checks = await chainChecks(records);
     renderRecords(records, changed);
     renderChecks(checks);
-    const [line, colour] = verdictLine(checks);
+    const [line, colour, help] = verdictLine(checks);
     const verdict = document.getElementById("ledger-verdict");
     verdict.textContent = line;
     verdict.style.color = colour;
+    verdict.title = help;
   };
 
   status.hidden = true;
@@ -276,6 +338,7 @@ const setUpLedger = async () => {
 };
 
 setUpTheme();
+explainStates();
 setUpRouting();
 setUpRun();
 setUpLedger();

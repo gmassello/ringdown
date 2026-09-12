@@ -10,7 +10,7 @@
   --color-neutral-300: #cfd3e5;
   --color-neutral-400: #b2b6ca;
   --color-neutral-500: #9397ab;
-  --color-neutral-600: #75798c;
+  --color-neutral-600: #84889b;
   --color-neutral-700: #595d6c;
   --color-neutral-800: #3f424d;
   --color-neutral-900: #292b31;
@@ -54,7 +54,7 @@
   --color-neutral-300: #3f424d;
   --color-neutral-400: #4a4d59;
   --color-neutral-500: #595d6c;
-  --color-neutral-600: #75798c;
+  --color-neutral-600: #666a7d;
   --color-neutral-700: #9397ab;
   --color-neutral-800: #b2b6ca;
   --color-neutral-900: #cfd3e5;
@@ -160,6 +160,7 @@ a:hover {
   background: transparent;
   border: 1px solid transparent;
   padding: 6px 10px;
+  min-height: 44px;
   border-radius: var(--radius-md);
 }
 
@@ -168,12 +169,13 @@ a:hover {
 }
 
 .btn-primary {
-  color: var(--color-accent);
+  color: var(--color-bg);
+  background: var(--color-accent);
   border-color: var(--color-accent);
 }
 
 .btn-primary:hover {
-  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 85%, var(--color-text));
 }
 
 .btn-secondary {
@@ -185,8 +187,8 @@ a:hover {
 }
 
 .btn-icon {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   flex: none;
 }
@@ -242,6 +244,8 @@ a:hover {
   font-size: 11px;
   color: var(--color-neutral-600);
 }
+
+.src-strong { color: var(--color-neutral-400); }
 
 .src a {
   color: var(--color-neutral-500);
@@ -369,6 +373,7 @@ a:hover {
 }
 
 .tab {
+  min-height: 44px;
   padding: 8px 14px;
   font-family: var(--font-heading);
   font-size: 13px;
@@ -392,7 +397,7 @@ a:hover {
   position: relative;
   background: transparent;
   border: 0;
-  padding: 8px 12px;
+  padding: 12px;
   cursor: pointer;
   font-family: var(--font-heading);
   font-size: 13px;
@@ -422,4 +427,8 @@ a:hover {
 
 .scroller {
   overflow-x: auto;
+}
+
+@media (max-width: 640px) {
+  .nav-link { padding-inline: 9px; }
 }
