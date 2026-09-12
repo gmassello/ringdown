@@ -16,12 +16,17 @@
 </p>
 
 <p align="center">
-  <img src="docs/demo.gif" alt="Three screens of the demo: a commitment at exit 0, a yes without an ETA that drops a rung, and a tampered ledger whose chain is intact and whose verification still fails at exit 40" width="900">
+  <img src="docs/demo.gif" alt="The ledger check, recomputed in the browser: after every verdict in the committed ledger is rewritten and the chain resealed, all eight links, all eight seals and all eight positions still pass, and the verdict check fails — exit 0 becomes exit 40" width="900">
+</p>
+
+<p align="center">
+  <em>Every verdict rewritten, the chain resealed and relinked from the genesis hash.<br>
+  Every link, every seal and every position still passes. The verdict does not —
+  <a href="https://gmassello.github.io/ringdown/#ledger">tamper with it yourself</a>.</em>
 </p>
 
 <p align="center">
   <a href="https://youtu.be/KITNQLZixWw"><b>▶ Watch the demo</b></a> (2:50) ·
-  <a href="https://gmassello.github.io/ringdown/#ledger"><b>Tamper with the ledger in your browser</b></a> ·
   <a href="apps/python/ringdown/README.md"><b>Operational manual</b></a> ·
   <a href="apps/python/ringdown/demo/EXPECTED.md"><b>Demo output</b></a> ·
   <a href="apps/python/ringdown/examples/ledger.example.jsonl"><b>A real ledger</b></a>

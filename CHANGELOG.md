@@ -88,6 +88,12 @@ Both packages are versioned together at `0.1.0`.
 - The root README's *Repository* table lists `skills/`, `video/` and `notes/`.
 - The root README summarises the comparison against the three neighbouring projects and links to
   the app README instead of repeating it word for word.
+- `docs/demo.gif` is the ledger check instead of three screens of terminal output. The old one held
+  ninety lines of monospace at the width GitHub renders it, and the line that carried the point was
+  the twenty-sixth of twenty-six identical ones. The new one is the site's `#ledger` panel, where
+  the same checks are grouped into five: the verdict is rewritten, the chain is resealed, every
+  link, seal and position still passes, and `exit 0` becomes `exit 40`. A caption under it says so
+  and links to the live widget, so the row of links no longer has to. 532 KB became 58 KB.
 
 ## [0.1.0] — 2026-08-20
 

@@ -17,6 +17,13 @@ live in `~/.claude/skills/personal-record-video/scripts/`.
 | `live/` | The live call: run files, pre-flight, evidence capture. Gitignored |
 | `out/` | Generated. `build-audio.sh` wipes it on every run, `narration.voice.wav` included |
 
+`docs/demo.gif`, the animation at the top of the root README, comes from none of this. It is
+captured off the published site, not off a terminal take: the `#ledger` section at
+<https://gmassello.github.io/ringdown/#ledger>, with `#tamper-btn` and the `verify` card lifted
+into a fixed full-bleed container so the screenshot needs no cropping, three states — clean,
+button focused, tampered — grabbed with `screencapture` at 2.5x and assembled by `ffmpeg`
+(`concat`, then `palettegen` with `stats_mode=full`, which the red of `exit 40` needs).
+
 Two recordings feed one video: `raw-terminal.mov` (the CLI) and `phone.mov` (the phone
 ringing). **`phone.mov` no longer reaches the video directly** — `mkintro.sh` takes tight,
 masked bands out of it for the opening, and the closing seconds show the dashboard instead.
