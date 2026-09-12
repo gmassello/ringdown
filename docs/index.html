@@ -66,7 +66,7 @@
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:clamp(24px,3vw,34px)">
           <a class="btn btn-primary" href="https://youtu.be/KITNQLZixWw" target="_blank" rel="noreferrer" style="padding:11px 18px">Watch the demo &middot; 2:50</a>
           <a class="btn btn-secondary" href="#run" style="padding:11px 18px">See a verified run</a>
-          <a href="#ledger">or tamper with the ledger</a>
+          <a class="tap-target" href="#ledger">or tamper with the ledger</a>
         </div>
       </div>
       <div class="card" id="hero-ledger" style="min-height:300px;padding:clamp(18px,2vw,24px)">
@@ -565,7 +565,7 @@
       <p style="color:var(--color-neutral-400);max-width:70ch;margin-bottom:8px">This is <span class="mono">examples/ledger.example.jsonl</span>, byte for byte, fetched as you load this page. A test in the repo fails if this file and the one <span class="mono">demo/run_local.py</span> writes ever differ. Tampering rewrites every <span class="mono">verdict</span> record to <span class="mono">acknowledged</span>, then reseals and relinks the whole chain from the genesis hash, exactly as <span class="mono">demo/run_local.py</span> does. Every link, every seal and every position stays green. The last check does not, because verification does not trust the recorded verdict: it re-derives it from the attempts.</p>
       <p style="color:var(--color-neutral-400);font-size:0.875rem;max-width:70ch">These eight records are <a href="#run">scenario 3</a> &mdash; nobody committed, so the honest verdict is <span class="mono">unacknowledged</span>. Three intent/attempt pairs, one for each rung, then the verdict and its verification. That run ends at <span class="mono">ledger 8 records &middot; head <span title="sha256:9d331fab8d2802f3c30566ab2fbf9898372cf5736b164522cfea8bee2d27611e">sha256:9d33&hellip;</span></span>, and record 8 below is <span class="mono">sha256:9d331fa&hellip;</span>.</p>
 
-      <div id="ledger-status" style="margin-top:24px;color:var(--color-neutral-500);font-size:0.875rem">Fetching the ledger&hellip;</div>
+      <div id="ledger-status" role="status" style="margin-top:24px;color:var(--color-neutral-500);font-size:0.875rem">Fetching the ledger&hellip;</div>
 
       <div id="ledger-body" hidden class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));margin-top:24px;align-items:start">
         <div>
@@ -577,6 +577,7 @@
             <strong>verification</strong> for the second channel's re-read, and
             <strong>notified</strong> for the note written back to PagerDuty.</p>
           <div id="ledger-records" style="display:flex;flex-direction:column;gap:8px"></div>
+          <div id="copy-status" role="status" class="visually-hidden"></div>
         </div>
         <div>
           <h3 class="kicker" style="margin:0 0 10px">verify &mdash; recomputed in your browser</h3>
@@ -584,7 +585,7 @@
             <strong>[!]</strong> contradicted &middot;
             <strong>[?]</strong> unanswered &mdash; and unanswered is not the same as contradicted.</p>
           <div class="card">
-            <div id="ledger-verdict" role="status" tabindex="-1" style="font-family:var(--font-heading);font-weight:500;font-size:clamp(1.25rem,2.4vw,1.75rem);letter-spacing:-0.02em;margin-bottom:16px;outline-offset:6px"></div>
+            <div id="ledger-verdict" tabindex="-1" style="font-family:var(--font-heading);font-weight:500;font-size:clamp(1.25rem,2.4vw,1.75rem);letter-spacing:-0.02em;margin-bottom:16px;outline-offset:6px"></div>
             <div id="ledger-checks" style="display:flex;flex-direction:column;gap:9px"></div>
           </div>
         </div>
@@ -669,8 +670,8 @@
 
 <footer class="shell" style="padding-block:32px;border-top:1px solid var(--color-divider);display:flex;flex-wrap:wrap;gap:16px;font-size:0.8125rem;color:var(--color-neutral-500)">
   <span>MIT licensed.</span>
-  <a href="https://github.com/gmassello/ringdown" target="_blank" rel="noreferrer" style="margin-left:auto">Source</a>
-  <a href="https://youtu.be/KITNQLZixWw" target="_blank" rel="noreferrer">Demo video</a>
+  <a class="tap-target" href="https://github.com/gmassello/ringdown" target="_blank" rel="noreferrer" style="margin-left:auto">Source</a>
+  <a class="tap-target" href="https://youtu.be/KITNQLZixWw" target="_blank" rel="noreferrer">Demo video</a>
 </footer>
 
 <script type="module" src="app.js"></script>

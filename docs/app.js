@@ -80,11 +80,13 @@ const setUpRun = () => {
     clearInterval(timer);
     timer = null;
     button.textContent = "Replay the run";
-    button.disabled = false;
+    button.removeAttribute("aria-disabled");
   };
 
   const replay = () => {
-    clearInterval(timer);
+    // disabling the focused button drops focus to <body> for the whole animation, so the
+    // button stays enabled and the guard is what keeps a second click from restarting it
+    if (timer) return;
     const total = totalSteps();
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
       paintStep(total);
@@ -93,7 +95,7 @@ const setUpRun = () => {
     let step = 0;
     paintStep(step);
     button.textContent = "Running…";
-    button.disabled = true;
+    button.setAttribute("aria-disabled", "true");
     timer = setInterval(() => {
       step += 1;
       paintStep(step);
@@ -189,9 +191,7 @@ const renderChecks = (checks) => {
   const details = document.createElement("details");
   details.style.marginTop = "16px";
   const summary = document.createElement("summary");
-  summary.style.cursor = "pointer";
-  summary.style.color = "var(--color-neutral-500)";
-  summary.style.fontSize = "0.8125rem";
+  summary.className = "checks-toggle tap-target";
   summary.textContent = `All ${checks.length} checks, one by one`;
   details.append(summary);
   const all = document.createElement("div");
@@ -250,11 +250,16 @@ const recordLabel = (record) =>
   record.type === "verdict" ? `verdict ${record.verdict}` : record.type;
 
 const copyHash = async (element, value) => {
+  // the button keeps its aria-label, which is what a screen reader announces as its name,
+  // so the outcome only reaches one through the live region
+  const status = document.getElementById("copy-status");
   try {
     await navigator.clipboard.writeText(value);
     element.textContent = "copied";
+    status.textContent = "Full hash copied";
   } catch (error) {
     element.textContent = "copy refused";
+    status.textContent = "The browser refused the copy";
   }
   setTimeout(() => {
     element.textContent = shortHash(value);
@@ -322,8 +327,13 @@ const setUpLedger = async () => {
   try {
     committed = await fetchLedger();
   } catch (error) {
+    // #ledger-status is a live region, so replacing the progress line announces the failure
     status.textContent = `Could not fetch the ledger (${error.message}). It is committed at examples/ledger.example.jsonl.`;
+    status.style.color = "var(--color-bad)";
     tamperButton.disabled = true;
+    // an empty 300px card promising "the proof it leaves behind" undercuts the claim harder
+    // than showing nothing; the explanation lives in the ledger view, which says why
+    document.getElementById("hero-ledger").hidden = true;
     return;
   }
 

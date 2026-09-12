@@ -191,6 +191,14 @@ a:hover {
   text-decoration: none;
 }
 
+/* aria-disabled instead of disabled: the button keeps focus, so it has to look inert itself.
+   pointer-events kills the hover of every variant at once; the keyboard path is untouched
+   and the handler's own guard is what makes an Enter a no-op. */
+.btn[aria-disabled="true"] {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 .btn-primary {
   color: var(--color-bg);
   background: var(--color-accent);
@@ -482,6 +490,29 @@ a:hover {
 
 .scroller {
   overflow-x: auto;
+}
+
+.checks-toggle {
+  cursor: pointer;
+  color: var(--color-neutral-500);
+  font-size: 0.8125rem;
+}
+
+/* A link that stands on its own is a target and needs the 24px WCAG 2.2 AA floor. Links
+   inside a sentence are exempt, and must stay that way: padding there overlaps the lines
+   around them. Same floor as .hash-copy, so both are one grep. */
+.tap-target {
+  min-height: 24px;
+  padding-block: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .site-header {

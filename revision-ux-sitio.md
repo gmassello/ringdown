@@ -283,13 +283,14 @@ ninguna fuente primaria que bendiga la excepción.
 
 ## Lo que revisé y decidí no reportar
 
-- **"Replay the run" NO tira el foco al `<body>` — retractado.** Lo había reportado como medido y
-  al reverificarlo sobre carga limpia no reproduce: `document.activeElement` sigue siendo el botón
-  durante los 8 segundos del replay, y un `Tab` real aterriza en el índice 6 de 13 focusables, que
-  es el propio botón, no al principio del documento. La lectura original fue un artefacto de una
-  página que yo ya había manoseado, con un replay anterior todavía en vuelo. Deshabilitar un
-  elemento enfocado sigue siendo un antipatrón conocido, pero acá no produce el daño que le
-  atribuí, y sin medición que lo sostenga no es un hallazgo.
+- **"Replay the run" SÍ tira el foco al `<body>` — la retractación de este hallazgo era incorrecta,
+  y está corregida en `revision-ux-sitio-publicado.md`.** Lo había reportado como medido, después lo
+  retracté porque no reproducía, y la segunda medición era la mala: estaba tomada con la pestaña de
+  Chrome en segundo plano, donde el navegador no procesa el blur de un elemento deshabilitado. Con
+  la pestaña visible se cae siempre, a los ~100 ms, y sigue en `<body>` dos segundos después.
+  Matiz que ninguna de las dos versiones anteriores tenía: un `Tab` real aterriza en el índice 7 de
+  13, adyacente, no al principio del documento — lo que se pierde es el anillo de foco visible y el
+  `activeElement` que reporta un lector de pantalla, no la posición en el orden de tabulación.
 
 - **El `412` del badge y del stat tile.** Parece mal (ringdown da 393) pero es correcto: 393 +
   19 del receiver = 412, y CI corre los dos paquetes. La etiqueta dice "tests, green in CI", que
