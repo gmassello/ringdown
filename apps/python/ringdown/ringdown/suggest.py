@@ -22,7 +22,7 @@ from ringdown.incident import (
 from ringdown.task import CALL_TASK, spoken_fields_in
 
 LIVE = "https://generativelanguage.googleapis.com"
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-3.6-flash"
 
 PROMPT = """Write a Ringdown field mapping for the alert payload below.
 

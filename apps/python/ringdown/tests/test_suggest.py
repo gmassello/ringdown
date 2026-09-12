@@ -9,7 +9,7 @@ import pytest
 from ringdown.audit import DETAIL_LIMIT
 from ringdown.calle import UntrustedHost
 from ringdown.incident import IncidentError
-from ringdown.suggest import LIVE, SuggestionError, prompt_for, suggest_mapping
+from ringdown.suggest import LIVE, MODEL, SuggestionError, prompt_for, suggest_mapping
 from tests.data import example_body
 
 PAYLOAD = example_body("opsgenie")
@@ -111,7 +111,7 @@ def test_the_key_travels_in_a_header_to_the_model_path_and_never_in_the_query(ge
     sent = RECEIVED[0]
 
     assert sent["key"] == "secret"
-    assert sent["path"] == "/v1beta/models/gemini-2.5-flash:generateContent"
+    assert sent["path"] == f"/v1beta/models/{MODEL}:generateContent"
     assert "secret" not in sent["path"]
 
 
