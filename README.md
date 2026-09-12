@@ -10,7 +10,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="453 tests" src="https://img.shields.io/badge/tests-453-2f6f4e">
+  <img alt="449 tests" src="https://img.shields.io/badge/tests-449-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -140,6 +140,18 @@ flowchart TD
   payload and are read aloud inside a quoted wrapper the agent is told never to obey. Their quotes
   are neutralised where the task is formatted, so the payload cannot close that wrapper and speak
   to the agent from outside it.
+- **A mapping file absorbs the vendor, so there is no vendor code.** PagerDuty and Opsgenie both
+  arrive through `adapt` and neither cost a line in the adapter: the mapping is paths into the
+  payload and literals for what it does not carry. Opsgenie is the one that tests the claim, because
+  its `Create` payload has no priority, no description and no alert URL, and the file absorbs all
+  three. When the verdict settles, `run --pagerduty-note` writes it back as a note quoting what the
+  engineer said — a note, never an acknowledgement.
+- **A model may write that file. It never writes the verdict.** `suggest-mapping` asks Gemini to
+  draft the mapping for a payload nobody has mapped yet, and then runs the draft: `adapt` executes
+  it and the incident loader validates the result before it reaches disk. A rejected draft goes back
+  to the model once carrying the loader's own words. The deterministic side corrects the model, and
+  nothing in `preview`, `run` or `verify` reaches for one — a layering test asserts that only the
+  CLI can even import it.
 - **One engine, more than one use case.** What the agent says is a template the incident file can
   replace, so the same ladder, verification and ledger notify a supplier that a service level was
   missed — [an example ships](apps/python/ringdown/examples/sla-breach.example.json) — with no code
@@ -148,10 +160,11 @@ flowchart TD
 
 ## Running it
 
-Four subcommands, and only one of them dials. `preview` is the default and prints the resolved
+Five subcommands, and only one of them dials. `preview` is the default and prints the resolved
 ladder, the first idempotency key and the literal task the recipient will hear, opening no socket
 and reading no credentials. `run` walks the ladder and verifies it. `verify --ledger` audits a
-ledger offline. `adapt` turns a webhook payload into an incident file. Flags, file formats and
+ledger offline. `adapt` turns a webhook payload into an incident file, and `suggest-mapping` asks a
+model to draft the mapping that `adapt` then has to execute. Flags, file formats and
 setup are in the [operational manual](apps/python/ringdown/README.md).
 
 > [!WARNING]

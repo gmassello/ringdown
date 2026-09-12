@@ -119,6 +119,16 @@ Unit tests: `uv run pytest` — 26 of them, no Twilio credentials and no outboun
 | `POST /voice/transcription` | Stores one `TranscriptSegment` per `transcription-content` event |
 | `GET /calls` | HTML dashboard: one card per call with audio player and transcript (5s auto-refresh, skipped while a recording is playing) |
 | `GET /calls/{sid}/recording.mp3` | Recording proxy (adds Twilio auth for the `<audio>` element) |
+| `GET /demo` | The same card, rendered from one sample call written into the page. No credentials, no recording, no real number |
+| `GET /health` | Liveness, and the cheapest way to wake the free tier before a demo |
+| `GET /` | Redirects to `/demo`, because a 404 after a 30-second cold start reads as a dead service |
+
+`/demo` exists because the two things that make `/calls` the wrong link to hand
+anybody are not fixable by documentation: it prints the number that actually
+dialled and the words that were actually said, and its SQLite file is wiped on
+every deploy, so the honest dashboard is usually empty anyway. The sample call is
+a module constant, not a seeded row — nothing is written to the database, so a
+redeploy cannot empty it and no real call can ever appear in it.
 
 The `POST /voice*` webhooks validate the `X-Twilio-Signature` header against
 `PUBLIC_BASE_URL` plus the path **and the query string** Twilio requested, so a

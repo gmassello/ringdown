@@ -139,3 +139,26 @@ def test_recording_proxy_reports_upstream_failure_as_502(client, create_call, mo
 
     assert resp.status_code == 502
     assert "Twilio recording fetch failed" in resp.text
+
+
+def test_the_demo_view_needs_no_credentials_and_prints_no_real_number(client):
+    page = client.get("/demo")
+
+    assert page.status_code == 200
+    assert "+1********00" in page.text
+    assert "not the inbound log" in page.text
+    assert "<audio" not in page.text
+    assert "Give me fifteen minutes." in page.text
+
+
+def test_the_demo_view_survives_an_empty_database(client):
+    assert client.get("/calls").status_code == 401
+    assert "checkout p99 latency" in client.get("/demo").text
+
+
+def test_the_root_leads_somewhere_instead_of_answering_404(client):
+    landing = client.get("/", follow_redirects=False)
+
+    assert landing.status_code in (307, 308)
+    assert landing.headers["location"] == "/demo"
+    assert client.get("/health").json() == {"status": "ok"}
