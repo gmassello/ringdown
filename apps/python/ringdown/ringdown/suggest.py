@@ -23,6 +23,7 @@ from ringdown.task import CALL_TASK, spoken_fields_in
 
 LIVE = "https://generativelanguage.googleapis.com"
 MODEL = "gemini-3.6-flash"
+ATTEMPTS = 2
 
 PROMPT = """Write a Ringdown field mapping for the alert payload below.
 
@@ -44,10 +45,25 @@ timezone is a literal IANA name.
 summary is the sentence a woken engineer hears read aloud, so it must be a whole sentence, not a
 field name.
 
+The mapping is a flat object: every key is an incident field, at the top level, and nothing is
+nested or wrapped. For a payload that kept its alert under "monitor", it would read:
+
+{{"id": "$.monitor.ref", "title": "$.monitor.name", "severity": "$.monitor.tags[0]",
+ "service": "$.monitor.target", "summary": "Checkout latency is above its objective.",
+ "ladder": ["primary", "secondary", "incident_commander"], "timezone": "UTC"}}
+
 Answer with the mapping object as JSON and nothing else.
 
 Alert payload:
 {payload}"""
+
+
+REJECTED = """Your previous answer was rejected. The loader that rejected it is deterministic and
+is not negotiable; the mapping has to satisfy it.
+
+{rejection}
+
+Answer again, with a corrected mapping object as JSON and nothing else."""
 
 
 class SuggestionError(IncidentError):
@@ -94,19 +110,35 @@ def _mapping_from(answer: Any) -> dict[str, Any]:
     return mapping
 
 
+def _body(prompt: str) -> dict[str, Any]:
+    return {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"responseMimeType": "application/json", "temperature": 0},
+    }
+
+
+def _validated(payload: Any, mapping: dict[str, Any]) -> dict[str, Any]:
+    try:
+        parse_incident(adapt(payload, mapping))
+    except IncidentError as error:
+        raise SuggestionError(
+            f"{error}. The model proposed {json.dumps(mapping, sort_keys=True)[:DETAIL_LIMIT]}"
+        ) from error
+    return mapping
+
+
 def suggest_mapping(
     payload: Any, api_key: str, url: str = LIVE, timeout: float = 30.0
 ) -> dict[str, Any]:
-    base = assert_trusted_url(url, LIVE)
-    answer = _post(
-        f"{base}/v1beta/models/{MODEL}:generateContent",
-        api_key,
-        {
-            "contents": [{"parts": [{"text": prompt_for(payload)}]}],
-            "generationConfig": {"responseMimeType": "application/json", "temperature": 0},
-        },
-        timeout,
-    )
-    mapping = _mapping_from(answer)
-    parse_incident(adapt(payload, mapping))
-    return mapping
+    endpoint = f"{assert_trusted_url(url, LIVE)}/v1beta/models/{MODEL}:generateContent"
+
+    def proposed(prompt: str) -> dict[str, Any]:
+        return _mapping_from(_post(endpoint, api_key, _body(prompt), timeout))
+
+    prompt = prompt_for(payload)
+    for _ in range(ATTEMPTS - 1):
+        try:
+            return _validated(payload, proposed(prompt))
+        except SuggestionError as rejection:
+            prompt = f"{prompt_for(payload)}\n\n{REJECTED.format(rejection=rejection)}"
+    return _validated(payload, proposed(prompt))

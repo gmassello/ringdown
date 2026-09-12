@@ -393,7 +393,9 @@ payload does not carry, the eight accepted severity tokens — and gets a mappin
 you ever see it, **the suggestion is run**: `adapt` executes it against the real payload and the
 incident loader validates the result. A mapping that points at a field that is not there, or names a
 severity that does not exist, never reaches the disk — you get the loader's error instead, the same
-one you would have got by writing it yourself.
+one you would have got by writing it yourself. That error is also the only feedback the model gets:
+a rejected draft goes back once with the loader's own words attached, and a second rejection ends the
+command. The deterministic side is what corrects the model, never the other way round.
 
 So the model writes a draft and the deterministic path decides whether the draft is admissible. It
 proposes paths; it does not get to say what a valid incident is. Three properties hold:

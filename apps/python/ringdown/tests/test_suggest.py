@@ -9,7 +9,14 @@ import pytest
 from ringdown.audit import DETAIL_LIMIT
 from ringdown.calle import UntrustedHost
 from ringdown.incident import IncidentError
-from ringdown.suggest import LIVE, MODEL, SuggestionError, prompt_for, suggest_mapping
+from ringdown.suggest import (
+    ATTEMPTS,
+    LIVE,
+    MODEL,
+    SuggestionError,
+    prompt_for,
+    suggest_mapping,
+)
 from tests.data import example_body
 
 PAYLOAD = example_body("opsgenie")
@@ -29,8 +36,12 @@ RECEIVED: list[dict] = []
 
 class _Gemini(BaseHTTPRequestHandler):
     status = 200
-    answer = json.dumps(MAPPING)
+    answers = [json.dumps(MAPPING)]
     redirect_to = ""
+
+    @classmethod
+    def _answer(cls) -> str:
+        return cls.answers[min(len(RECEIVED), len(cls.answers)) - 1]
 
     def do_POST(self) -> None:
         body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
@@ -53,7 +64,7 @@ class _Gemini(BaseHTTPRequestHandler):
             json.dumps(
                 {"error": {"message": "API key not valid"}}
                 if type(self).status != 200
-                else {"candidates": [{"content": {"parts": [{"text": type(self).answer}]}}]}
+                else {"candidates": [{"content": {"parts": [{"text": type(self)._answer()}]}}]}
             ).encode()
         )
 
@@ -65,7 +76,7 @@ class _Gemini(BaseHTTPRequestHandler):
 def gemini():
     RECEIVED.clear()
     _Gemini.status = 200
-    _Gemini.answer = json.dumps(MAPPING)
+    _Gemini.answers = [json.dumps(MAPPING)]
     _Gemini.redirect_to = ""
     server = HTTPServer(("127.0.0.1", 0), _Gemini)
     threading.Thread(
@@ -90,16 +101,30 @@ def test_a_suggested_mapping_is_returned_only_after_it_dials_a_valid_incident(ge
 
 def test_a_mapping_the_model_invented_is_refused_rather_than_handed_back(gemini):
     handler, url = gemini
-    handler.answer = json.dumps({**MAPPING, "severity": "$.alert.nowhere"})
+    handler.answers = [json.dumps({**MAPPING, "severity": "$.alert.nowhere"})]
 
     with pytest.raises(IncidentError) as raised:
         suggest_mapping(PAYLOAD, "k", url=url)
     assert "severity" in str(raised.value)
+    assert "The model proposed" in str(raised.value)
+    assert len(RECEIVED) == ATTEMPTS
+
+
+def test_a_rejected_mapping_is_sent_back_to_the_model_with_what_the_loader_said(gemini):
+    handler, url = gemini
+    handler.answers = [json.dumps({**MAPPING, "severity": "$.alert.nowhere"}), json.dumps(MAPPING)]
+
+    assert suggest_mapping(PAYLOAD, "k", url=url) == MAPPING
+
+    retry = RECEIVED[1]["body"]["contents"][0]["parts"][0]["text"]
+    assert "Your previous answer was rejected" in retry
+    assert "$.alert.nowhere" in retry
+    assert "severity" in retry
 
 
 def test_an_answer_that_is_not_a_mapping_object_is_reported(gemini):
     handler, url = gemini
-    handler.answer = "here is your mapping:"
+    handler.answers = ["here is your mapping:"]
 
     with pytest.raises(SuggestionError):
         suggest_mapping(PAYLOAD, "k", url=url)
