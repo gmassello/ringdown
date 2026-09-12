@@ -205,8 +205,8 @@ second channel does not support exits 40, not 10. And `45` only lands when nothi
 | [`apps/python/ringdown/`](apps/python/ringdown/) | The app, and its [README](apps/python/ringdown/README.md): setup, exit codes, file formats, threat model, all the ceilings |
 | [`apps/python/ringdown/demo/EXPECTED.md`](apps/python/ringdown/demo/EXPECTED.md) | The demo scenarios, narrated, written before the code that produces them |
 | [`apps/python/ringdown/examples/`](apps/python/ringdown/examples/) | The incident, rotation, mapping and call-script files, a second use case that runs on the same binary, and a ledger committed exactly as the demo wrote it |
-| [`docs/`](docs/) | The project site (GitHub Pages): the overview, two demo scenarios replayed step by step, and a ledger you can tamper with in the browser. No build step, no dependencies |
-| [`apps/python/calle-receiver/`](apps/python/calle-receiver/) | Demo infrastructure, not the product: CALL-E's recipient regions don't include Argentina, so this FastAPI service receives the agent's call on a US Twilio number and bridges it to an Argentine phone, with recording, live transcription and a password-protected [dashboard](https://calle-receiver.onrender.com/calls). |
+| [`docs/`](docs/) | The project site (GitHub Pages): the overview, three demo scenarios replayed step by step, and a ledger you can tamper with in the browser. No build step, no dependencies |
+| [`apps/python/calle-receiver/`](apps/python/calle-receiver/) | Demo infrastructure, not the product: CALL-E's recipient regions don't include Argentina, so this FastAPI service receives the agent's call on a US Twilio number and bridges it to an Argentine phone, with recording, live transcription and a dashboard. The [sample call](https://calle-receiver.onrender.com/demo) is open and masked; the inbound log at `/calls` keeps its password, because that one prints the number that actually dialled and the words that were actually said. Free tier: give it thirty seconds to wake. |
 | [`skills/incident-escalation-call/`](skills/incident-escalation-call/) | The Claude skill that drives the app, and the second of the two paths that travel upstream: the task shape, worked examples and the safety notes |
 | [`video/`](video/) | How the demo video was produced — the takes, the stills and the assembly steps. Author-facing; most of its inputs are gitignored |
 | [`notes/`](notes/) | Working notes kept as written: the planning documents and the feedback sent to the provider after the live calls |
@@ -311,7 +311,7 @@ failure is unsafe. The full argument, one project at a time, is in
 - The ladder never re-calls, and retries would need another key and another record.
 - The provider does not dial every country, and Ringdown does not preflight the list.
 
-The [app README](apps/python/ringdown/README.md#known-ceilings) has all twenty, unvarnished.
+The [app README](apps/python/ringdown/README.md#known-ceilings) has all twenty-one, unvarnished.
 
 </details>
 
