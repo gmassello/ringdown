@@ -179,6 +179,13 @@ setup are in the [operational manual](apps/python/ringdown/README.md).
 > built. The two channels live on different hosts and are named separately, and that is enforced
 > rather than described: two flags resolving to one non-loopback host exit 30, on loopback the run
 > says so out loud, and the ledger records both hostnames either way.
+>
+> `suggest-mapping` is pinned the same way, and harder: there is no flag for the model endpoint at
+> all, so the only host it can reach is the constant it was compiled against. The key travels in a
+> header rather than a query string, a redirect is refused rather than followed, and without
+> `GEMINI_API_KEY` the subcommand exits 30 without opening a socket. What does leave your network is
+> the alert payload you named — which is why drafting a mapping is its own opt-in subcommand and not
+> a fallback inside `adapt`.
 
 Eight exit codes:
 
