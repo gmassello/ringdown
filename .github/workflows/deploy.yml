@@ -1,0 +1,86 @@
+name: deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - docs/**
+      - apps/python/ringdown/**
+      - .github/workflows/deploy.yml
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  pages:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+
+      # test_site_port.py compares docs/ledger.js against the Python implementation and
+      # skips itself where node is absent. The gate is only a gate if it actually runs.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: uv sync
+        working-directory: apps/python/ringdown
+      - run: uv run pytest -q
+        working-directory: apps/python/ringdown
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Why the site was not published
+        if: failure()
+        run: |
+          diff -u apps/python/ringdown/examples/ledger.example.jsonl docs/ledger.example.jsonl \
+            || echo "docs/ledger.example.jsonl has drifted from the committed ledger"
+
+  gemini:
+    runs-on: ubuntu-latest
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+        working-directory: apps/python/ringdown
+
+      # The suggest-mapping tests answer from a loopback server, so they prove this repo's
+      # reading of the Gemini contract, not the contract. This is the only step that asks
+      # Google. Alertmanager on purpose: the model never sees the mapping written by hand
+      # for that payload, so a pass means the prompt works with no worked example.
+      - name: Ask the model for a mapping, then dial with it
+        working-directory: apps/python/ringdown
+        run: |
+          if [ -z "${GEMINI_API_KEY:-}" ]; then
+            echo "GEMINI_API_KEY is not set for this repository, so the live contract is"
+            echo "unproven by this run. A fork or an external pull request never receives it."
+            exit 0
+          fi
+          uv run python -m ringdown suggest-mapping \
+            --payload examples/alertmanager.example.json \
+            --out mapping.json
+          uv run python -m ringdown adapt \
+            --payload examples/alertmanager.example.json \
+            --mapping mapping.json \
+            --out incident.json
+          uv run python -m ringdown preview \
+            --incident incident.json \
+            --rotation examples/rotation.example.json
