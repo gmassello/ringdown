@@ -1,5 +1,4 @@
 import secrets
-from urllib.parse import urljoin
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -22,8 +21,9 @@ async def twilio_form(request: Request) -> FormData:
     form = await request.form()
     settings = get_settings()
     if settings.validate_twilio_signature:
-        url = urljoin(settings.public_base_url, request.url.path)
+        query = f"?{request.url.query}" if request.url.query else ""
+        url = settings.url_for(request.url.path) + query
         signature = request.headers.get("X-Twilio-Signature", "")
-        if not RequestValidator(settings.twilio_auth_token).validate(url, dict(form), signature):
+        if not RequestValidator(settings.twilio_auth_token).validate(url, form, signature):
             raise HTTPException(status_code=403, detail="Invalid Twilio signature")
     return form

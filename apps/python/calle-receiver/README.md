@@ -83,6 +83,10 @@ an account's authtoken. Copy the `*.trycloudflare.com` URL to
 above, or the console). The URL changes on every tunnel restart: update both
 sides and restart uvicorn.
 
+`PUBLIC_BASE_URL` is `scheme://host` and nothing else — a trailing slash is
+absorbed, and a path, query or fragment is refused at startup rather than
+producing callbacks the app does not serve.
+
 ## Testing (in order, without burning CALL-E credits)
 
 1. `uv run python scripts/test_outbound.py` — calls your cell phone from the
@@ -109,7 +113,9 @@ Unit tests: `uv run pytest` — 19 of them, no Twilio credentials and no outboun
 | `GET /calls` | HTML dashboard: one card per call with audio player and transcript (5s auto-refresh) |
 | `GET /calls/{sid}/recording.mp3` | Recording proxy (adds Twilio auth for the `<audio>` element) |
 
-The `POST /voice*` webhooks validate the `X-Twilio-Signature` header (can be
+The `POST /voice*` webhooks validate the `X-Twilio-Signature` header against
+`PUBLIC_BASE_URL` plus the path **and the query string** Twilio requested, so a
+webhook configured with a parameter (`/voice?env=prod`) still validates (can be
 disabled with `VALIDATE_TWILIO_SIGNATURE=false` for local development);
 `/voice/recording` only persists a `RecordingUrl` that points to
 `https://api.twilio.com/`. The dashboard and the recording proxy require

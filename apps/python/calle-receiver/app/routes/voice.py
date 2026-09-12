@@ -39,7 +39,7 @@ def incoming_call(form: FormData = Depends(twilio_form)) -> Response:
     if settings.enable_transcription:
         start = Start()
         start.transcription(
-            status_callback_url=f"{settings.public_base_url}/voice/transcription",
+            status_callback_url=settings.url_for("/voice/transcription"),
             language_code=settings.transcription_language,
             track="both_tracks",
             partial_results=False,
@@ -50,12 +50,12 @@ def incoming_call(form: FormData = Depends(twilio_form)) -> Response:
     dial_kwargs = {
         "answer_on_bridge": True,
         "caller_id": settings.twilio_number,
-        "action": f"{settings.public_base_url}/voice/status",
+        "action": settings.url_for("/voice/status"),
     }
     if settings.enable_recording:
         dial_kwargs.update(
             record="record-from-answer-dual",
-            recording_status_callback=f"{settings.public_base_url}/voice/recording",
+            recording_status_callback=settings.url_for("/voice/recording"),
             recording_status_callback_event="completed",
         )
 

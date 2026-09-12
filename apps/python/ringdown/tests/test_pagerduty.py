@@ -7,7 +7,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import pytest
 
-from ringdown.audit import append_record, chain_checks, notified_record
+from ringdown.audit import DETAIL_LIMIT, append_record, chain_checks, notified_record
 from ringdown.calle import UntrustedHost, assert_trusted_url
 from ringdown.escalate import LadderResult
 from ringdown.exits import EXIT_ACKNOWLEDGED, EXIT_UNKNOWN, EXIT_UNRESOLVED, EXIT_UNVERIFIED
@@ -19,6 +19,7 @@ RECEIVED: list[dict] = []
 
 class _Notes(BaseHTTPRequestHandler):
     status = 200
+    message = "Requester User Not Found"
 
     def do_POST(self) -> None:
         body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
@@ -32,7 +33,7 @@ class _Notes(BaseHTTPRequestHandler):
         self.send_response(type(self).status)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
-        self.wfile.write(b'{"error": {"message": "Requester User Not Found"}}')
+        self.wfile.write(json.dumps({"error": {"message": type(self).message}}).encode())
 
     def log_message(self, *_) -> None:
         return
@@ -42,6 +43,7 @@ class _Notes(BaseHTTPRequestHandler):
 def notes():
     RECEIVED.clear()
     _Notes.status = 200
+    _Notes.message = "Requester User Not Found"
     server = HTTPServer(("127.0.0.1", 0), _Notes)
     threading.Thread(
         target=server.serve_forever, kwargs={"poll_interval": 0.0005}, daemon=True
@@ -121,6 +123,19 @@ def test_a_host_that_is_not_pagerduty_never_receives_the_token():
 @pytest.mark.parametrize("live", [LIVE_US, LIVE_EU])
 def test_both_documented_pagerduty_regions_are_trusted(live):
     assert assert_trusted_url(live, LIVE_URLS) == live
+
+
+def test_a_provider_error_too_long_for_the_ledger_is_cut_by_whoever_produces_it(notes):
+    _, url = notes
+    _Notes.status = 400
+    _Notes.message = "The From header is not a valid PagerDuty user: " + "x" * 178
+
+    written = post_note(url, "tok", "a@b.com", "PBAZLIU", "hello")
+
+    assert not written.delivered
+    assert len(written.detail) == DETAIL_LIMIT
+    record = notified_record("PBAZLIU", host="api.pagerduty.com", delivered=False, detail=written.detail)
+    assert record["detail"].startswith("http 400 The From header")
 
 
 def test_a_server_that_never_answers_is_reported_as_a_transport_failure(notes):

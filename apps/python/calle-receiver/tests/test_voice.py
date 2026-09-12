@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+
 import pytest
 from sqlmodel import Session, select
 
@@ -17,6 +19,9 @@ def test_incoming_call_returns_twiml_and_persists(client):
     assert "+5491100000000" in resp.text
     assert "<Transcription" in resp.text
     assert 'record="record-from-answer-dual"' in resp.text
+    for path in ("/voice/status", "/voice/recording", "/voice/transcription"):
+        assert f"https://example.test{path}" in resp.text
+    assert "example.test//" not in resp.text
     with Session(get_engine()) as session:
         call = session.get(Call, "CA123")
         assert call is not None
@@ -90,6 +95,43 @@ def test_signature_accepted_when_valid(client, monkeypatch):
         f"{settings.public_base_url}/voice", params
     )
     resp = client.post("/voice", data=params, headers={"X-Twilio-Signature": signature})
+    assert resp.status_code == 200
+
+
+def test_signature_accepted_when_the_webhook_carries_a_query_string(client, monkeypatch):
+    from twilio.request_validator import RequestValidator
+
+    settings = get_settings()
+    monkeypatch.setattr(settings, "validate_twilio_signature", True)
+    params = {"CallSid": "CAtagged", "From": "+15550000001", "To": "+15550000002"}
+    signature = RequestValidator(settings.twilio_auth_token).compute_signature(
+        settings.url_for("/voice") + "?env=prod", params
+    )
+    resp = client.post(
+        "/voice", params={"env": "prod"}, data=params, headers={"X-Twilio-Signature": signature}
+    )
+    assert resp.status_code == 200
+
+
+def test_signature_accepted_when_twilio_repeats_a_form_key(client, monkeypatch):
+    from starlette.datastructures import FormData
+    from twilio.request_validator import RequestValidator
+
+    settings = get_settings()
+    monkeypatch.setattr(settings, "validate_twilio_signature", True)
+    sent = [("CallSid", "CArepeated"), ("From", "+15550000001"), ("To", "+15550000002"),
+            ("SpeechResult", "first"), ("SpeechResult", "second")]
+    signature = RequestValidator(settings.twilio_auth_token).compute_signature(
+        settings.url_for("/voice"), FormData(sent)
+    )
+    resp = client.post(
+        "/voice",
+        content=urlencode(sent),
+        headers={
+            "X-Twilio-Signature": signature,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+    )
     assert resp.status_code == 200
 
 

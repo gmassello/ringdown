@@ -186,6 +186,50 @@ def test_a_ledger_path_in_a_missing_directory_is_a_usage_error_not_a_traceback(t
         append_record(tmp_path / "missing" / "ledger.jsonl", {"type": "note"})
 
 
+def test_a_ledger_that_is_not_utf8_is_a_failed_check_not_a_crash(tmp_path):
+    ledger = tmp_path / "ledger.jsonl"
+    write_run(ledger)
+    ledger.write_bytes(ledger.read_bytes() + b"\xff\n")
+
+    checks = chain_checks(ledger)
+
+    assert len(checks) == 1
+    assert checks[0][0] is False
+    assert "cannot be read" in checks[0][1]
+
+
+def test_a_ledger_path_that_is_a_directory_is_a_failed_check_not_a_crash(tmp_path):
+    checks = chain_checks(tmp_path)
+
+    assert len(checks) == 1
+    assert checks[0][0] is False
+    assert "cannot be read" in checks[0][1]
+
+
+def test_a_verification_whose_counts_are_not_numbers_is_a_failed_check_not_a_crash(tmp_path):
+    ledger = tmp_path / "ledger.jsonl"
+    write_run(ledger, checks=[(None, "the second channel said nothing")])
+    records = read_lines(ledger)
+    records[2]["total"] = "3"
+    ledger.write_text("\n".join(canonical_json(record) for record in records) + "\n")
+
+    checks = chain_checks(ledger)
+
+    assert (False, "record 3 reports check counts that are not numbers") in checks
+
+
+def test_a_position_field_that_is_not_a_number_does_not_break_appending(tmp_path):
+    ledger = tmp_path / "ledger.jsonl"
+    write_run(ledger)
+    records = read_lines(ledger)
+    records[-1]["seq"] = "3"
+    ledger.write_text("\n".join(canonical_json(record) for record in records) + "\n")
+
+    append_record(ledger, {"type": "note"})
+
+    assert read_lines(ledger)[-1]["seq"] == 4
+
+
 def test_a_valid_json_line_that_is_not_an_object_is_a_failed_check_not_a_crash(tmp_path):
     ledger = tmp_path / "ledger.jsonl"
     write_run(ledger)

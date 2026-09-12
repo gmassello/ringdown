@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 from ringdown import report
 from ringdown.adapter import adapt
 from ringdown.audit import (
+    LedgerError,
     append_record,
     attempt_record,
     chain_checks,
@@ -34,6 +35,7 @@ from ringdown.calle import (
 from ringdown.escalate import Attempt, LadderResult, run_ladder
 from ringdown.exits import (
     EXIT_ACKNOWLEDGED,
+    EXIT_LEDGER,
     EXIT_UNKNOWN,
     EXIT_USAGE,
     reconcile,
@@ -148,48 +150,55 @@ def run(args: argparse.Namespace) -> int:
     emit(*report.header_lines(incident, rungs, start))
 
     total = len(rungs)
+    placed: list[str] = []
 
     def watch(position: int, rung: Rung, attempt: Attempt | None) -> None:
         if attempt is None:
             emit(report.attempt_header(position, total, rung))
             return
-        append_record(args.ledger, attempt_record(attempt, incident.id))
         emit(*report.attempt_lines(attempt, incident.policy), "")
+        if attempt.call_id:
+            placed.append(attempt.call_id)
+        append_record(args.ledger, attempt_record(attempt, incident.id))
 
     def announce(attempt_id: str, key: str, rung: Rung) -> None:
         append_record(args.ledger, intent_record(incident.id, attempt_id, key, rung))
 
-    result = run_ladder(
-        RestClient(base_url, api_key),
-        incident,
-        rungs,
-        log=lambda line: emit(report.progress_line(line)),
-        watch=watch,
-        announce=announce,
-    )
-    append_record(args.ledger, verdict_record(incident.id, result))
-    emit(*report.verdict_lines(result))
-
-    checks: list[Check] = []
-    if verifiable(result.verdict, result.placed):
-        mcp = McpClient(mcp_url, mcp_key)
-        checks = _verify(mcp, incident, result, start)
-        append_record(
-            args.ledger,
-            verification_record(incident.id, checks, rest_host=rest_host, mcp_host=mcp_host),
+    try:
+        result = run_ladder(
+            RestClient(base_url, api_key),
+            incident,
+            rungs,
+            log=lambda line: emit(report.progress_line(line)),
+            watch=watch,
+            announce=announce,
         )
+        emit(*report.verdict_lines(result))
+        append_record(args.ledger, verdict_record(incident.id, result))
 
-    code = settle(result.verdict, result.placed, checks)
-    if code == EXIT_UNKNOWN:
-        emit(*report.unknown_lines(result))
-    elif code == EXIT_USAGE:
-        emit(*report.NOTHING_PLACED)
-    elif code in report.ADVICE and result.verdict == "acknowledged":
-        emit("", *report.ADVICE[code])
-    if args.pagerduty_note:
-        _notify_pagerduty(args.pagerduty_url, args.ledger, incident.id, result, code)
-    emit("", *report.ledger_lines(*head(args.ledger), result))
-    return code
+        checks: list[Check] = []
+        if verifiable(result.verdict, result.placed):
+            mcp = McpClient(mcp_url, mcp_key)
+            checks = _verify(mcp, incident, result, start)
+            append_record(
+                args.ledger,
+                verification_record(incident.id, checks, rest_host=rest_host, mcp_host=mcp_host),
+            )
+
+        code = settle(result.verdict, result.placed, checks)
+        if code == EXIT_UNKNOWN:
+            emit(*report.unknown_lines(result))
+        elif code == EXIT_USAGE:
+            emit(*report.NOTHING_PLACED)
+        elif code in report.ADVICE and result.verdict == "acknowledged":
+            emit("", *report.ADVICE[code])
+        if args.pagerduty_note:
+            _notify_pagerduty(args.pagerduty_url, args.ledger, incident.id, result, code)
+        emit("", *report.ledger_lines(*head(args.ledger), result))
+        return code
+    except LedgerError as error:
+        emit(f"error: {error}")
+        return EXIT_LEDGER if placed else EXIT_USAGE
 
 
 def _notify_pagerduty(
@@ -200,25 +209,28 @@ def _notify_pagerduty(
         return
     try:
         pinned = assert_trusted_url(url, PAGERDUTY_LIVE)
+        token = _credential(pinned, "PAGERDUTY_TOKEN", "RINGDOWN_FAKE_PAGERDUTY_TOKEN")
+        sender = _credential(pinned, "PAGERDUTY_FROM", "RINGDOWN_FAKE_PAGERDUTY_FROM")
+        if not token or not sender:
+            emit("skipping the PagerDuty note; the run is unaffected")
+            return
+        content = note_text(result, code, *head(ledger))
+        written = post_note(pinned, token, sender, incident_id, content)
+        append_record(
+            ledger,
+            notified_record(
+                incident_id,
+                host=host_of(pinned),
+                delivered=written.delivered,
+                detail=written.detail,
+            ),
+        )
     except UntrustedHost as error:
         emit(f"refusing to notify PagerDuty: {error}")
         return
-    token = _credential(pinned, "PAGERDUTY_TOKEN", "RINGDOWN_FAKE_PAGERDUTY_TOKEN")
-    sender = _credential(pinned, "PAGERDUTY_FROM", "RINGDOWN_FAKE_PAGERDUTY_FROM")
-    if not token or not sender:
-        emit("skipping the PagerDuty note; the run is unaffected")
+    except IncidentError as error:
+        emit(f"the PagerDuty note could not be recorded: {error}; the run is unaffected")
         return
-    content = note_text(result, code, *head(ledger))
-    written = post_note(pinned, token, sender, incident_id, content)
-    append_record(
-        ledger,
-        notified_record(
-            incident_id,
-            host=host_of(pinned),
-            delivered=written.delivered,
-            detail=written.detail,
-        ),
-    )
     emit(
         f"PagerDuty note on {incident_id}: "
         + ("written" if written.delivered else f"not written ({written.detail})")

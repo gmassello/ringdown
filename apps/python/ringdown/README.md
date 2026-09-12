@@ -196,8 +196,9 @@ resolves to one, so there is no run to read. Live, every verdict settles at exit
 | 20 | nobody acknowledged and the ladder is exhausted |
 | 25 | call state could not be established; a call may be live |
 | 30 | usage error: no confirmation phrase, no API key, untrusted host, both channels on one non-loopback host, bad incident or rotation file |
-| 40 | the recorded verdict does not reconcile on the second channel, or a ledger fails verification |
+| 40 | the recorded verdict does not reconcile on the second channel, or a ledger fails verification — including a ledger file that cannot be read at all |
 | 45 | the second channel could not be reached or could not be read, or a ledger holds an announced call with no attempt, so the verdict stands unconfirmed |
+| 50 | a call was placed but the ledger could not be written, so the verdict is printed and unsealed |
 
 Precedence: 25 wins and skips verification entirely, because checks against a call that has not
 finished produce failures that are not contradictions. Then 30 when a verdict exists but no call
@@ -206,6 +207,15 @@ disagrees exits 40, not 10. 45 is the weakest of the three: it only applies when
 contradicted and something went unanswered. Read 40 as *the second channel says otherwise* and 45
 as *the second channel said nothing*; the first means the incident has no owner, the second means
 the owner is unconfirmed and has to be checked another way.
+
+50 sits outside that order because it is not a verdict: it is the local disk failing after a phone
+already rang. It replaces 30 for that case — a ledger that cannot be opened, read or extended once
+a call exists is an infrastructure failure, not an operator mistake, and collapsing the two would
+tell a scheduler that no phone rang. The run prints the verdict and the attempts it got to before
+exiting, because that output is the only surviving evidence. A ledger that is unusable *before* the
+first call still exits 30: nothing was placed and the input file is simply bad. The PagerDuty note
+is the one writer exempt from this — it is best effort by design, so a note that cannot be posted or
+recorded is reported and the run still exits on its own verdict.
 
 ## The incident file
 
@@ -421,6 +431,11 @@ The last two carry the same 40/45 distinction the ladder uses. A verdict that do
 a verification the second channel contradicted, exits 40. A verification that went unanswered, or
 a record written by a schema this build cannot read, exits 45: unproven is not the same as
 tampered with, and an auditor is owed the difference.
+
+A ledger `verify` cannot read at all — a byte that is not UTF-8, a path that is a directory, a
+permission it does not have — is reported as a failed check and exits 40, not as a traceback.
+Nothing that can be written into the file is allowed to stop the audit from reaching a verdict:
+corrupting a record has to be at least as visible as rewriting one.
 
 Phone numbers are masked everywhere they are written or printed. The raw transcript is never
 stored: an attempt record keeps only the spans that were actually quoted as evidence, and only

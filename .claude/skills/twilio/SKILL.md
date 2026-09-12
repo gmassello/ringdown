@@ -89,10 +89,14 @@ receiving and forwarding to Argentina, skip them all.
 
 ## Webhooks and signature
 
-- The `X-Twilio-Signature` is validated against `PUBLIC_BASE_URL + path`
-  (never `request.url`: behind the proxy it arrives as `http://` and
-  validation fails). Implemented in `app/security.py` as the `twilio_form`
-  dependency, which validates and returns the form.
+- The `X-Twilio-Signature` is validated against `PUBLIC_BASE_URL + path +
+  query` (never `request.url` whole: behind the proxy the host arrives as
+  `http://` and validation fails — but the query string must be kept, because
+  Twilio signs the URL exactly as it is configured in the console). Implemented
+  in `app/security.py` as the `twilio_form` dependency, which validates and
+  returns the form. `PUBLIC_BASE_URL` is normalised and checked in
+  `app/config.py`: `scheme://host` only, no trailing slash and no path, so the
+  signed URL and the callback URLs in the TwiML cannot drift apart.
 - A POST without a valid signature returns 403 — that is the quick proof the
   tunnel→app circuit works: `curl -X POST <URL>/voice -d "CallSid=x"` → 403.
 - Live transcription: the callback sends form-data with

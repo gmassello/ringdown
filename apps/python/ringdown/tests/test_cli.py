@@ -11,13 +11,15 @@ from ringdown.__main__ import CONFIRMATION, main
 from ringdown.exits import (
     EXIT_ACKNOWLEDGED,
     EXIT_DECLINED,
+    EXIT_LEDGER,
     EXIT_UNKNOWN,
     EXIT_UNRESOLVED,
     EXIT_UNVERIFIED,
     EXIT_USAGE,
 )
-from ringdown.audit import append_record
+from ringdown.audit import LedgerError, append_record
 from ringdown.calle import LIVE_BASE_URL, LIVE_MCP_URL, RestClient
+from ringdown.pagerduty import NoteResult
 from ringdown.task import CALL_TASK
 from tests.data import ALICE, BEN, CARLA, EXAMPLES, example_body, write_json
 
@@ -494,6 +496,54 @@ def test_a_pagerduty_note_that_cannot_be_delivered_never_changes_the_exit_code(
     assert main(["verify", "--ledger", str(ledger)]) == EXIT_UNRESOLVED
 
 
+
+
+def test_a_note_the_ledger_refuses_to_record_never_changes_the_exit_code(
+    serving, incident_file, tmp_path, capsys, monkeypatch
+):
+    monkeypatch.setenv("RINGDOWN_FAKE_PAGERDUTY_TOKEN", "pd_test_token")
+    monkeypatch.setenv("RINGDOWN_FAKE_PAGERDUTY_FROM", "ops@example.com")
+    monkeypatch.setattr(
+        "ringdown.__main__.post_note",
+        lambda *_, **__: NoteResult(False, "http 400 " + "x" * 200),
+    )
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+
+    code = _run(
+        server.base_url,
+        incident_file,
+        ledger,
+        "--confirm", CONFIRMATION,
+        "--pagerduty-note",
+        "--pagerduty-url", server.base_url,
+    )
+
+    out = capsys.readouterr().out
+    assert code == EXIT_ACKNOWLEDGED
+    assert "the PagerDuty note could not be recorded" in out
+    assert "ledger 4 records" in out
+
+
+def test_a_ledger_that_fails_after_a_call_reports_the_verdict_and_exits_fifty(
+    serving, incident_file, tmp_path, capsys, monkeypatch
+):
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+    def flaky(path: Path, record: dict) -> None:
+        if record["type"] == "verdict":
+            raise LedgerError(f"cannot open the ledger at {path}: No space left on device")
+        append_record(path, record)
+
+    monkeypatch.setattr("ringdown.__main__.append_record", flaky)
+
+    code = _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION)
+
+    out = capsys.readouterr().out
+    assert code == EXIT_LEDGER
+    assert "verdict acknowledged  owner a.okafor" in out
+    assert "No space left on device" in out
+    assert len(server.created) == 1
 
 
 def test_a_second_use_case_runs_on_the_same_binary(capsys):

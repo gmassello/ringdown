@@ -1,6 +1,7 @@
 from functools import lru_cache
+from urllib.parse import urlsplit
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 E164 = r"^\+[1-9]\d{7,14}$"
@@ -21,6 +22,22 @@ class Settings(BaseSettings):
     enable_transcription: bool = True
     transcription_language: str = "en-US"
     validate_twilio_signature: bool = True
+
+    @field_validator("public_base_url")
+    @classmethod
+    def _rooted_origin(cls, raw: str) -> str:
+        parts = urlsplit(raw.rstrip("/"))
+        if parts.scheme not in ("http", "https") or not parts.netloc:
+            raise ValueError(f"public_base_url must be http(s)://host, got {raw!r}")
+        if parts.path or parts.query or parts.fragment:
+            raise ValueError(
+                f"public_base_url must carry no path, query or fragment, got {raw!r}; "
+                "the app is mounted at the root"
+            )
+        return f"{parts.scheme}://{parts.netloc}"
+
+    def url_for(self, path: str) -> str:
+        return f"{self.public_base_url}{path}"
 
 
 @lru_cache

@@ -5,6 +5,7 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass
 
+from ringdown.audit import DETAIL_LIMIT
 from ringdown.calle import assert_trusted_url, error_envelope
 from ringdown.escalate import LadderResult
 from ringdown.exits import EXIT_UNRESOLVED, EXIT_UNVERIFIED
@@ -16,7 +17,6 @@ LIVE_URLS = (LIVE_US, LIVE_EU)
 
 ACCEPT = "application/vnd.pagerduty+json;version=2"
 NOTE_LIMIT = 2000
-MESSAGE_LIMIT = 200
 
 SETTLED = {
     "acknowledged": "acknowledged the page",
@@ -104,7 +104,7 @@ def post_note(
         with _OPENER.open(request, timeout=timeout) as response:
             return NoteResult(True, f"http {response.status}")
     except urllib.error.HTTPError as error:
-        message = str(error_envelope(error).get("message") or "")[:MESSAGE_LIMIT]
-        return NoteResult(False, f"http {error.code} {message}".strip())
+        message = str(error_envelope(error).get("message") or "")
+        return NoteResult(False, f"http {error.code} {message}".strip()[:DETAIL_LIMIT])
     except OSError as error:
-        return NoteResult(False, f"transport failure: {error}")
+        return NoteResult(False, f"transport failure: {error}"[:DETAIL_LIMIT])
