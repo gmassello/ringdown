@@ -8,17 +8,6 @@
 <p align="center">
   <a href="https://github.com/gmassello/ringdown/actions/workflows/ci.yml"><img src="https://github.com/gmassello/ringdown/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
-</p>
-
-<p align="center">
-  <a href="https://gmassello.github.io/ringdown/#ledger"><b>Tamper with the ledger in your browser</b></a> ·
-  <a href="https://youtu.be/KITNQLZixWw"><b>Video (2:50)</b></a> ·
-  <a href="apps/python/ringdown/README.md"><b>Operational manual</b></a> ·
-  <a href="apps/python/ringdown/demo/EXPECTED.md"><b>Demo output</b></a> ·
-  <a href="apps/python/ringdown/examples/ledger.example.jsonl"><b>A real ledger</b></a>
-</p>
-
-<p align="center">
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
   <img alt="412 tests" src="https://img.shields.io/badge/tests-412-2f6f4e">
@@ -27,48 +16,36 @@
 </p>
 
 <p align="center">
-  <a href="https://youtu.be/KITNQLZixWw"><img src="https://img.youtube.com/vi/KITNQLZixWw/maxresdefault.jpg" alt="Watch the demo (2:50)" width="560"></a><br>
-  <a href="https://youtu.be/KITNQLZixWw"><b>▶ Watch the demo</b></a> · 2:50
+  <img src="docs/demo.gif" alt="Three screens of the demo: a commitment at exit 0, a yes without an ETA that drops a rung, and a tampered ledger whose chain is intact and whose verification still fails at exit 40" width="900">
 </p>
 
 <p align="center">
-  <i>Or skip the install: <a href="https://gmassello.github.io/ringdown/#ledger">rewrite every verdict in the committed ledger</a>,
-  reseal the whole chain from the genesis hash, and watch the links, the seals and the positions all<br>
-  stay green while the verification fails anyway — because it re-derives the verdict from the recorded attempts.</i>
+  <a href="https://youtu.be/KITNQLZixWw"><b>▶ Watch the demo</b></a> (2:50) ·
+  <a href="https://gmassello.github.io/ringdown/#ledger"><b>Tamper with the ledger in your browser</b></a> ·
+  <a href="apps/python/ringdown/README.md"><b>Operational manual</b></a> ·
+  <a href="apps/python/ringdown/demo/EXPECTED.md"><b>Demo output</b></a> ·
+  <a href="apps/python/ringdown/examples/ledger.example.jsonl"><b>A real ledger</b></a>
 </p>
 
 ---
 
-## What it does
+## "Notification sent" proves nothing
 
-Ringdown walks an escalation ladder one rung at a time. Each rung is a real phone call that asks
-one person two questions: **are you taking this incident, and in how many minutes.** A run ends
-when somebody commits with an owner and an ETA, when somebody declines, or when the ladder is
-exhausted.
+The push arrived at a phone on silent, the email landed in a folder, the SMS was half-read at 03:00
+and the engineer went back to sleep. The acknowledgement is the only part that matters, and it is
+exactly the part nobody verifies.
 
-The part that matters is the last step. Ringdown **places the call over the REST API and verifies
-it over MCP**, then appends the verdict and its verification to a hash-chained ledger. An agent
-that audits itself through the channel it wrote with has proved nothing.
+|  | Every on-call tool | Ringdown |
+| --- | --- | --- |
+| **How it reaches you** | push, SMS, email — fire and forget | a real phone call, one person per rung, until somebody commits |
+| **What counts as success** | "notification sent" | a named owner and a number of minutes, each quoted from a span the recipient actually spoke |
+| **Who confirms it** | the channel that sent it, if anyone | a second transport — the call is placed over REST and verified over MCP |
+| **What evidence is left** | a log line | a hash-chained ledger that **re-derives** the verdict from the recorded attempts instead of only sealing it |
+| **If the create's reply is lost** | wake a second person, or drop the page | replay a content-derived idempotency key — one rung, one call, ever |
 
-Every on-call system reports "notification sent" and treats the incident as escalated. The push
-arrived at a phone on silent, the email landed in a folder, the SMS was half-read at 03:00 and the
-engineer went back to sleep. The acknowledgement is the only part that matters, and it is exactly
-the part nobody verifies.
+An agent that audits itself through the channel it wrote with has proved nothing.
 
-## Contents
-
-[Sixty seconds](#sixty-seconds) · [How it works](#how-it-works) · [Running it](#running-it) ·
-[What it proves](#what-it-proves) · [Repository](#repository) · [The defence](#the-defence) ·
-[Known ceilings](#known-ceilings)
-
-## Sixty seconds
-
-```bash
-cd apps/python/ringdown && uv sync && uv run python -m demo.run_local
-```
-
-Seven scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
-nothing rings — the demo supplies its own throwaway key. This is the second one:
+## The case that is the whole product
 
 ```text
 [1/3] primary  Alice Okafor  +1********00
@@ -85,7 +62,14 @@ on those three signals reports this incident as escalated and goes back to sleep
 "yeah, sure, I'll take a look at some point" — no owner, no clock, no acknowledgement. Ringdown
 drops to the next rung, and the backup commits.
 
-That one case is the whole product.
+## Sixty seconds
+
+```bash
+cd apps/python/ringdown && uv sync && uv run python -m demo.run_local
+```
+
+Seven scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
+nothing rings — the demo supplies its own throwaway key.
 
 <details>
 <summary><b>The seven scenarios</b> — what each one is there to break</summary>
@@ -171,14 +155,27 @@ Seven exit codes:
 | `40` | the second channel contradicts the recorded verdict |
 | `45` | the second channel could not be reached |
 
-Precedence is the interesting part. `40` overrides `0`, `10`, `20` and `45` alike, so a decline the
-second channel does not support exits 40, not 10. `25` outranks everything and skips verification
-entirely — there is nothing to re-derive from a call whose state nobody knows. And `45` only lands
-when nothing was contradicted: **a channel that is down is never read as a channel that disagrees.**
-That distinction is why `Check` is a ternary and why `None` is load-bearing rather than falsy.
+Precedence is the interesting part: `40` overrides `0`, `10`, `20` and `45` alike, so a decline the
+second channel does not support exits 40, not 10. And `45` only lands when nothing was contradicted
+— **a channel that is down is never read as a channel that disagrees.**
 [Full table](apps/python/ringdown/README.md#exit-codes).
 
-## What it proves
+## Repository
+
+| Path | What it is |
+| --- | --- |
+| [`apps/python/ringdown/`](apps/python/ringdown/) | The app, and its [README](apps/python/ringdown/README.md): setup, exit codes, file formats, threat model, all the ceilings |
+| [`apps/python/ringdown/demo/EXPECTED.md`](apps/python/ringdown/demo/EXPECTED.md) | The demo scenarios, narrated, written before the code that produces them |
+| [`apps/python/ringdown/examples/`](apps/python/ringdown/examples/) | The incident, rotation, mapping and call-script files, a second use case that runs on the same binary, and a ledger committed exactly as the demo wrote it |
+| [`docs/`](docs/) | The project site (GitHub Pages): the overview, two demo scenarios replayed step by step, and a ledger you can tamper with in the browser. No build step, no dependencies |
+| [`apps/python/calle-receiver/`](apps/python/calle-receiver/) | Demo infrastructure, not the product: CALL-E's recipient regions don't include Argentina, so this FastAPI service receives the agent's call on a US Twilio number and bridges it to an Argentine phone, with recording, live transcription and a password-protected [dashboard](https://calle-receiver.onrender.com/calls). |
+
+---
+
+<details>
+<summary><b>What it proves</b> — ten checks on a second transport, and a ledger that re-derives the verdict instead of only sealing it</summary>
+
+<br>
 
 The provider's two surfaces are not two views of one JSON document. REST reports lowercase statuses
 and exposes `task_completed` and `completion_confidence`. MCP reports uppercase statuses and accepts
@@ -208,21 +205,16 @@ fails. A ledger whose own verification did not hold cannot be replayed as a clea
 Phone numbers are masked everywhere they are written or printed, and the raw transcript is never
 stored: an attempt keeps only the spans quoted as evidence.
 
-## Repository
+On the exit codes: `25` outranks everything and skips verification entirely — there is nothing to
+re-derive from a call whose state nobody knows. That `45` lands only when nothing was contradicted
+is why `Check` is a ternary and why `None` is load-bearing rather than falsy.
 
-| Path | What it is |
-| --- | --- |
-| [`apps/python/ringdown/`](apps/python/ringdown/) | The app, and its [README](apps/python/ringdown/README.md): setup, exit codes, file formats, threat model, all the ceilings |
-| [`apps/python/ringdown/demo/EXPECTED.md`](apps/python/ringdown/demo/EXPECTED.md) | The demo scenarios, narrated, written before the code that produces them |
-| [`apps/python/ringdown/examples/`](apps/python/ringdown/examples/) | The incident, rotation, mapping and call-script files, a second use case that runs on the same binary, and a ledger committed exactly as the demo wrote it |
-| [`docs/`](docs/) | The project site (GitHub Pages): the overview, two demo scenarios replayed step by step, and a ledger you can tamper with in the browser. No build step, no dependencies |
-| [`apps/python/calle-receiver/`](apps/python/calle-receiver/) | Demo infrastructure, not the product: CALL-E's recipient regions don't include Argentina, so this FastAPI service receives the agent's call on a US Twilio number and bridges it to an Argentine phone, with recording, live transcription and a password-protected [dashboard](https://calle-receiver.onrender.com/calls). |
+</details>
 
-Only the app and its skill are meant to travel to
-[`CALLE-AI/awesome-phone-call-agents`](https://github.com/CALLE-AI/awesome-phone-call-agents).
-This README stays here.
+<details>
+<summary><b>Why this is not the other three projects</b> — approval before acting, a recipe that wakes two people, and a one-shot fact check</summary>
 
-## The defence
+<br>
 
 **Against `deployment-approval-call`**, the nearest neighbour: it asks *before* acting — "may I do
 X?" — of a known approver, and its failure is safe, because nothing happens. Ringdown asks *after*
@@ -240,7 +232,12 @@ existed, which is the point here.
 published fact, and abstains when it cannot. Ringdown runs a ladder looking for a commitment and
 audits its own call over a second transport. Same technique, different product.
 
-## Known ceilings
+</details>
+
+<details>
+<summary><b>Known ceilings</b> — six live calls broke the thing they were meant to confirm, and every live verdict settles at exit 45</summary>
+
+<br>
 
 - **Six calls were placed against the live provider on 2026-08-20, and they broke the thing they
   were meant to confirm.** Cross-surface verification does not work: `get_call_run` takes a
@@ -281,5 +278,13 @@ audits its own call over a second transport. Same technique, different product.
 - The provider does not dial every country, and Ringdown does not preflight the list.
 
 The [app README](apps/python/ringdown/README.md#known-ceilings) has all nineteen, unvarnished.
+
+</details>
+
+---
+
+Only the app and its skill are meant to travel to
+[`CALLE-AI/awesome-phone-call-agents`](https://github.com/CALLE-AI/awesome-phone-call-agents).
+This README stays here.
 
 This is a demo app for a workflow pattern, not a CALL-E SDK and not a supported product API.
