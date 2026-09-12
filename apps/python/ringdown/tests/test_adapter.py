@@ -64,3 +64,29 @@ def test_a_mapping_value_that_is_not_a_path_is_copied_as_a_literal():
         "ladder": ["primary"],
         "timezone": "UTC",
     }
+
+
+def opsgenie_mapped(**alert_overrides) -> dict:
+    payload = example_body("opsgenie")
+    payload["alert"].update(alert_overrides)
+    return adapt(payload, example_body("opsgenie-mapping"))
+
+
+def test_an_opsgenie_webhook_becomes_an_incident_ringdown_can_dial():
+    incident = parse_incident(opsgenie_mapped())
+
+    assert incident.id == "052652ac-5d1c-464a-812a-7dd18bbfba8c"
+    assert incident.title == "checkout p99 latency above 3s"
+    assert incident.service == "checkout-api"
+    assert incident.severity == "p2"
+    assert incident.runbook_url == ""
+
+
+def test_the_first_opsgenie_tag_is_the_severity_that_gets_spoken():
+    assert parse_incident(opsgenie_mapped(tags=["P1", "checkout"])).severity == "p1"
+
+
+def test_an_opsgenie_alert_tagged_with_something_else_is_refused_rather_than_guessed():
+    with pytest.raises(IncidentError):
+        parse_incident(opsgenie_mapped(tags=["checkout", "p2"]))
+

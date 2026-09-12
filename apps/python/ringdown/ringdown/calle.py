@@ -4,7 +4,7 @@ import json
 import time
 import urllib.error
 import urllib.request
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 from urllib.parse import urlparse
 
 from ringdown.calls import CallRun, CallSnapshot, run_from, snapshot_from
@@ -38,16 +38,23 @@ class UntrustedHost(ValueError):
     pass
 
 
-class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        raise CalleError(
-            "unexpected_redirect",
-            code,
-            f"{req.full_url} answered with a redirect to {newurl}; refusing to follow it",
-        )
+def refusing_redirects(fail: Callable[[str, str, int], Exception]) -> urllib.request.OpenerDirector:
+    class _NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            raise fail(req.full_url, newurl, code)
+
+    return urllib.request.build_opener(_NoRedirect)
 
 
-_OPENER = urllib.request.build_opener(_NoRedirect)
+def redirect_refused(url: str, newurl: str, code: int) -> str:
+    return f"{url} answered with a redirect to {newurl}; refusing to follow it"
+
+
+_OPENER = refusing_redirects(
+    lambda url, newurl, code: CalleError(
+        "unexpected_redirect", code, redirect_refused(url, newurl, code)
+    )
+)
 
 
 def is_loopback(url: str) -> bool:

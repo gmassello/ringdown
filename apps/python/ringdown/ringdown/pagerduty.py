@@ -6,7 +6,12 @@ import urllib.request
 from dataclasses import dataclass
 
 from ringdown.audit import DETAIL_LIMIT
-from ringdown.calle import assert_trusted_url, error_envelope
+from ringdown.calle import (
+    assert_trusted_url,
+    error_envelope,
+    redirect_refused,
+    refusing_redirects,
+)
 from ringdown.escalate import LadderResult
 from ringdown.exits import EXIT_UNRESOLVED, EXIT_UNVERIFIED
 from ringdown.incident import mask_phone
@@ -36,12 +41,9 @@ CORROBORATION = {
 }
 
 
-class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        raise OSError(f"{req.full_url} answered with a redirect to {newurl}; refusing to follow it")
-
-
-_OPENER = urllib.request.build_opener(_NoRedirect)
+_OPENER = refusing_redirects(
+    lambda url, newurl, code: OSError(redirect_refused(url, newurl, code))
+)
 
 
 @dataclass(frozen=True)

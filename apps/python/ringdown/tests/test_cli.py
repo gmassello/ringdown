@@ -73,7 +73,7 @@ def test_preview_never_touches_the_network(incident_file, capsys):
 
 def test_the_bare_command_prints_help_instead_of_guessing(capsys):
     assert main([]) == EXIT_USAGE
-    assert "{preview,run,verify,adapt}" in capsys.readouterr().out
+    assert "{preview,run,verify,adapt,suggest-mapping}" in capsys.readouterr().out
 
 
 def test_run_without_the_confirmation_phrase_places_no_call(serving, incident_file, tmp_path):
@@ -423,13 +423,14 @@ def test_a_rewritten_verdict_with_a_relinked_chain_still_fails_verify_ledger(
     assert "does not follow from the recorded attempts (declined)" in out
 
 
-def test_a_pagerduty_priority_survives_the_whole_adapt_and_preview_path(tmp_path, capsys):
+@pytest.mark.parametrize("vendor", ["pagerduty", "opsgenie"])
+def test_a_vendor_alert_survives_the_whole_adapt_and_preview_path(vendor, tmp_path, capsys):
     out = tmp_path / "incident.json"
     assert main(
         [
             "adapt",
-            "--payload", str(EXAMPLES / "pagerduty.example.json"),
-            "--mapping", str(EXAMPLES / "pagerduty-mapping.example.json"),
+            "--payload", str(EXAMPLES / f"{vendor}.example.json"),
+            "--mapping", str(EXAMPLES / f"{vendor}-mapping.example.json"),
             "--out", str(out),
         ]
     ) == EXIT_ACKNOWLEDGED
@@ -439,6 +440,14 @@ def test_a_pagerduty_priority_survives_the_whole_adapt_and_preview_path(tmp_path
     printed = capsys.readouterr().out
     assert "p2" in printed
     assert "checkout p99 latency above 3s" in printed
+
+
+def test_suggest_mapping_without_a_key_asks_nobody_and_guesses_nothing(monkeypatch, capsys):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    code = main(["suggest-mapping", "--payload", str(EXAMPLES / "opsgenie.example.json")])
+
+    assert code == EXIT_USAGE
+    assert "GEMINI_API_KEY is not set" in capsys.readouterr().out
 
 
 def test_a_run_without_the_pagerduty_flag_notifies_nobody(serving, incident_file, tmp_path, capsys):
