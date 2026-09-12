@@ -1,6 +1,6 @@
 import { chainChecks, fetchLedger, tamper } from "./ledger.js";
 
-const VIEWS = ["overview", "run", "receiver"];
+const VIEWS = ["overview", "run", "ledger", "receiver"];
 const STEP_MS = 900;
 
 const showTheme = (theme) => {
@@ -90,13 +90,6 @@ const setUpRun = () => {
     }, STEP_MS);
   };
 
-  const showLedgerNote = (scenario) => {
-    for (const note of document.querySelectorAll("[data-ledger-note]")) {
-      const wanted = scenario === "nobody" ? "nobody" : "other";
-      note.hidden = note.dataset.ledgerNote !== wanted;
-    }
-  };
-
   const select = (tab) => {
     stop();
     for (const other of tabs) {
@@ -106,7 +99,6 @@ const setUpRun = () => {
         `[data-scenario-panel="${other.dataset.scenario}"]`,
       ).hidden = !selected;
     }
-    showLedgerNote(tab.dataset.scenario);
     paintStep(totalSteps());
   };
 
@@ -114,15 +106,6 @@ const setUpRun = () => {
 
   for (const tab of tabs) {
     tab.addEventListener("click", () => select(tab));
-  }
-
-  for (const link of document.querySelectorAll("[data-goto-nobody]")) {
-    link.addEventListener("click", (event) => {
-      event.preventDefault();
-      const tab = tabs.find((candidate) => candidate.dataset.scenario === "nobody");
-      select(tab);
-      tab.scrollIntoView({ block: "center", behavior: "smooth" });
-    });
   }
 };
 

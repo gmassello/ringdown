@@ -24,6 +24,12 @@ the recipient's own mouth.
 
 ## Try it without an account
 
+Nothing to install: the [project site](https://gmassello.github.io/ringdown/#ledger) fetches the
+committed ledger, lets you rewrite every verdict in it, reseals and relinks the whole chain in your
+browser — and shows the verification failing anyway.
+
+Locally, the demo needs no account either:
+
 ```bash
 python -m demo.run_local
 ```
@@ -61,7 +67,7 @@ Python 3.11 or newer. No runtime dependencies — `dependencies = []`, standard 
 
 ```bash
 uv sync
-uv run pytest -q          # 298 tests, no credentials, no outbound calls
+uv run pytest -q          # 378 tests, no credentials, no outbound calls
 ```
 
 ## Preview, which is the default

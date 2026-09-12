@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://gmassello.github.io/ringdown/"><b>Tamper with the ledger in your browser</b></a> ·
+  <a href="https://gmassello.github.io/ringdown/#ledger"><b>Tamper with the ledger in your browser</b></a> ·
   <a href="https://youtu.be/KITNQLZixWw"><b>Video (2:50)</b></a> ·
   <a href="apps/python/ringdown/README.md"><b>Operational manual</b></a> ·
   <a href="apps/python/ringdown/demo/EXPECTED.md"><b>Demo output</b></a> ·
@@ -32,7 +32,7 @@
 </p>
 
 <p align="center">
-  <i>Or skip the install: <a href="https://gmassello.github.io/ringdown/">rewrite every verdict in the committed ledger</a>,
+  <i>Or skip the install: <a href="https://gmassello.github.io/ringdown/#ledger">rewrite every verdict in the committed ledger</a>,
   reseal the whole chain from the genesis hash, and watch the links, the seals and the positions all<br>
   stay green while the verification fails anyway — because it re-derives the verdict from the recorded attempts.</i>
 </p>
