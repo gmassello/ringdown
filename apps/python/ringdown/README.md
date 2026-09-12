@@ -54,8 +54,11 @@ Python 3.11 or newer, and [uv](https://docs.astral.sh/uv/). No runtime dependenc
 git clone https://github.com/gmassello/ringdown
 cd ringdown/apps/python/ringdown
 uv sync
-uv run pytest -q          # 442 tests, no credentials, no outbound calls
+uv run pytest -q          # 449 tests, no credentials, no outbound calls
 ```
+
+Seven of those tests read the project site and skip where `docs/` is absent, which is the case in
+any checkout of this directory alone — there the run reports 442 passed and 7 skipped.
 
 **Every command in this file runs from `apps/python/ringdown/`.**
 
@@ -328,7 +331,8 @@ python -m ringdown preview --incident /tmp/incident.json --rotation examples/rot
 ```
 
 No vendor code was added for this. All of PagerDuty lives in that mapping file, and the adapter
-stays generic.
+stays generic. The identifiers in the example payload are the sample values from PagerDuty's own
+public documentation and the subdomain is fictional: nothing here came from an account.
 
 Two things the payload cannot give, and neither is papered over:
 
@@ -413,10 +417,10 @@ proposes paths; it does not get to say what a valid incident is. Three propertie
 What the model still cannot be trusted with is whether the mapping is *right* — see ceiling 21.
 
 The tests for this path answer from a loopback HTTP server, which proves what this repository
-believes the Gemini contract to be — not the contract. So the repository's `deploy` workflow holds a
-Google API key as a repository secret, hands it to the job as `GEMINI_API_KEY`, and on every run
-asks the live API for a mapping over `examples/alertmanager.example.json` and then dials with it:
-`adapt`, then `preview`. The model never
+believes the Gemini contract to be — not the contract. So the project's own repository
+([`gmassello/ringdown`](https://github.com/gmassello/ringdown)) holds a Google API key as a
+repository secret and, on every deploy, asks the live API for a mapping over
+`examples/alertmanager.example.json` and then dials with it: `adapt`, then `preview`. The model never
 sees the mapping written by hand for that payload, so a pass means the prompt still works with no
 worked example, and a change on Google's side surfaces there rather than the first time you need it.
 That job never gates anything else — it says whether the contract still holds, and nothing in
@@ -793,7 +797,10 @@ own call over a second transport. Same technique, different product.
     for paging. They are accurate for on-call and merely odd elsewhere, and renaming them would
     change the ledger format for no functional gain.
 
-20. The browser port of `chain_checks` in `docs/ledger.js` is pinned by a test that runs both
+20. The project site is not part of this directory: it lives under `docs/` in
+    [`gmassello/ringdown`](https://github.com/gmassello/ringdown), and every test that reads it
+    skips where that directory is absent. The browser port of `chain_checks` in `docs/ledger.js`
+    is pinned by a test that runs both
     implementations over the same six ledgers and compares every `(ok, label)` pair
     (`tests/test_site_port.py`, skipped where `docs/` or `node` is absent). That closes the drift
     the seals could never catch — a missing family of checks does not change a digest. Two gaps

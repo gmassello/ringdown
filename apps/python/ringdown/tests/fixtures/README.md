@@ -30,6 +30,10 @@ Read `unobserved` before trusting a fixture. The evidence is partial and the gap
 
 ## What the live provider settled, and what it broke
 
+The paragraphs below are about the *shape* the provider answered with, which is all these fixtures
+carry. Every value in the committed files was rewritten; no transcript, recording, phone number or
+identifier from a real call is stored anywhere in this repository.
+
 On 2026-08-20 six calls were placed against the live provider from a US Twilio number that
 bridges to the on-call engineer's phone, which is how ceiling 14 was worked around. Five over
 REST, one over MCP. They settled four things the fake could only assume:

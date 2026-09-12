@@ -52,6 +52,14 @@ def test_an_unknown_https_host_is_refused_and_there_is_no_flag_that_permits_it()
         assert_trusted_url("https://calle.example.com", LIVE_BASE_URL)
 
 
+def test_a_url_carrying_a_password_is_refused_without_printing_it():
+    with pytest.raises(UntrustedHost) as raised:
+        assert_trusted_url("ftp://operator:hunter2@calle.example.com", LIVE_BASE_URL)
+
+    assert "hunter2" not in str(raised.value)
+    assert "operator" not in str(raised.value)
+
+
 def test_each_channel_accepts_its_own_live_url_and_loopback():
     assert assert_trusted_url(LIVE_BASE_URL + "/", LIVE_BASE_URL) == LIVE_BASE_URL
     assert assert_trusted_url(LIVE_MCP_URL, LIVE_MCP_URL) == LIVE_MCP_URL

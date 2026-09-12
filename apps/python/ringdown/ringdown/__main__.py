@@ -23,8 +23,6 @@ from ringdown.audit import (
     verification_record,
 )
 from ringdown.calle import (
-    LIVE_BASE_URL,
-    LIVE_MCP_URL,
     McpClient,
     RestClient,
     UntrustedHost,
@@ -82,8 +80,8 @@ def _parser() -> argparse.ArgumentParser:
     run = with_files("run")
     run.add_argument("--ledger", type=Path, required=True)
     run.add_argument("--confirm", default="")
-    run.add_argument("--base-url", default=LIVE_BASE_URL)
-    run.add_argument("--mcp-url", default=LIVE_MCP_URL)
+    run.add_argument("--base-url", default=RestClient.LIVE)
+    run.add_argument("--mcp-url", default=McpClient.LIVE)
     run.add_argument("--pagerduty-note", action="store_true")
     run.add_argument("--pagerduty-url", default=LIVE_US)
 
@@ -139,8 +137,8 @@ def run(args: argparse.Namespace) -> int:
     if args.confirm != CONFIRMATION:
         emit(f"refusing to place calls without --confirm {CONFIRMATION!r}")
         return EXIT_USAGE
-    base_url = assert_trusted_url(args.base_url, LIVE_BASE_URL)
-    mcp_url = assert_trusted_url(args.mcp_url, LIVE_MCP_URL)
+    base_url = assert_trusted_url(args.base_url, RestClient.LIVE)
+    mcp_url = assert_trusted_url(args.mcp_url, McpClient.LIVE)
     rest_host = urlparse(base_url).hostname or ""
     mcp_host = urlparse(mcp_url).hostname or ""
     if is_loopback(base_url) and is_loopback(mcp_url):

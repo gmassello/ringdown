@@ -77,10 +77,10 @@ def assert_trusted_url(url: str, live: str | Sequence[str]) -> str:
     allowed = (live,) if isinstance(live, str) else tuple(live)
     pinned = url.rstrip("/")
     parsed = urlparse(url)
-    if parsed.scheme not in ("http", "https") or not parsed.hostname:
-        raise UntrustedHost(f"{url!r} is not an http or https URL")
     if parsed.username or parsed.password:
         raise UntrustedHost("refusing a URL that carries credentials in its userinfo")
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        raise UntrustedHost(f"{url!r} is not an http or https URL")
     if parsed.query or parsed.fragment:
         raise UntrustedHost("refusing a base URL that carries a query string or a fragment")
     if pinned not in allowed and not is_loopback(url):

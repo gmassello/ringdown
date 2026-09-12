@@ -220,6 +220,18 @@ def test_an_incident_naming_a_script_that_is_not_there_says_so(tmp_path):
         load_incident(path)
 
 
+@pytest.mark.parametrize("named", ["/etc/passwd", "../outside.txt", "sub/../../outside.txt"])
+def test_an_incident_cannot_name_a_script_outside_its_own_directory(tmp_path, named):
+    (tmp_path.parent / "outside.txt").write_text(CALL_TASK)
+    body = example_body("sla-breach")
+    body["script"] = named
+    path = write_json(tmp_path, "incident.json", body)
+
+    with pytest.raises(IncidentError, match="outside") as raised:
+        load_incident(path)
+    assert named not in str(raised.value)
+
+
 def test_a_script_that_never_mentions_a_service_does_not_need_one(tmp_path):
     script = tmp_path / "s.txt"
     script.write_text(CALL_TASK.replace(" incident on {service}", " incident"))

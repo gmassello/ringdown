@@ -115,7 +115,7 @@ def test_a_host_that_is_not_pagerduty_never_receives_the_token():
     RECEIVED.clear()
 
     with pytest.raises(UntrustedHost):
-        post_note("https://api.pagerduty.com.evil.test", "tok", "a@b.com", "P1", "hello")
+        post_note("https://api.pagerduty.com.evil.test", "tok", "ops@example.com", "P1", "hello")
 
     assert not RECEIVED
 
@@ -130,7 +130,7 @@ def test_a_provider_error_too_long_for_the_ledger_is_cut_by_whoever_produces_it(
     _Notes.status = 400
     _Notes.message = "The From header is not a valid PagerDuty user: " + "x" * 178
 
-    written = post_note(url, "tok", "a@b.com", "PBAZLIU", "hello")
+    written = post_note(url, "tok", "ops@example.com", "PBAZLIU", "hello")
 
     assert not written.delivered
     assert len(written.detail) == DETAIL_LIMIT
@@ -142,7 +142,7 @@ def test_a_server_that_never_answers_is_reported_as_a_transport_failure(notes):
     server, url = notes
     server.shutdown()
 
-    written = post_note(url, "tok", "a@b.com", "PBAZLIU", "hello", timeout=0.2)
+    written = post_note(url, "tok", "ops@example.com", "PBAZLIU", "hello", timeout=0.2)
 
     assert not written.delivered
     assert "transport failure" in written.detail

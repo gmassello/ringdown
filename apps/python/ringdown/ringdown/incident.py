@@ -225,7 +225,10 @@ def load_incident(path: Path) -> Incident:
     named = raw.get("script")
     if not named:
         return parse_incident(raw)
-    script = (path.parent / str(named)).resolve()
+    beside = path.parent.resolve()
+    script = (beside / str(named)).resolve()
+    if not script.is_relative_to(beside):
+        raise IncidentError(f"the incident names a call script outside {beside}")
     if not script.is_file():
         raise IncidentError(f"the incident names a call script at {script}, which does not exist")
     try:

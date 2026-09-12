@@ -481,6 +481,54 @@ def test_a_run_asked_to_notify_pagerduty_without_credentials_still_settles(
     assert "notified" not in ledger.read_text()
 
 
+def test_the_live_pagerduty_token_is_never_read_for_a_note_against_the_local_fake(
+    serving, incident_file, tmp_path, capsys, monkeypatch
+):
+    monkeypatch.delenv("RINGDOWN_FAKE_PAGERDUTY_TOKEN", raising=False)
+    monkeypatch.setenv("PAGERDUTY_TOKEN", "pd_live_token")
+    monkeypatch.setenv("PAGERDUTY_FROM", "oncall@example.com")
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+
+    code = _run(
+        server.base_url,
+        incident_file,
+        ledger,
+        "--confirm", CONFIRMATION,
+        "--pagerduty-note",
+        "--pagerduty-url", server.base_url,
+    )
+
+    assert code == EXIT_ACKNOWLEDGED
+    printed = capsys.readouterr().out
+    assert "RINGDOWN_FAKE_PAGERDUTY_TOKEN is not set" in printed
+    assert "pd_live_token" not in printed
+    assert "notified" not in ledger.read_text()
+
+
+def test_a_pagerduty_token_is_refused_against_the_url_of_the_other_channel(
+    serving, incident_file, tmp_path, capsys, monkeypatch
+):
+    monkeypatch.setenv("PAGERDUTY_TOKEN", "pd_live_token")
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+
+    code = _run(
+        server.base_url,
+        incident_file,
+        ledger,
+        "--confirm", CONFIRMATION,
+        "--pagerduty-note",
+        "--pagerduty-url", LIVE_BASE_URL,
+    )
+
+    assert code == EXIT_ACKNOWLEDGED
+    printed = capsys.readouterr().out
+    assert "refusing to notify PagerDuty" in printed
+    assert "pd_live_token" not in printed
+    assert "notified" not in ledger.read_text()
+
+
 def test_a_pagerduty_note_that_cannot_be_delivered_never_changes_the_exit_code(
     serving, incident_file, tmp_path, capsys, monkeypatch
 ):
