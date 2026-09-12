@@ -177,7 +177,8 @@ the owner is unconfirmed and has to be checked another way.
 
 ## The incident file
 
-Required: `id`, `title`, `severity` (`sev1`, `sev2` or `sev3`), `service`, `summary`, `ladder`
+Required: `id`, `title`, `severity` (`sev1`–`sev3`, or PagerDuty's `p1`–`p5`), `service`,
+`summary`, `ladder`
 (the ordered scopes to walk) and `timezone` (an IANA name — Ringdown never infers one). Optional:
 `runbook_url`, read out only if the engineer asks for it, and `policy`.
 
@@ -208,7 +209,10 @@ minute; a quiet-hours rule derived from a timezone would only guess at what the 
 See [`examples/rotation.example.json`](examples/rotation.example.json). All numbers are from the
 reserved `555-01xx` range.
 
-## Adapting a webhook
+## Adapting an alert payload
+
+The heading used to say *webhook*, which overstated it: this reads a payload the operator hands it
+on disk. Nothing is accepted over the network — see ceiling 3.
 
 ```bash
 python -m ringdown adapt --payload examples/alertmanager.example.json \
@@ -220,6 +224,88 @@ payload — dotted keys and integer indices, nothing else, no `eval` and no vend
 else is a literal. A path that does not resolve **omits the key** instead of inventing a value,
 and the result is validated by the same loader `run` uses, so the omission surfaces as an error
 rather than as a call.
+
+### A worked example: PagerDuty
+
+[`examples/pagerduty.example.json`](examples/pagerduty.example.json) is an `incident.triggered`
+event in the shape of [Webhooks v3](https://developer.pagerduty.com/docs/webhooks-overview), and
+[`examples/pagerduty-mapping.example.json`](examples/pagerduty-mapping.example.json) turns it into an
+incident. End to end, without placing a call:
+
+```bash
+python -m ringdown adapt --payload examples/pagerduty.example.json \
+                         --mapping examples/pagerduty-mapping.example.json \
+                         --out /tmp/incident.json
+python -m ringdown preview --incident /tmp/incident.json --rotation examples/rotation.example.json
+```
+
+No vendor code was added for this. All of PagerDuty lives in that mapping file, and the adapter
+stays generic.
+
+Two things the payload cannot give, and neither is papered over:
+
+- **Severity.** `Severity` is a list of accepted spoken tokens, not an ordered scale: nothing
+  compares or sorts it, it is interpolated into the call task and printed. PagerDuty ranks incidents
+  `P1`–`P5`; Ringdown had `sev1`–`sev3`. There is no honest
+  translation between them — nobody can say whether a P4 is a sev3 or a sev2, and guessing wakes the
+  wrong person or nobody at all. So Ringdown accepts **both scales** and says out loud whichever one
+  arrived: `$.event.data.priority.summary` maps straight through, and the call says *"There is a p2
+  incident on checkout-api"*. An incident with no priority resolves to nothing, the key is omitted,
+  and the load fails rather than defaulting to a severity nobody chose.
+- **Summary.** The v3 payload carries `title` and no long-form description, so `summary` — the
+  sentence actually read aloud — is a literal in the mapping. A path there would have to invent one.
+
+## Telling PagerDuty what happened
+
+Once the verdict has settled, `run --pagerduty-note` writes a note on the PagerDuty incident saying
+who was called, what they said, and where the evidence lives:
+
+```bash
+export PAGERDUTY_TOKEN=...          # a REST key that is not read-only
+export PAGERDUTY_FROM=ops@example.com
+python -m ringdown run --incident /tmp/incident.json --rotation examples/rotation.example.json \
+                       --ledger ledger.jsonl --confirm 'place real calls' --pagerduty-note
+```
+
+```text
+Ringdown called Alice Okafor (+1********00) as primary: acknowledged the page.
+Stated ETA: 15 minutes.
+Heard: "yes, this is alice"
+Heard: "yes, i am taking this incident right now"
+Heard: "give me fifteen minutes"
+Ringdown placed 1 call(s) across 1 rung(s), and exited 0. Ledger at the verdict: 4 records, head
+sha256:1ebde…
+This note is a record of a phone call. It changes no incident state.
+```
+
+The note reports the **settled** exit code, not the raw ladder verdict, so it cannot claim a clean
+acknowledgement the second channel refused to corroborate. An exit 40 note says the acknowledgement
+is not trustworthy and the incident should be treated as unowned; an exit 45 note says nothing was
+cross-verified. Whatever the terminal says, the note says.
+
+**It writes a note and never an acknowledgement**, and that is the whole design of this leg:
+
+- PagerDuty's REST API requires a `From` header naming "the user to record as having taken the
+  action". A `PUT` setting `status=acknowledged` would therefore record that a named person
+  acknowledged the incident. Nobody did — a phone call happened. Ringdown does not put words in a
+  person's account.
+- That same `PUT` would suppress PagerDuty's own escalation. Deciding to stop escalating on the
+  strength of a phone call is the operator's call, not this tool's.
+- The Events API v2 cannot do it at all: an `acknowledge` sent with a routing key other than the one
+  that opened the alert [is dropped](https://developer.pagerduty.com/docs/events-api-v2-overview),
+  and Ringdown did not open the alert.
+
+The note is a side effect of the run, never its result. Without the flag nothing is sent; with the
+flag and no credentials it says so and carries on; and a note PagerDuty refuses is reported and
+recorded without moving the exit code. The verdict lives in the ledger either way — that is the
+source of truth, and the note only points at it.
+
+`--pagerduty-url` is pinned the same way the call channels are: `https://api.pagerduty.com` or
+`https://api.eu.pagerduty.com`, the [two service regions](https://support.pagerduty.com/main/docs/service-regions),
+or loopback. Any other host is refused before a socket opens, so the token cannot leave for somewhere
+else. Every delivery, successful or not, appends a `notified` record to the ledger.
+
+This leg has been exercised against a local server, never against PagerDuty itself.
 
 ## The ledger
 
@@ -365,7 +451,10 @@ own call over a second transport. Same technique, different product.
    costs a human review, not an unowned incident — but it is a real cost. The proper fix belongs
    to the provider.
 2. A verdict of `unknown` is never verified — see [Exit codes](#exit-codes).
-3. No webhooks, because they are unsigned.
+3. No inbound webhooks, because they are unsigned. The provider's deliveries carry no secret, no
+   timestamp and no signature, so `adapt` reads a payload the operator hands it on disk and nothing
+   is accepted over the network. The outbound direction is now real but narrow — see
+   [Telling PagerDuty what happened](#telling-pagerduty-what-happened).
 4. No cancellation of a call in flight.
 5. Two runners are not prevented. The lock on the ledger is taken per append and only serialises
    writers to that file; it is not a run lock and it is not distributed. What stops a second run
@@ -472,6 +561,16 @@ own call over a second transport. Same technique, different product.
     are taking the incident and names a number of minutes, is acknowledged. Nothing was obeyed — the
     person simply said the thing. Distinguishing that from an impersonator who says the same words
     is identity verification, which a phone call does not provide and this app does not claim.
+
+18. The PagerDuty note is written once, with no retry and no queue. If PagerDuty is down, rate
+    limits the request, or refuses the `From` user, the note is lost and the run still exits on its
+    own verdict — the ledger keeps the evidence and the incident does not. It also assumes the
+    incident `id` is PagerDuty's own, which only holds when the incident entered through that
+    mapping; pointing it at an incident id from anywhere else produces a 404 that is reported and
+    otherwise ignored. And it has never run against PagerDuty: the leg is exercised against a local
+    server, so what is proven is the request this app builds, not the response their API gives it.
+    A note that does not arrive is not silent, though: the failure is appended to the ledger and
+    `verify` reports it as unresolved.
 
 This is a demo app for a workflow pattern, not a CALL-E SDK and not a supported
 product API.

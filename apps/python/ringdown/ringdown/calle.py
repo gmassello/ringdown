@@ -4,7 +4,7 @@ import json
 import time
 import urllib.error
 import urllib.request
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 from urllib.parse import urlparse
 
 from ringdown.calls import CallRun, CallSnapshot, run_from, snapshot_from
@@ -51,10 +51,23 @@ _OPENER = urllib.request.build_opener(_NoRedirect)
 
 
 def is_loopback(url: str) -> bool:
-    return (urlparse(url).hostname or "") in LOOPBACK_HOSTS
+    return host_of(url) in LOOPBACK_HOSTS
 
 
-def assert_trusted_url(url: str, live: str) -> str:
+def host_of(url: str) -> str:
+    return urlparse(url).hostname or ""
+
+
+def error_envelope(error: urllib.error.HTTPError) -> Mapping[str, Any]:
+    try:
+        body = json.loads(error.read() or b"{}")
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return body.get("error", {}) if isinstance(body, dict) else {}
+
+
+def assert_trusted_url(url: str, live: str | Sequence[str]) -> str:
+    allowed = (live,) if isinstance(live, str) else tuple(live)
     pinned = url.rstrip("/")
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.hostname:
@@ -63,10 +76,10 @@ def assert_trusted_url(url: str, live: str) -> str:
         raise UntrustedHost("refusing a URL that carries credentials in its userinfo")
     if parsed.query or parsed.fragment:
         raise UntrustedHost("refusing a base URL that carries a query string or a fragment")
-    if pinned != live and not is_loopback(url):
+    if pinned not in allowed and not is_loopback(url):
         raise UntrustedHost(
-            f"refusing to send a credential to {url!r}: this channel is pinned to {live}, "
-            "and every other target must be loopback"
+            f"refusing to send a credential to {url!r}: this channel is pinned to "
+            f"{' or '.join(allowed)}, and every other target must be loopback"
         )
     return pinned
 
@@ -104,11 +117,7 @@ class _Client:
 
 
 def _http_error(error: urllib.error.HTTPError) -> CalleError:
-    try:
-        body = json.loads(error.read() or b"{}")
-        envelope = body.get("error", {}) if isinstance(body, dict) else {}
-    except (json.JSONDecodeError, OSError):
-        envelope = {}
+    envelope = error_envelope(error)
     return CalleError(
         code=str(envelope.get("code") or f"http_{error.code}")[:CODE_LIMIT],
         status=error.code,

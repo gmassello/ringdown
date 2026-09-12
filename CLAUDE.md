@@ -17,7 +17,7 @@ HTTP). Do not add one. The receiver may use its FastAPI/SQLModel/Twilio stack.
 ```bash
 cd apps/python/ringdown        # or apps/python/calle-receiver
 uv sync
-uv run pytest                  # ringdown: 326 tests · receiver: 19
+uv run pytest                  # ringdown: 378 tests · receiver: 19
 uv run pytest tests/test_verify.py -k grounding    # one file / one test
 ```
 
@@ -98,7 +98,7 @@ prove, so it is a decision, not a patch — see ceiling 12 in `apps/python/ringd
 
 ## Documentation is load-bearing
 
-`apps/python/ringdown/README.md` (setup, exit codes, file formats, threat model, seventeen known
+`apps/python/ringdown/README.md` (setup, exit codes, file formats, threat model, eighteen known
 ceilings) and `demo/EXPECTED.md` are tested or referenced, not decorative. When behaviour changes,
 update the ceilings rather than deleting them — the honesty about what does not work is the point,
 and a live run currently always settles at exit 45.

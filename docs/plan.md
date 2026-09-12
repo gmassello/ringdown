@@ -394,7 +394,8 @@ masked · no secrets or API keys.
 
 ## Out of scope
 
-- Integration with PagerDuty, Opsgenie or any concrete vendor. The adapter is generic.
+- Vendor-specific code. The adapter stays generic: PagerDuty is supported by a mapping file and
+  an outbound note, not by a branch in the parser.
 - A scheduler, or automatic re-escalation on an expired ETA.
 - Diagnosing the incident or deciding whether it is real. That is upstream.
 - A webhook receiver.

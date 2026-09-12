@@ -17,6 +17,7 @@ from ringdown.audit import (
     chain_checks,
     head,
     intent_record,
+    notified_record,
     verdict_record,
     verification_record,
 )
@@ -27,6 +28,7 @@ from ringdown.calle import (
     RestClient,
     UntrustedHost,
     assert_trusted_url,
+    host_of,
     is_loopback,
 )
 from ringdown.escalate import Attempt, LadderResult, run_ladder
@@ -49,6 +51,7 @@ from ringdown.incident import (
     resolve_ladder,
     unstaffed_scopes,
 )
+from ringdown.pagerduty import LIVE_URLS as PAGERDUTY_LIVE, LIVE_US, note_text, post_note
 from ringdown.script import call_payload, call_task, idempotency_key
 from ringdown.checks import Check, all_checks, render_blocks
 from ringdown.verify import verify_ladder
@@ -78,6 +81,8 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--confirm", default="")
     run.add_argument("--base-url", default=LIVE_BASE_URL)
     run.add_argument("--mcp-url", default=LIVE_MCP_URL)
+    run.add_argument("--pagerduty-note", action="store_true")
+    run.add_argument("--pagerduty-url", default=LIVE_US)
 
     verify = commands.add_parser("verify")
     verify.add_argument("--ledger", type=Path, required=True)
@@ -181,8 +186,43 @@ def run(args: argparse.Namespace) -> int:
         emit(*report.NOTHING_PLACED)
     elif code in report.ADVICE and result.verdict == "acknowledged":
         emit("", *report.ADVICE[code])
+    if args.pagerduty_note:
+        _notify_pagerduty(args.pagerduty_url, args.ledger, incident.id, result, code)
     emit("", *report.ledger_lines(*head(args.ledger), result))
     return code
+
+
+def _notify_pagerduty(
+    url: str, ledger: Path, incident_id: str, result: LadderResult, code: int
+) -> None:
+    if not result.placed:
+        emit("no call was placed, so PagerDuty was not notified")
+        return
+    try:
+        pinned = assert_trusted_url(url, PAGERDUTY_LIVE)
+    except UntrustedHost as error:
+        emit(f"refusing to notify PagerDuty: {error}")
+        return
+    token = _credential(pinned, "PAGERDUTY_TOKEN", "RINGDOWN_FAKE_PAGERDUTY_TOKEN")
+    sender = _credential(pinned, "PAGERDUTY_FROM", "RINGDOWN_FAKE_PAGERDUTY_FROM")
+    if not token or not sender:
+        emit("skipping the PagerDuty note; the run is unaffected")
+        return
+    content = note_text(result, code, *head(ledger))
+    written = post_note(pinned, token, sender, incident_id, content)
+    append_record(
+        ledger,
+        notified_record(
+            incident_id,
+            host=host_of(pinned),
+            delivered=written.delivered,
+            detail=written.detail,
+        ),
+    )
+    emit(
+        f"PagerDuty note on {incident_id}: "
+        + ("written" if written.delivered else f"not written ({written.detail})")
+    )
 
 
 def verify(args: argparse.Namespace) -> int:

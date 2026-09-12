@@ -8,11 +8,12 @@ from typing import TYPE_CHECKING, Sequence
 
 from ringdown.canonical import canonical_json, digest
 from ringdown.checks import Check, all_ok, labels, passed, unresolved
-from ringdown.incident import IncidentError, Rung, mask_phone
+from ringdown.incident import IncidentError, Rung, clean_text, mask_phone
 
 if TYPE_CHECKING:
     from ringdown.escalate import Attempt, LadderResult
 
+DETAIL_LIMIT = 200
 GENESIS = "sha256:" + "0" * 64
 
 
@@ -78,6 +79,16 @@ def verdict_record(incident_id: str, result: LadderResult) -> dict:
         "verdict": result.verdict,
         "owner": last.rung.contact.id if settled else None,
         "eta_minutes": last.extraction.eta_minutes if settled and last.extraction else None,
+    }
+
+
+def notified_record(incident_id: str, *, host: str, delivered: bool, detail: str) -> dict:
+    return {
+        "type": "notified",
+        "incident": incident_id,
+        "host": host,
+        "delivered": delivered,
+        "detail": clean_text(detail or "no detail", "the notification detail", DETAIL_LIMIT),
     }
 
 
@@ -191,6 +202,11 @@ def chain_checks(path: Path) -> list[Check]:
         corroboration_check(number, record)
         for number, record in enumerate(records, 1)
         if record.get("type") == "verification"
+    ]
+    checks += [
+        (None, f"record {number} note to {record.get('host')} was not delivered")
+        for number, record in enumerate(records, 1)
+        if record.get("type") == "notified" and not record.get("delivered")
     ]
     verdicts: dict[str, list[str]] = {}
     for number, record in enumerate(records, 1):

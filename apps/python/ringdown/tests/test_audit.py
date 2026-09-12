@@ -26,24 +26,9 @@ from ringdown.checks import all_ok, contradicted
 from ringdown.escalate import Attempt, LadderResult
 from ringdown.incident import IncidentError
 from ringdown.extract import extract
-from tests.data import ALICE, LADDER
+from tests.data import ALICE, EXTRACTION, LADDER, an_attempt
 
-EXTRACTION = extract(parse_turns(scenarios.answer_ack(ALICE.name, "alice").turns))
 GOLDEN = Path(__file__).resolve().parent / "golden"
-
-
-def an_attempt(**overrides) -> Attempt:
-    fields = {
-        "rung": LADDER[0],
-        "key": "rd-inc-1-primary-1-abc123def456",
-        "attempt_id": "inc-1/primary/1",
-        "verdict": "not_acknowledged",
-        "reason": "no_answer",
-        "call_id": "call_fake1",
-        "snapshot": snapshot_from({"id": "call_fake1", "status": "failed"}),
-        "extraction": EXTRACTION,
-    }
-    return Attempt(**{**fields, **overrides})
 
 
 SAW_IT = [(True, "run for Alice Okafor reports no acknowledgement")]

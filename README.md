@@ -21,7 +21,7 @@
 <p align="center">
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="345 tests" src="https://img.shields.io/badge/tests-345-2f6f4e">
+  <img alt="397 tests" src="https://img.shields.io/badge/tests-397-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -275,6 +275,6 @@ audits its own call over a second transport. Same technique, different product.
 - The ladder never re-calls, and retries would need another key and another record.
 - The provider does not dial every country, and Ringdown does not preflight the list.
 
-The [app README](apps/python/ringdown/README.md#known-ceilings) has all seventeen, unvarnished.
+The [app README](apps/python/ringdown/README.md#known-ceilings) has all eighteen, unvarnished.
 
 This is a demo app for a workflow pattern, not a CALL-E SDK and not a supported product API.

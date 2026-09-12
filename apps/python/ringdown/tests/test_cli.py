@@ -418,3 +418,78 @@ def test_a_rewritten_verdict_with_a_relinked_chain_still_fails_verify_ledger(
     out = capsys.readouterr().out
     assert "hash matches its content" in out
     assert "does not follow from the recorded attempts (declined)" in out
+
+
+def test_a_pagerduty_priority_survives_the_whole_adapt_and_preview_path(tmp_path, capsys):
+    out = tmp_path / "incident.json"
+    assert main(
+        [
+            "adapt",
+            "--payload", str(EXAMPLES / "pagerduty.example.json"),
+            "--mapping", str(EXAMPLES / "pagerduty-mapping.example.json"),
+            "--out", str(out),
+        ]
+    ) == EXIT_ACKNOWLEDGED
+    capsys.readouterr()
+
+    assert main(["preview", "--incident", str(out), "--rotation", ROTATION]) == EXIT_ACKNOWLEDGED
+    printed = capsys.readouterr().out
+    assert "p2" in printed
+    assert "checkout p99 latency above 3s" in printed
+
+
+def test_a_run_without_the_pagerduty_flag_notifies_nobody(serving, incident_file, tmp_path, capsys):
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+
+    _run(server.base_url, incident_file, ledger, "--confirm", CONFIRMATION)
+
+    assert "PagerDuty" not in capsys.readouterr().out
+    assert "notified" not in ledger.read_text()
+
+
+def test_a_run_asked_to_notify_pagerduty_without_credentials_still_settles(
+    serving, incident_file, tmp_path, capsys, monkeypatch
+):
+    monkeypatch.delenv("RINGDOWN_FAKE_PAGERDUTY_TOKEN", raising=False)
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+
+    code = _run(
+        server.base_url,
+        incident_file,
+        ledger,
+        "--confirm", CONFIRMATION,
+        "--pagerduty-note",
+        "--pagerduty-url", server.base_url,
+    )
+
+    assert code == EXIT_ACKNOWLEDGED
+    assert "the run is unaffected" in capsys.readouterr().out
+    assert "notified" not in ledger.read_text()
+
+
+def test_a_pagerduty_note_that_cannot_be_delivered_never_changes_the_exit_code(
+    serving, incident_file, tmp_path, capsys, monkeypatch
+):
+    monkeypatch.setenv("RINGDOWN_FAKE_PAGERDUTY_TOKEN", "pd_test_token")
+    monkeypatch.setenv("RINGDOWN_FAKE_PAGERDUTY_FROM", "ops@example.com")
+    server = serving({ALICE.phone: scenarios.answer_ack("Alice Okafor", "alice")})
+    ledger = tmp_path / "l.jsonl"
+
+    code = _run(
+        server.base_url,
+        incident_file,
+        ledger,
+        "--confirm", CONFIRMATION,
+        "--pagerduty-note",
+        "--pagerduty-url", server.base_url,
+    )
+
+    assert code == EXIT_ACKNOWLEDGED
+    assert "PagerDuty note on" in capsys.readouterr().out
+    written = [json.loads(line) for line in ledger.read_text().splitlines()]
+    assert [record for record in written if record["type"] == "notified"]
+    assert main(["verify", "--ledger", str(ledger)]) == EXIT_UNRESOLVED
+
+

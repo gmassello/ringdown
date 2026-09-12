@@ -9,7 +9,7 @@ from typing import Any, Literal, Mapping, Sequence, get_args
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-Severity = Literal["sev1", "sev2", "sev3"]
+Severity = Literal["sev1", "sev2", "sev3", "p1", "p2", "p3", "p4", "p5"]
 
 E164 = re.compile(r"^\+[1-9]\d{7,14}$")
 
