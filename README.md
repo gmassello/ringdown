@@ -114,7 +114,11 @@ produces it.
 
 ```mermaid
 flowchart TD
-    INC["incident.json + rotation.json<br/>scopes · shifts · policy"] --> LADDER["resolve_ladder<br/>cover relieves the open shift, per scope"]
+    ALERT["alert payload<br/>PagerDuty · Opsgenie · Alertmanager"] --> ADAPT["adapt"]
+    MAP["mapping file<br/>paths and literals, no vendor code"] --> ADAPT
+    MODEL(["suggest-mapping<br/>a model drafts it, the loader decides if it holds"]) -.-> MAP
+    ADAPT --> INC["incident.json + rotation.json<br/>scopes · shifts · policy"]
+    INC --> LADDER["resolve_ladder<br/>cover relieves the open shift, per scope"]
     LADDER --> CALL["one call per rung<br/>content-derived idempotency key"]
     CALL -->|"REST · lowercase status · task_completed"| CALLE["CALL-E"]
     CALL --> EXTRACT["extract<br/>disposition · owner · ETA, each quoted by a spoken span"]
@@ -124,6 +128,7 @@ flowchart TD
     VERDICT --> LEDGER[("ledger.jsonl<br/>attempt · verdict · verification, SHA-256 chained")]
     AUDIT --> LEDGER
     CALLE -.->|"MCP · second transport"| AUDIT
+    VERDICT --> NOTE["pagerduty-note<br/>quotes what was said · never an acknowledgement"]
 ```
 
 - **The ladder is resolved before anything dials.** A shift covering the current moment holds its
