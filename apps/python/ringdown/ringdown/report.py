@@ -95,6 +95,11 @@ def reason_prose(attempt: Attempt, policy: Policy) -> tuple[str, ...]:
             f"asked to be called back in {attempt.extraction.callback_minutes} minutes,",
             "which is a request to be called again, not a commitment to the incident",
         )
+    if attempt.reason == "hedged_acknowledgement":
+        return (
+            "the words that would have taken the incident came with a condition attached,",
+            "and a commitment with a condition is not a commitment",
+        )
     if attempt.reason == "no_eta":
         return (
             "the call completed and the provider was confident,",
@@ -153,6 +158,8 @@ def _span_lines(attempt: Attempt) -> list[str]:
     lines = [_span("disposition", disposition), _span("eta", eta)]
     if extraction.callback_span:
         lines.append(_span("callback", _quoted(extraction.callback_span)))
+    if extraction.hedge_span:
+        lines.append(_span("hedged", _quoted(extraction.hedge_span)))
     return lines
 
 

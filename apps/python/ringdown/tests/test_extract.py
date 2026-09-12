@@ -250,3 +250,45 @@ def test_the_callback_span_is_the_verbatim_turn_that_asked_for_it():
     spoken = "i can't right now, call me back in ten minutes"
 
     assert extract(said("hello", spoken)).callback_span == spoken
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("yes, i am taking this incident right now", "acknowledged"),
+        ("yes, i am taking this, nobody else is around", "acknowledged"),
+        ("no, i can't, i'll take it tomorrow", "unclear"),
+        ("i am not able to take it now, i'll take it in the morning", "declined"),
+        ("i think i am taking this", "unclear"),
+        ("i'll take it, but i'm not sure i can", "unclear"),
+        ("maybe i'll take it", "unclear"),
+        ("i'll try to take it", "unclear"),
+        ("i'll take it if i can get to a laptop", "unclear"),
+        ("i guess i am taking this", "unclear"),
+    ],
+)
+def test_taking_the_incident_requires_a_commitment_without_a_condition(text, expected):
+    assert extract(said("yes, this is alice", text)).disposition == expected
+
+
+def test_a_commitment_spoken_plainly_later_survives_an_earlier_hedge():
+    result = extract(said("i think i'll take it", "yes, i am taking this incident right now"))
+
+    assert result.disposition == "acknowledged"
+    assert result.disposition_span == "yes, i am taking this incident right now"
+
+
+def test_the_words_that_qualified_the_commitment_are_kept_so_they_can_be_quoted():
+    hedged = "i'll take it, but i'm not sure i can"
+
+    result = extract(said(hedged))
+
+    assert result.disposition == "unclear"
+    assert result.hedge_span == hedged
+
+
+def test_a_negation_after_the_commitment_does_not_undo_it():
+    result = extract(said("yes, i am taking this, no need to call anyone else"))
+
+    assert result.disposition == "acknowledged"
+    assert result.hedge_span == ""

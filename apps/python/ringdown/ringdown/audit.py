@@ -63,6 +63,7 @@ def attempt_record(attempt: Attempt, incident_id: str) -> dict:
                 ("owner", extraction.owner_span),
                 ("eta", extraction.eta_span),
                 ("callback", extraction.callback_span),
+                ("hedge", extraction.hedge_span),
             )
             if span
         }

@@ -50,6 +50,19 @@ ACKNOWLEDGE = (
     "i'm picking this up",
 )
 
+HEDGES = (
+    "not sure",
+    "i think",
+    "maybe",
+    "probably",
+    "i'll try",
+    "i will try",
+    "try to",
+    "if i can",
+    "i guess",
+    "hopefully",
+)
+
 CALLBACK = (
     "call me back",
     "call me again",
@@ -87,6 +100,8 @@ ONE_HOUR = re.compile(r"\b(?:an|one) hour\b")
 
 NEGATION = re.compile(r"\b(?:no|not|nobody|wrong)\b")
 
+HEDGE = re.compile(r"\b(?:" + "|".join(re.escape(hedge) for hedge in HEDGES) + r")\b")
+
 OVERRIDE = re.compile(
     r"\b(?:ignore|disregard|forget|override)\b[^.]{0,40}?"
     r"\b(?:previous|prior|earlier|above|all|your|the)\b[^.]{0,40}?"
@@ -117,6 +132,7 @@ class Extraction:
     eta_span: str
     callback_minutes: int | None = None
     callback_span: str = ""
+    hedge_span: str = ""
 
 
 def normalise(text: str) -> str:
@@ -185,6 +201,19 @@ def find_eta(turns: Sequence[Turn]) -> tuple[int | None, str]:
     return None, ""
 
 
+def find_commitment(spoken: Sequence[tuple[Turn, str]]) -> tuple[Turn | None, Turn | None]:
+    hedged: Turn | None = None
+    for turn, text in spoken:
+        said = min((text.find(phrase) for phrase in ACKNOWLEDGE if phrase in text), default=None)
+        if said is None:
+            continue
+        if NEGATION.search(text[:said]) or HEDGE.search(text):
+            hedged = hedged or turn
+            continue
+        return turn, None
+    return None, hedged
+
+
 def find_callback(spoken: Sequence[tuple[Turn, str]]) -> tuple[int | None, str]:
     for turn, text in spoken:
         asked = min((text.find(phrase) for phrase in CALLBACK if phrase in text), default=None)
@@ -214,7 +243,6 @@ def extract(turns: Sequence[Turn]) -> Extraction:
         (VOICEMAIL, "unreachable"),
         (WRONG_PERSON, "wrong_person"),
         (DECLINE, "declined"),
-        (ACKNOWLEDGE, "acknowledged"),
     ):
         turn = _first_matching(spoken, phrases)
         if turn is None:
@@ -223,9 +251,23 @@ def extract(turns: Sequence[Turn]) -> Extraction:
             return Extraction(disposition, turn.text, "", "", None, "")
         return Extraction(disposition, turn.text, owner, owner_span, eta_minutes, eta_span)
 
+    committed, hedged = find_commitment(spoken)
+    if committed is not None:
+        return Extraction(
+            "acknowledged", committed.text, owner, owner_span, eta_minutes, eta_span
+        )
+
     if not spoken:
         return Extraction("unreachable", "", "", "", None, "")
     callback_minutes, callback_span = find_callback(spoken)
     return Extraction(
-        "unclear", "", owner, owner_span, eta_minutes, eta_span, callback_minutes, callback_span
+        "unclear",
+        "",
+        owner,
+        owner_span,
+        eta_minutes,
+        eta_span,
+        callback_minutes,
+        callback_span,
+        hedged.text if hedged is not None else "",
     )

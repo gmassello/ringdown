@@ -9,7 +9,7 @@ a matrix that fails if a third `apps/python/*/pyproject.toml` shows up.
 ```bash
 cd apps/python/ringdown        # or apps/python/calle-receiver
 uv sync
-uv run pytest                  # ringdown: 469 · receiver: 29
+uv run pytest                  # ringdown: 486 · receiver: 29
 ```
 
 **Ringdown has zero runtime dependencies** — `dependencies = []`, standard library only,
@@ -59,7 +59,7 @@ add one.
 ## Documentation is load-bearing
 
 `apps/python/ringdown/README.md` and `demo/EXPECTED.md` are tested or referenced, not decorative.
-When behaviour changes, **update the twenty-two known ceilings rather than deleting them** — the
+When behaviour changes, **update the twenty-three known ceilings rather than deleting them** — the
 honesty about what does not work is the point.
 
 ## Two checkouts

@@ -357,3 +357,19 @@ def test_a_request_to_be_called_back_that_nobody_spoke_is_not_honoured(serving, 
     run_ladder(rest_client(server), an_incident(policy=FAST), LADDER, pause=waited.append)
 
     assert waited == []
+
+
+def test_a_commitment_with_a_condition_does_not_stop_the_ladder(serving, rest_client):
+    server = serving(
+        {
+            ALICE.phone: scenarios.hedged_yes(ALICE.name, "alice"),
+            BEN.phone: scenarios.answer_ack(BEN.name, "ben"),
+        }
+    )
+
+    result = run_ladder(rest_client(server), an_incident(policy=FAST), LADDER)
+
+    assert result.verdict == "acknowledged"
+    assert [a.rung.contact.id for a in result.attempts] == [ALICE.id, BEN.id]
+    assert result.attempts[0].reason == "hedged_acknowledgement"
+    assert result.attempts[0].extraction.hedge_span == "i'll take it, but i'm not sure i can get to it"

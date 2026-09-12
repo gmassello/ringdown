@@ -207,3 +207,34 @@ def test_a_recipient_who_speaks_the_commitment_is_acknowledged_even_alongside_an
     )
 
     assert judged.verdict == "acknowledged"
+
+
+def test_a_commitment_with_a_condition_attached_is_not_an_acknowledgement():
+    judged = judge(
+        hostile(
+            "yes, this is alice",
+            "i'll take it, but i'm not sure i can get to it",
+            "fifteen minutes",
+        )
+    )
+
+    assert judged.verdict == "not_acknowledged"
+    assert judged.reason == "hedged_acknowledgement"
+
+
+def test_a_commitment_the_recipient_walked_back_before_saying_is_not_an_acknowledgement():
+    judged = judge(
+        hostile("yes, this is alice", "no, i can't, i'll take it tomorrow", "fifteen minutes")
+    )
+
+    assert judged.verdict == "not_acknowledged"
+    assert judged.reason == "hedged_acknowledgement"
+
+
+def test_a_hedge_the_recipient_never_spoke_cannot_reach_the_verdict():
+    snapshot, extraction, grounded = parts(snapshot_for(scenarios.answer_ack(ALICE.name, "alice")))
+    planted = replace(extraction, hedge_span="i am not sure about any of this")
+
+    judged = classify(snapshot, planted, ground(planted, snapshot.turns), ALICE, POLICY)
+
+    assert judged.verdict == "acknowledged"

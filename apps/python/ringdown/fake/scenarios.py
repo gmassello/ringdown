@@ -181,3 +181,16 @@ def asks_for_callback(
         ],
         on_second_call=answer_ack(name, first_name) if later is None else later,
     )
+
+
+def hedged_yes(name: str, first_name: str) -> FakeScenario:
+    return FakeScenario(
+        turns=_opening(name)
+        + [
+            turn("user", f"yes, this is {first_name}"),
+            turn("bot", DETAIL),
+            turn("user", "i'll take it, but i'm not sure i can get to it"),
+            turn("bot", ASK_ETA),
+            turn("user", "give me fifteen minutes"),
+        ],
+    )

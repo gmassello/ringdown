@@ -54,7 +54,7 @@ Python 3.11 or newer, and [uv](https://docs.astral.sh/uv/). No runtime dependenc
 git clone https://github.com/gmassello/ringdown
 cd ringdown/apps/python/ringdown
 uv sync
-uv run pytest -q          # 469 tests, no credentials, no outbound calls
+uv run pytest -q          # 486 tests, no credentials, no outbound calls
 ```
 
 Seven of those tests read the project site and skip where `docs/` is absent, which is the case in
@@ -191,6 +191,36 @@ All of it is proven against the fake, and against the live provider none of it h
 first thing to read in [Known ceilings](#known-ceilings). The live MCP surface indexes calls by a
 `run_id` that only its own placement tool hands out, and no identifier a REST-placed call exposes
 resolves to one, so there is no run to read. Live, every verdict settles at exit 45.
+
+## What counts as taking the incident
+
+Three things have to line up before Ringdown records an owner, and each is quoted by a span the
+recipient spoke: they said they were taking it, they confirmed their own first name, and they gave
+a number of minutes. A missing one is not an acknowledgement — that is what scenario 2 of the demo
+is there to show.
+
+A fourth condition is about *how* it was said. The commitment has to arrive without a condition
+attached:
+
+- **A negation before it does not count as a commitment.** "No, I can't, I'll take it tomorrow"
+  contains "I'll take it" and used to settle acknowledged, on the strength of two words inside a
+  refusal. The owner and the ETA already worked this way; the disposition, which is the field that
+  hands someone an incident, was the one that did not.
+- **A commitment with a qualifier is not a commitment.** "I'll take it, but I'm not sure I can",
+  "I think I'm taking this", "I'll try to take it", "I'll take it if I can get to a laptop". The
+  attempt settles `not_acknowledged` with the reason `hedged_acknowledgement`, and the words that
+  carried the qualifier are quoted in the ledger and on the terminal so it is clear what was heard.
+
+Both gates are scoped to the turn the commitment was spoken in, and only the negation is scoped to
+the text *before* it. "Yes, I am taking this, nobody else is around" is an acknowledgement: the
+negation is about who else is available, not about taking the incident. Getting that backwards
+would escalate past someone who committed, which is the failure this whole section is trying not to
+cause.
+
+The list of qualifiers is deliberately short, and deliberately leaves out "but" and "actually".
+Both of them appear in perfectly firm commitments — "yes, I'm on it, but who else is paged?" — and
+a list that flags them wakes the next person for no reason. See ceiling 23 for why that error is
+worse than it looks.
 
 ## Asking to be called back
 
@@ -869,6 +899,17 @@ own call over a second transport. Same technique, different product.
     shift change rings the person going off shift. The window is bounded by the ladder deadline
     rather than open-ended, which is what keeps this small, but it is a real edge and the fix is to
     re-resolve the rotation at callback time.
+
+23. Hardening the extractor cannot be checked by the extractor. A qualifier list that is too wide
+    escalates past somebody who did commit, and **nothing catches it**: the second channel is
+    re-read with the same extractor (`verify.py`, `extract(run.turns)`), so it agrees, and
+    `no_ack_checks` — the check whose whole job is catching an escalation past a real yes — agrees
+    too. The failure is silent by construction, and the only thing that would break it is a second
+    derivation the provider cannot supply, which is the same wall as ceiling 12. What stands in for
+    it here is a short list, gates scoped to one turn, and the words that caused the refusal written
+    into the ledger so a human reading it afterwards can see the call was judged wrongly. The
+    opposite error — accepting a hedge — is the one the ledger cannot show at all, which is why the
+    list exists.
 
 ## License
 

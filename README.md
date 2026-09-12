@@ -10,7 +10,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="469 tests" src="https://img.shields.io/badge/tests-469-2f6f4e">
+  <img alt="486 tests" src="https://img.shields.io/badge/tests-486-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -320,7 +320,7 @@ failure is unsafe. The full argument, one project at a time, is in
   and its own records, and the wait has to fit inside the time the ladder has left.
 - The provider does not dial every country, and Ringdown does not preflight the list.
 
-The [app README](apps/python/ringdown/README.md#known-ceilings) has all twenty-two, unvarnished.
+The [app README](apps/python/ringdown/README.md#known-ceilings) has all twenty-three, unvarnished.
 
 </details>
 

@@ -16,6 +16,7 @@ class Grounded:
     owner: bool
     eta: bool
     callback: bool = False
+    hedge: bool = False
 
 
 @dataclass(frozen=True)
@@ -37,6 +38,7 @@ def ground(extraction: Extraction, turns: Sequence[Turn]) -> Grounded:
         owner=ground_span(extraction.owner_span, turns),
         eta=ground_span(extraction.eta_span, turns),
         callback=ground_span(extraction.callback_span, turns),
+        hedge=ground_span(extraction.hedge_span, turns),
     )
 
 
@@ -67,6 +69,8 @@ def classify(
         return Assessment("not_acknowledged", extraction.disposition)
     if extraction.callback_minutes is not None and grounded.callback:
         return Assessment("not_acknowledged", "callback_requested")
+    if extraction.hedge_span and grounded.hedge:
+        return Assessment("not_acknowledged", "hedged_acknowledgement")
     if extraction.eta_minutes is None:
         return Assessment("not_acknowledged", "no_eta")
     if not 1 <= extraction.eta_minutes <= policy.max_eta_minutes:
