@@ -10,12 +10,13 @@ Both packages are versioned together.
 
 ### Changed
 
-- `docs/demo.gif` is the close of the real call instead of the ledger widget. The old one was three
-  screenshots of a web page proving something true but abstract; this one is a telephone, ten
-  seconds of it, ending at eighty-two seconds with an owner and a clock. The subtitles were already
-  burned into the cut, so the slice carries its own narration — a GIF has no audio. It comes out of
-  `video/out/demo.mp4` through the new `video/mkgif.sh`, which replaces a recipe that lived only as
-  prose in `video/README.md`. 900x506, 9.9 s, 327 KB.
+- `docs/demo.gif` is the real call instead of the ledger widget. The old one was three screenshots
+  of a web page proving something true but abstract; this one is a telephone, the whole call from
+  the first ring: it is answered, the machine hears the wrong name and asks again, then asks who is
+  taking the incident and in how many minutes, and ends at eighty-two seconds with an owner and a
+  clock. The subtitles were already burned into the cut, so the slice carries its own narration — a
+  GIF has no audio. It comes out of `video/out/demo.mp4` through the new `video/mkgif.sh`, which
+  replaces a recipe that lived only as prose in `video/README.md`. 900x506, 52.7 s, 1.7 MB.
 - The root README's caption and image description follow the GIF. The caption was the only link to
   the live ledger widget anywhere in that file, so the link moved down to the row beside the video
   and the manual rather than disappearing with the text that carried it.

@@ -30,13 +30,13 @@ one that never placed the call and has no reason to agree. What comes out the en
 </p>
 
 <p align="center">
-  <img src="docs/demo.gif" alt="The close of a real call placed on 20 August 2026: the phone ends the call at eighty-two seconds, and beside it the words the recipient actually spoke — he takes the incident and names fifteen minutes" width="900">
+  <img src="docs/demo.gif" alt="A real call placed on 20 August 2026, from the first ring to Call ended: the phone on the left, and beside it every word the recipient spoke as he speaks it — the machine mishears his name and asks again, then asks who is taking the incident and in how many minutes, and he names fifteen" width="900">
 </p>
 
 <p align="center">
-  <em>A real call, 20 August 2026. Every line on the right is a span he actually spoke — the grey
-  note is the provider hearing <b>banking</b> where he said <b>taking</b>, recorded and not
-  smoothed over.<br>
+  <em>A real call, 20 August 2026, from the first ring. Every line on the right is a span he
+  actually spoke; the grey notes are the provider mishearing him, recorded rather than smoothed
+  over. It gets his name wrong and asks again before it asks anything that matters.<br>
   Eighty-two seconds, an owner, and a clock.</em>
 </p>
 

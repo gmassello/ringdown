@@ -26,14 +26,17 @@ live in `~/.claude/skills/personal-record-video/scripts/`.
 | `out/` | Generated. `build-audio.sh` wipes it on every run, `narration.voice.wav` included |
 
 `docs/demo.gif`, the animation at the top of the root README, is a slice of the finished cut —
-`mkgif.sh` with no arguments takes the close of the real call, 157.7 s in, for 9.9 s. It used to be
-three screenshots of the site's `#ledger` panel, assembled by hand; the call is the thing the site
-cannot show.
+`mkgif.sh` with no arguments takes the whole real call, 114.9 s in, for 52.7 s — the ring, the
+answer, the name it gets wrong, the two questions, and `Call ended`. It used to be three
+screenshots of the site's `#ledger` panel, assembled by hand; the call is the thing the site cannot
+show.
 
 A GIF has no audio, so the slice keeps the full 16:9 frame: the bottom band is where
 `build-video.sh` burned the subtitles, and without it the narration is gone. The knobs are
 `START`, `DUR`, `WIDTH`, `FPS`, `STATS` and `OUT`, and the script prints the size it produced,
-which is the number that decides whether it ships — 900 px wide at 15 fps lands near 330 KB.
+which is the number that decides whether it ships — the full call at 900 px and 15 fps is 791
+frames and lands near 1.7 MB, against a ceiling of 2. Shorter slices are much cheaper: the close
+alone (`START=157.7 DUR=9.9`) is 327 KB, because almost nothing on screen moves.
 `STATS` defaults to `diff` because the slice is nearly still and the palette is better spent on
 what moves; the old ledger GIF needed `full` for the red of `exit 40`.
 

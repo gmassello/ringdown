@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Cuts docs/demo.gif out of the finished cut. Defaults to the close of the real call: the
-# commitment, the eighty-two seconds, and the phone in "Call ended". Knobs are environment
-# variables; the size it prints is the number that decides whether it ships.
+# Cuts docs/demo.gif out of the finished cut. Defaults to the whole real call: the phone
+# ringing, the answer, the name it gets wrong, the two questions, and "Call ended". Knobs are
+# environment variables; the size it prints is the number that decides whether it ships.
 set -e
 cd "$(dirname "$0")/.."
 [ -d /opt/homebrew/opt/ffmpeg@7/bin ] && PATH="/opt/homebrew/opt/ffmpeg@7/bin:$PATH"
 
 SRC=${SRC:-video/out/demo.mp4}
-START=${START:-157.7}
-DUR=${DUR:-9.9}
+START=${START:-114.9}
+DUR=${DUR:-52.7}
 WIDTH=${WIDTH:-900}
 FPS=${FPS:-15}
 STATS=${STATS:-diff}
