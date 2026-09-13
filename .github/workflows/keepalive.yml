@@ -1,0 +1,22 @@
+name: keepalive
+
+# Render's free tier sleeps after 15 minutes of inactivity and takes ~22s to wake, so the receiver
+# reads as a dead service to anyone who opens its link cold. Best effort only: GitHub delays cron
+# under load, which is why apps/python/calle-receiver/README.md still documents the manual wake.
+# Staying awake around the clock also spends most of the free tier's monthly instance hours, so
+# delete this workflow once the receiver stops needing an audience.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  wake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      # /health carries no credentials and touches no database; /calls answers 401 from the router's
+      # own dependency, before its handler runs
+      - run: curl -fsS --max-time 60 https://calle-receiver.onrender.com/health

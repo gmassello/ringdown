@@ -7,8 +7,9 @@ transcription in SQLite.
 
 > Demo infrastructure. The product is [Ringdown](../ringdown/README.md).
 >
-> **In production:** [`https://calle-receiver.onrender.com/calls`](https://calle-receiver.onrender.com/calls)
-> — full CALL-E → Twilio → AR cell phone flow validated end-to-end on 2026-08-16.
+> **In production:** [`https://calle-receiver.onrender.com/demo`](https://calle-receiver.onrender.com/demo)
+> — the sample call, open and masked. The inbound log at `/calls` keeps its password.
+> Full CALL-E → Twilio → AR cell phone flow validated end-to-end on 2026-08-16.
 
 Two operational skills carry the parts this README summarises, in more detail and with the
 failure modes: [`.claude/skills/deploy/SKILL.md`](../../../.claude/skills/deploy/SKILL.md) for
@@ -57,7 +58,8 @@ contains no secrets and no phone numbers.
   close to unreachable in practice. A truncated transcript says so in its own
   summary rather than quietly showing fewer lines.
 - **The service sleeps after 15 min of inactivity**: `curl` the URL before a
-  demo, or the first call times out.
+  demo, or the first call times out. `.github/workflows/keepalive.yml` rings
+  `/health` every five minutes, best-effort.
 - The number's webhooks can be pointed without going through the console:
 
 ```python

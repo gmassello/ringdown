@@ -58,22 +58,28 @@ summary{cursor:pointer;font-size:12px;letter-spacing:.14em;text-transform:upperc
 .outbound .text{color:var(--n300)}
 .empty{color:var(--n600);padding:clamp(18px,3vw,26px)}
 </style>
+</head>
+<body>
+<div class="shell">
+"""
+
+FOOTER = "</div></body></html>"
+
+RELOAD = """<div class="live">refreshing every 5s</div>
 <script>
 setInterval(() => {
   if ([...document.querySelectorAll("audio")].every(a => a.paused)) location.reload();
 }, 5000);
 </script>
-</head>
-<body>
-<div class="shell">
-<div class="head">
-<div>
-<div class="kicker">CALL-E receiver &middot; inbound</div>
-<h1>Calls</h1>
-</div>
-<div class="live">refreshing every 5s</div>
-</div>
 """
+
+
+def head(title: str, reload: str = "") -> str:
+    return (
+        '<div class="head">\n<div>\n'
+        '<div class="kicker">CALL-E receiver &middot; inbound</div>\n'
+        f"<h1>{title}</h1>\n</div>\n{reload}</div>\n"
+    )
 
 EMPTY_ROW = '<div class="call"><div class="empty">No calls yet.</div></div>'
 STATUS_CLASS = {"completed": "ok", "failed": "bad"}
@@ -150,7 +156,7 @@ def dashboard() -> str:
     for seg in segments:
         by_call.setdefault(seg.call_sid, []).append(seg)
     cards = "".join(_call_card(call, by_call.get(call.call_sid, [])) for call in calls) or EMPTY_ROW
-    return HEADER + cards + "</div></body></html>"
+    return HEADER + head("Calls", RELOAD) + cards + FOOTER
 
 
 @router.get("/calls/{call_sid}/recording.mp3")

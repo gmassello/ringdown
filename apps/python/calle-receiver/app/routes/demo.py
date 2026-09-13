@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 
 from app.models import Call, TranscriptSegment
-from app.routes.dashboard import HEADER, _call_card
+from app.routes.dashboard import FOOTER, HEADER, _call_card, head
 
 router = APIRouter()
 
@@ -55,4 +55,4 @@ SEGMENTS = [
 
 @router.get("/demo", response_class=HTMLResponse)
 def demo() -> str:
-    return HEADER + BANNER + _call_card(CALL, SEGMENTS) + "</div></body></html>"
+    return HEADER + head("Sample call") + BANNER + _call_card(CALL, SEGMENTS) + FOOTER

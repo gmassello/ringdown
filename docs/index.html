@@ -638,8 +638,7 @@
         <h1 style="font-size:clamp(1.875rem,4.6vw,3.75rem);line-height:1.06;max-width:20ch">The agent called a US number. It rang a phone in Argentina.</h1>
       </div>
       <div style="display:flex;align-items:center;gap:8px;font-size:0.75rem;color:var(--color-neutral-500)">
-        <div class="dot" style="width:7px;height:7px;box-shadow:none"></div>
-        refreshing every 5s
+        a card from the dashboard, which refreshes every 5s
       </div>
     </div>
 
@@ -695,7 +694,7 @@
     </div>
 
     <p style="margin-top:24px;font-size:0.875rem;color:var(--color-neutral-500);max-width:70ch">Demo infrastructure, not the product. CALL-E does not dial Argentina, so this service takes the agent&rsquo;s call on a US Twilio number and bridges it, recording and transcribing both tracks. The numbers above are masked here, as they are everywhere Ringdown writes or prints one.</p>
-    <p style="margin-top:12px;font-size:0.875rem;color:var(--color-neutral-500);max-width:70ch">The live dashboard is at <a href="https://calle-receiver.onrender.com/calls" target="_blank" rel="noreferrer">calle-receiver.onrender.com/calls</a> &mdash; it asks for a password, and on the free tier it sleeps and loses its database between deploys.</p>
+    <p style="margin-top:12px;font-size:0.875rem;color:var(--color-neutral-500);max-width:70ch">The <a href="https://calle-receiver.onrender.com/demo" target="_blank" rel="noreferrer">sample call</a> is open and masked, and is written into the page rather than the database, so it survives a redeploy. The inbound log at <a href="https://calle-receiver.onrender.com/calls" target="_blank" rel="noreferrer">/calls</a> keeps its password, because that one prints the number that actually dialled and the words that were actually said. Free tier: give it thirty seconds to wake.</p>
     <span class="src">Source: <a href="https://github.com/gmassello/ringdown/blob/main/apps/python/calle-receiver/app/routes/dashboard.py" target="_blank" rel="noreferrer">app/routes/dashboard.py</a> and a recorded call.</span>
   </div>
 </section>

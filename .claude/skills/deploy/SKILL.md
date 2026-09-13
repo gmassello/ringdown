@@ -42,11 +42,14 @@ costs", so review plan/instance changes before pushing.
 - **SQLite is ephemeral**: `calls.db` is wiped on every deploy and restart.
   An empty dashboard after a deploy is normal, not a bug. Persistent disks are
   a paid feature.
-- **The service sleeps after 15 min idle.** Cold start is ~30s; Twilio times
+- **The service sleeps after 15 min idle.** Cold start is ~22s measured; Twilio times
   out webhooks at 15s, so a call that arrives while asleep fails. **Before any
   demo or expected call**: `curl -s https://calle-receiver.onrender.com/calls`
   to wake it, then wait for the response (401 without credentials is fine —
   the service is awake).
+  `.github/workflows/keepalive.yml` pings `/health` every five minutes, which
+  covers a casual visitor but not a scheduled call: GitHub delays cron runs
+  under load, so the wake-up above stays mandatory before anything that dials.
 
 ## If the public URL ever changes
 

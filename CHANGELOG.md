@@ -10,6 +10,11 @@ Both packages are versioned together at `0.1.0`.
 
 ### Added
 
+- `.github/workflows/keepalive.yml`, which rings the receiver's `/health` every five minutes. The
+  free tier sleeps after 15 minutes idle and takes ~22s to wake, so a visitor arriving cold could
+  not tell the service from a dead one. It covers a visitor, not an incoming call: GitHub delays
+  scheduled runs, and Twilio times its webhook out at 15s, so the manual wake before anything that
+  dials stays mandatory.
 - **Exit code 50**, and a `LedgerError` to carry it: a ledger that cannot be opened, read or
   extended once a call has been placed is an infrastructure failure, not the operator's mistake it
   used to be reported as. Before the first call it is still 30. The run prints the verdict and the
@@ -38,6 +43,14 @@ Both packages are versioned together at `0.1.0`.
 
 ### Fixed
 
+- The site's receiver page offered exactly one link, the password-gated `/calls`, so a visitor
+  waited out a cold start and then met a login box. It now points at the open `/demo` first, the way
+  the root README already did, and keeps `/calls` described as what it is. The card's header also
+  claimed to refresh every five seconds; it is a static reproduction of one, and now says so.
+- The receiver's `/demo` page inherited the dashboard's header, so the sample call was titled
+  "Calls", announced that it refreshed every five seconds, and reloaded itself on a timer to
+  re-render constants that are hardcoded in Python. The header is now built per page, and only the
+  dashboard claims to refresh.
 - A PagerDuty note whose failure text ran past 200 characters turned a verified run into exit 30
   and lost the `notified` record entirely. The limit now belongs to `post_note`, which produces the
   detail, and the note is wrapped so that no failure in it can change the exit code of a run that
