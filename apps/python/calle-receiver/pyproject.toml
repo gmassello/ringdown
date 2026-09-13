@@ -1,6 +1,6 @@
 [project]
 name = "calle-receiver"
-version = "0.1.0"
+version = "0.2.0"
 description = "Twilio inbound receiver that bridges CALL-E calls to an Argentine phone, with recording and live transcription."
 requires-python = ">=3.11"
 dependencies = [

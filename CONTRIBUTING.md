@@ -9,7 +9,7 @@ a matrix that fails if a third `apps/python/*/pyproject.toml` shows up.
 ```bash
 cd apps/python/ringdown        # or apps/python/calle-receiver
 uv sync
-uv run pytest                  # ringdown: 589 · receiver: 29
+uv run pytest                  # both packages, no credentials, no outbound calls
 ```
 
 **Ringdown has zero runtime dependencies** — `dependencies = []`, standard library only,
@@ -71,6 +71,8 @@ the upstream PR. There is no submodule and no sync script: mirror by hand, and d
 
 ## Known papercut
 
-The test count is hardcoded in three places and nothing keeps them honest: the badge in
-`README.md`, the Setup block in `apps/python/ringdown/README.md`, and the receiver's test line.
-Update all three, or move them to something generated.
+The test count is hardcoded in four places and nothing keeps them honest: the badge in
+`README.md`, the stat band in `docs/index.html`, and the Setup block in
+`apps/python/ringdown/README.md` — which carries it twice, once for this checkout and once for
+the upstream one, where `docs/` is absent and twelve tests skip.
+Update all four, or move them to something generated.

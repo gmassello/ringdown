@@ -4,9 +4,14 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Both packages are versioned together at `0.1.0`.
+Both packages are versioned together.
 
 ## [Unreleased]
+
+## [0.2.0] — 2026-09-13
+
+Spanish, the calls the provider ends before they ring, and the identity answer that had no
+rule. Everything here was found by placing real calls: nine of them, across two sessions.
 
 ### Added
 

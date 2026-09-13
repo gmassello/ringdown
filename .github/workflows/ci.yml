@@ -13,7 +13,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+
+      # test_site_port.py compares docs/ledger.js against the Python implementation and
+      # skips itself where node is absent. The gate is only a gate if it actually runs.
+      - uses: actions/setup-node@v4
+        if: matrix.package == 'apps/python/ringdown'
+        with:
+          node-version: 22
+
       - run: "! ls apps/python/*/pyproject.toml | grep -v -e /ringdown/ -e /calle-receiver/"
+      - run: uvx ruff@0.16.7 check .
+        if: matrix.package == 'apps/python/ringdown'
       - run: uv sync
         working-directory: ${{ matrix.package }}
       - run: uv run pytest
