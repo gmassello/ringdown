@@ -17,7 +17,7 @@ HTTP). Do not add one. The receiver may use its FastAPI/SQLModel/Twilio stack.
 ```bash
 cd apps/python/ringdown        # or apps/python/calle-receiver
 uv sync
-uv run pytest                  # ringdown: 498 tests · receiver: 29
+uv run pytest                  # ringdown: 502 tests · receiver: 29
 uv run pytest tests/test_verify.py -k grounding    # one file / one test
 ```
 

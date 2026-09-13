@@ -145,6 +145,96 @@ const setUpRun = () => {
   }
 };
 
+const CALL_URL = "./audio/manifest.json";
+
+const setUpCall = async () => {
+  const card = document.getElementById("call");
+  const audio = document.getElementById("call-audio");
+  const list = document.getElementById("call-turns");
+  const tabs = [...document.querySelectorAll("[data-scenario]")];
+
+  const manifest = await fetch(CALL_URL, { cache: "no-store" }).then((answer) => {
+    if (!answer.ok) throw new Error(`the call manifest answered ${answer.status}`);
+    return answer.json();
+  });
+
+  let turns = [];
+
+  const recipientOf = (call) =>
+    (turns.find((turn) => turn.call === call && turn.speaker !== "bot") || {}).name || "";
+
+  const render = (scenario) => {
+    turns = scenario.turns;
+    list.textContent = "";
+    let call = 0;
+    turns.forEach((turn, index) => {
+      if (turn.call !== call) {
+        call = turn.call;
+        const head = document.createElement("div");
+        head.className = "call-head";
+        head.textContent = `call ${call} — ${recipientOf(call)}`;
+        list.append(head);
+      }
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = `turn turn-${turn.speaker}`;
+      row.dataset.turn = String(index);
+      if (turn.speaker === "silent") row.disabled = true;
+      const who = document.createElement("span");
+      who.className = "turn-who";
+      who.textContent = turn.speaker === "bot" ? "agent" : turn.name.split(" ")[0].toLowerCase();
+      const said = document.createElement("span");
+      said.className = "turn-said";
+      said.textContent = turn.speaker === "silent" ? turn.text : `“${turn.text}”`;
+      row.append(who, said);
+      if (turn.field) {
+        const field = document.createElement("span");
+        field.className = "turn-field";
+        field.textContent = `quoted as the ${turn.field}`;
+        row.append(field);
+      }
+      list.append(row);
+    });
+  };
+
+  // a silent turn has start === end, so "the turn playing now" is the last one that has started:
+  // matching on start <= t < end would leave the marker nowhere during the gaps between lines
+  const paintTurn = () => {
+    const at = audio.currentTime;
+    let playing = -1;
+    turns.forEach((turn, index) => {
+      if (turn.speaker !== "silent" && turn.start <= at) playing = index;
+    });
+    for (const row of list.querySelectorAll(".turn")) {
+      row.classList.toggle("turn-now", Number(row.dataset.turn) === playing && !audio.paused);
+    }
+  };
+
+  const select = (panel) => {
+    const scenario = manifest.scenarios[panel];
+    if (!scenario) return;
+    audio.pause();
+    audio.src = `./audio/${scenario.file}`;
+    render(scenario);
+    paintTurn();
+  };
+
+  list.addEventListener("click", (event) => {
+    const row = event.target.closest(".turn");
+    if (!row) return;
+    audio.currentTime = turns[Number(row.dataset.turn)].start;
+    audio.play().catch(() => paintTurn());
+  });
+
+  audio.addEventListener("timeupdate", paintTurn);
+  audio.addEventListener("play", paintTurn);
+  audio.addEventListener("pause", paintTurn);
+  for (const tab of tabs) tab.addEventListener("click", () => select(tab.dataset.scenario));
+
+  select(tabs.find((tab) => tab.getAttribute("aria-pressed") === "true").dataset.scenario);
+  card.hidden = false;
+};
+
 const STATE_HELP = {
   acknowledged:
     "The person gave their name, said they were taking it, and named a number of minutes. All three had to be quoted from what they actually said.",
@@ -421,3 +511,5 @@ placePrimer();
 setUpRouting();
 setUpRun();
 setUpLedger().catch((error) => console.error("the ledger view could not be set up", error));
+// the card stays hidden when this fails: the panels below already carry the quoted spans in text
+setUpCall().catch((error) => console.error("the call audio could not be set up", error));

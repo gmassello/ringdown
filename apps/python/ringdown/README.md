@@ -55,7 +55,7 @@ Python 3.11 or newer, and [uv](https://docs.astral.sh/uv/). No runtime dependenc
 git clone https://github.com/gmassello/ringdown
 cd ringdown/apps/python/ringdown
 uv sync
-uv run pytest -q          # 498 tests, no credentials, no outbound calls
+uv run pytest -q          # 502 tests, no credentials, no outbound calls
 ```
 
 Seven of those tests read the project site and skip where `docs/` is absent, which is the case in
@@ -67,7 +67,11 @@ any checkout of this directory alone — there the run reports 442 passed and 7 
 
 Nothing to install: the [project site](https://gmassello.github.io/ringdown/#ledger) fetches the
 committed ledger, lets you rewrite every verdict in it, reseals and relinks the whole chain in your
-browser — and shows the verification failing anyway.
+browser — and shows the verification failing anyway. [The run](https://gmassello.github.io/ringdown/#run)
+plays the three calls out loud, marking each sentence as it is spoken and naming the field it was
+quoted into. Nobody was called: those are synthesised voices reading the fake server's script, which
+is the same text the extractor is handed. `demo/audio.py` renders them from `fake/scenarios.py` and a
+test refuses a page whose audio has drifted from the script.
 
 Locally, the demo needs no account either:
 
@@ -76,7 +80,10 @@ uv run python -m demo.run_local
 ```
 
 Eight scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
-nothing rings — the demo supplies its own throwaway key. `demo/EXPECTED.md` holds the full
+nothing rings — the demo supplies its own throwaway key. `python -m demo.audio` renders the first
+three of them as audio next to the transcript that produced it, writing to `demo/out/audio` unless
+`--out` says otherwise; it needs `say` and `ffmpeg`, which is why it is a separate command and not
+part of the demo. `demo/EXPECTED.md` holds the full
 narrated output; this is scenario 2:
 
 ```text

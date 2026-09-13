@@ -565,3 +565,88 @@ a:hover {
     --header-h: 0px;
   }
 }
+
+.call-head {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-neutral-500);
+  margin: 18px 0 8px;
+}
+
+.call-head:first-child {
+  margin-top: 0;
+}
+
+.turn {
+  display: grid;
+  grid-template-columns: minmax(88px, auto) 1fr;
+  gap: 4px 16px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.turn:hover {
+  background: var(--color-neutral-900);
+}
+
+.turn-who {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-neutral-500);
+  padding-top: 2px;
+}
+
+.turn-said {
+  font-size: 0.9375rem;
+  color: var(--color-neutral-300);
+}
+
+.turn-bot .turn-said {
+  color: var(--color-neutral-500);
+}
+
+.turn-now {
+  background: var(--color-accent-900);
+  box-shadow: inset 0 0 0 1px var(--color-accent-700);
+}
+
+.turn-now .turn-said,
+.turn-now .turn-who {
+  color: var(--color-text);
+}
+
+.turn-field {
+  grid-column: 2;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--color-accent-300);
+}
+
+.turn-silent {
+  cursor: default;
+  font-style: italic;
+}
+
+.turn-silent .turn-said {
+  color: var(--color-neutral-500);
+}
+
+@media (max-width: 640px) {
+  .turn {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .turn-field {
+    grid-column: 1;
+  }
+}
