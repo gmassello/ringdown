@@ -2,6 +2,8 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
 results/
 *.jsonl
 !**/examples/*.jsonl
@@ -19,3 +21,4 @@ video/*.png.bak
 video/thumbnail.png
 .DS_Store
 review-*.md
+ringdown_brechas.md

@@ -21,6 +21,13 @@ uv run pytest                  # both packages, no credentials, no outbound call
 uv run pytest tests/test_verify.py -k grounding    # one file / one test
 ```
 
+CI lints before it tests. The rules are in `.ruff.toml` at the root, not in the workflow, so this
+is the same command CI runs — and it runs from the root, not from a package:
+
+```bash
+uvx ruff@0.16.7 check .        # both packages in one pass
+```
+
 Ringdown demo, and the thing to run after touching the ladder, the report or the ledger:
 
 ```bash

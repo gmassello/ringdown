@@ -12,6 +12,17 @@ uv sync
 uv run pytest                  # both packages, no credentials, no outbound calls
 ```
 
+CI lints before it tests, and the rules live in `.ruff.toml` at the root rather than in the
+workflow, so this is the same command CI runs. From the repository root, both packages in one
+pass:
+
+```bash
+uvx ruff@0.16.7 check .
+```
+
+The selection is deliberately narrow — the rules that catch mistakes, not the ones that have
+opinions. Widen it in `.ruff.toml`, where everyone gets the change, not in the workflow.
+
 **Ringdown has zero runtime dependencies** — `dependencies = []`, standard library only,
 `urllib.request` for HTTP. A pull request that adds one will not be merged. The receiver may use
 its FastAPI/SQLModel/Twilio stack freely.
