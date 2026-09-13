@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass
 from typing import Literal, Sequence
 
@@ -15,12 +16,23 @@ VOICEMAIL = (
     "you have reached",
     "answering machine",
     "unable to take your call",
+    "deja tu mensaje",
+    "deje su mensaje",
+    "despues del tono",
+    "despues de la senal",
+    "buzon de voz",
+    "contestador automatico",
 )
 
 WRONG_PERSON = (
     "wrong number",
     "you have the wrong",
     "there is nobody here by that name",
+    "numero equivocado",
+    "te equivocaste de numero",
+    "se equivoco de numero",
+    "aca no hay ningun",
+    "no hay nadie con ese nombre",
 )
 
 DECLINE = (
@@ -32,6 +44,12 @@ DECLINE = (
     "can't take this",
     "i am not able to take",
     "someone else will have to",
+    "no lo puedo tomar",
+    "no puedo tomarlo",
+    "no lo voy a tomar",
+    "no estoy de guardia",
+    "no me puedo hacer cargo",
+    "que lo tome otro",
 )
 
 ACKNOWLEDGE = (
@@ -48,6 +66,14 @@ ACKNOWLEDGE = (
     "i'm on it",
     "i am picking this up",
     "i'm picking this up",
+    "lo tomo yo",
+    "me lo llevo",
+    "lo estoy tomando",
+    "lo tomo ahora",
+    "me hago cargo",
+    "yo me encargo",
+    "lo agarro yo",
+    "estoy con eso",
 )
 
 HEDGES = (
@@ -61,6 +87,16 @@ HEDGES = (
     "if i can",
     "i guess",
     "hopefully",
+    "no estoy seguro",
+    "no estoy segura",
+    "creo que",
+    "tal vez",
+    "capaz que",
+    "voy a intentar",
+    "si llego a",
+    "si es que",
+    "supongo que",
+    "ojala",
 )
 
 CALLBACK = (
@@ -72,12 +108,18 @@ CALLBACK = (
     "try me again",
     "try me in",
     "come back to me",
+    "llamame en",
+    "llamame de nuevo",
+    "llamame mas tarde",
+    "llamame dentro de",
+    "volve a llamar",
+    "volveme a llamar",
+    "llama de nuevo",
 )
 
 OWNER = (
-    re.compile(r"\bthis is ([a-z][a-z'\-]+)"),
+    re.compile(r"\b(?:this is|speaking with|soy|habla) ([a-z][a-z'\-]+)"),
     re.compile(r"\b([a-z][a-z'\-]+) speaking\b"),
-    re.compile(r"\bspeaking with ([a-z][a-z'\-]+)"),
 )
 
 UNITS = {
@@ -85,39 +127,59 @@ UNITS = {
     "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13,
     "fourteen": 14, "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18,
     "nineteen": 19,
+    "un": 1, "uno": 1, "una": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5,
+    "seis": 6, "siete": 7, "ocho": 8, "nueve": 9, "diez": 10, "once": 11,
+    "doce": 12, "trece": 13, "catorce": 14, "quince": 15, "dieciseis": 16,
+    "diecisiete": 17, "dieciocho": 18, "diecinueve": 19,
+    "veintiuno": 21, "veintidos": 22, "veintitres": 23, "veinticuatro": 24,
+    "veinticinco": 25, "veintiseis": 26, "veintisiete": 27, "veintiocho": 28,
+    "veintinueve": 29,
 }
 
-TENS = {"twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60}
+TENS = {
+    "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60,
+    "veinte": 20, "treinta": 30, "cuarenta": 40, "cincuenta": 50, "sesenta": 60,
+}
 
-MINUTES = r"(?:minutes?|mins?)"
-ETA_QUESTION = re.compile(rf"how many {MINUTES}\b")
-IDENTITY_QUESTION = re.compile(r"\bam i speaking with\b")
+
+MINUTES = r"(?:minutes?|mins?|minutos?)"
+ETA_QUESTION = re.compile(rf"(?:how many|en cuantos) {MINUTES}\b")
+IDENTITY_QUESTION = re.compile(r"\b(?:am i speaking with|hablo con)\b")
 DIGIT_ETA = re.compile(rf"(\d{{1,3}})\s*{MINUTES}\b")
 WORD_ETA = re.compile(
-    rf"\b({'|'.join([*TENS, *UNITS])})(?:[\s\-]+({'|'.join(UNITS)}))?\s*{MINUTES}\b"
+    rf"\b({'|'.join([*TENS, *UNITS])})"
+    rf"(?:[\s\-]+(?:y\s+)?({'|'.join(UNITS)}))?\s*{MINUTES}\b"
 )
-HALF_HOUR = re.compile(r"\bhalf an hour\b")
-ONE_HOUR = re.compile(r"\b(?:an|one) hour\b")
+HALF_HOUR = re.compile(r"\b(?:half an hour|media hora)\b")
+ONE_HOUR = re.compile(r"\b(?:(?:an|one) hour|una hora)\b")
 
-NEGATION = re.compile(r"\b(?:no|not|nobody|wrong)\b")
+NEGATION = re.compile(r"\b(?:no|not|nobody|wrong|nadie|equivocado|equivocada)\b")
 
 HEDGE = re.compile(r"\b(?:" + "|".join(re.escape(hedge) for hedge in HEDGES) + r")\b")
 
 OVERRIDE = re.compile(
-    r"\b(?:ignore|disregard|forget|override)\b[^.]{0,40}?"
-    r"\b(?:previous|prior|earlier|above|all|your|the)\b[^.]{0,40}?"
-    r"\b(?:instruction|instructions|prompt|rules|directives|guidelines)\b"
+    r"\b(?:ignore|disregard|forget|override|ignora|olvida|olvidate|desestima)\b[^.]{0,40}?"
+    r"\b(?:previous|prior|earlier|above|all|your|the"
+    r"|anterior|anteriores|previa|previas|previo|previos"
+    r"|todo|toda|todos|todas|tu|tus|el|la|lo|los|las)\b[^.]{0,40}?"
+    r"\b(?:instruction|instructions|prompt|rules|directives|guidelines"
+    r"|instruccion|instrucciones|reglas|directivas)\b"
 )
 
 IMPERSONATION = re.compile(
-    r"(?:\bsystem\s*:|\b(?:you are|you're) now\b|\bnew instructions\b"
-    r"|\bas (?:the|your) (?:admin|administrator|developer|operator|supervisor)\b)"
+    r"(?:\b(?:system|sistema)\s*:|\b(?:you are|you're) now\b|\bahora (?:sos|eres)\b"
+    r"|\b(?:new instructions|nuevas instrucciones)\b"
+    r"|\bas (?:the|your) (?:admin|administrator|developer|operator|supervisor)\b"
+    r"|\bcomo (?:el |tu )?(?:admin|administrador|desarrollador|operador|supervisor)\b)"
 )
 
 VERDICT_COMMAND = re.compile(
     r"\b(?:record|mark|log|report|register) (?:this|it|the call|the page) as "
     r"(?:acknowledged|acknowledge|ack|accepted|taken|handled|resolved|owned|done|complete)\b"
     r"|\bset the (?:verdict|eta|status|disposition)\b"
+    r"|\b(?:marca|registra|anota|reporta|informa) (?:esto|esta llamada|el llamado) como "
+    r"(?:reconocid[oa]|aceptad[oa]|tomad[oa]|atendid[oa]|resuelt[oa]|hech[oa])\b"
+    r"|\b(?:pone|poner|setea|cambia) el (?:veredicto|estado)\b"
 )
 
 INJECTION = (OVERRIDE, IMPERSONATION, VERDICT_COMMAND)
@@ -137,7 +199,9 @@ class Extraction:
 
 
 def normalise(text: str) -> str:
-    return " ".join(text.replace("’", "'").lower().split())
+    folded = unicodedata.normalize("NFD", text.replace("’", "'").lower())
+    stripped = "".join(c for c in folded if not unicodedata.combining(c))
+    return " ".join(stripped.split())
 
 
 def recipient_turns(turns: Sequence[Turn]) -> tuple[Turn, ...]:
@@ -176,6 +240,8 @@ def _minutes_in_normalised(lowered: str) -> int | None:
     if words:
         head, tail = words.group(1), words.group(2)
         base = TENS.get(head, UNITS.get(head, 0))
+        if tail and head not in TENS:
+            return None
         return base + UNITS.get(tail, 0) if head in TENS and tail else base
     if HALF_HOUR.search(lowered):
         return 30

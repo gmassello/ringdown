@@ -10,6 +10,22 @@ Both packages are versioned together at `0.1.0`.
 
 ### Added
 
+- **Spanish.** The extractor's phrase tables carry Spanish beside English — commitments, declines,
+  qualifiers, callbacks, voicemail greetings, wrong-number answers, the two questions a call script
+  has to ask, spoken numbers, and the three injection families. `normalise` now folds accents, so
+  `José` and `Muñoz` confirm an owner where they used to be read as `jos` and `mu`. There is no
+  language flag: a real call code-switches, and the language is not known until somebody answers.
+  The gates do not soften — *"creo que lo tomo yo, si puedo"* is a commitment with a condition and
+  settles `not_acknowledged`, exactly as its English twin does. `examples/guardia.script.txt` is a
+  call script in Spanish, which `validate_task_template` used to refuse outright, and scenario 8 of
+  the demo runs the ladder in Spanish end to end. One collision the fold creates is recorded rather
+  than papered over: `sí` and `si` fold to the same string, so a conditional "si puedo" cannot be
+  told from an affirmative "sí puedo", and the conditional is accepted rather than risk escalating
+  past a firm commitment. Ceilings 10 and 17 rewritten around what two
+  languages do and do not buy.
+- A ledger whose spans were spoken in Spanish, as the seventh shape `tests/test_site_port.py`
+  replays through `docs/ledger.js`. Python escapes non-ASCII to `\uXXXX` and the browser port
+  replicates that escape, but nothing proved the two agreed until now.
 - `.github/workflows/keepalive.yml`, which rings the receiver's `/health` every five minutes. The
   free tier sleeps after 15 minutes idle and takes ~22s to wake, so a visitor arriving cold could
   not tell the service from a dead one. It covers a visitor, not an incoming call: GitHub delays

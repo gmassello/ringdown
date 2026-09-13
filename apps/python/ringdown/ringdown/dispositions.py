@@ -51,7 +51,7 @@ def confident(snapshot: CallSnapshot, policy: Policy) -> bool:
 
 
 def owner_matches(extraction: Extraction, contact: Contact) -> bool:
-    return extraction.owner_confirmed == first_name(contact)
+    return extraction.owner_confirmed == normalise(first_name(contact))
 
 
 def classify(

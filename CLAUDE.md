@@ -17,7 +17,7 @@ HTTP). Do not add one. The receiver may use its FastAPI/SQLModel/Twilio stack.
 ```bash
 cd apps/python/ringdown        # or apps/python/calle-receiver
 uv sync
-uv run pytest                  # ringdown: 512 tests · receiver: 29
+uv run pytest                  # ringdown: 568 tests · receiver: 29
 uv run pytest tests/test_verify.py -k grounding    # one file / one test
 ```
 
@@ -27,7 +27,7 @@ Ringdown demo, and the thing to run after touching the ladder, the report or the
 cd apps/python/ringdown && uv sync && uv run python -m demo.run_local
 ```
 
-It runs eight scenarios against `fake/calle_server.py` on loopback and **rewrites
+It runs nine scenarios against `fake/calle_server.py` on loopback and **rewrites
 `examples/ledger.example.jsonl`**. `tests/test_demo.py` asserts that the committed ledger is byte-identical
 to what the demo writes, and that the demo still prints every block quoted in `demo/EXPECTED.md`,
 in order. So a change to output formatting or ledger content means: run the demo, reconcile

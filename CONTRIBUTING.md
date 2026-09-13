@@ -9,7 +9,7 @@ a matrix that fails if a third `apps/python/*/pyproject.toml` shows up.
 ```bash
 cd apps/python/ringdown        # or apps/python/calle-receiver
 uv sync
-uv run pytest                  # ringdown: 512 · receiver: 29
+uv run pytest                  # ringdown: 568 · receiver: 29
 ```
 
 **Ringdown has zero runtime dependencies** — `dependencies = []`, standard library only,
@@ -25,7 +25,7 @@ move, not a one-line edit:
 cd apps/python/ringdown && uv run python -m demo.run_local
 ```
 
-That runs eight scenarios against `fake/calle_server.py` on loopback and **rewrites**
+That runs nine scenarios against `fake/calle_server.py` on loopback and **rewrites**
 `examples/ledger.example.jsonl`. Then:
 
 1. Reconcile `demo/EXPECTED.md` by hand — `tests/test_demo.py` asserts the demo still prints every

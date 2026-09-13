@@ -389,6 +389,40 @@ exit 0
 
 ---
 
+## Scenario 8 — The engineer answers in Spanish
+
+Same ladder, same ledger, same two transports. Nothing about the escalation knows which language
+the call was in: the phrase tables carry both, and the spans are quoted in the words that were
+actually spoken, so the evidence reads back in Spanish.
+
+The gates do not soften either. Alice says *"creo que lo tomo yo, tal vez"* — a commitment with a
+condition attached — and that is not an acknowledgement in Spanish any more than *"I think I'll
+take it"* is in English, so Ben rings. Ben commits without a condition and gives a number, and the
+second channel re-derives the same verdict from the same Spanish transcript.
+
+```text
+[1/3] primary  Alice Okafor  +1********00
+      idempotency key rd-inc-2026-08-09-0113-primary-1-fa4c8e3b3de0
+      call call_fake1  status completed  confidence 0.94 high
+      not acknowledged (hedged_acknowledgement)  the words that would have taken the incident came with a condition attached,
+                                                 and a commitment with a condition is not a commitment
+        disposition  unclear
+        eta          "dame quince minutos"
+        hedged       "creo que lo tomo yo, tal vez"
+
+[2/3] secondary  Ben Mensah  +1********01
+      idempotency key rd-inc-2026-08-09-0113-secondary-1-fcff0fabef7e
+      call call_fake2  status completed  confidence 0.94 high
+      acknowledged  owner Ben Mensah  eta 20 minutes
+        disposition  "sí, lo tomo yo"
+        owner        "sí, soy ben"
+        eta          "dame veinte minutos"
+
+verdict acknowledged  owner b.mensah  eta 20 minutes
+```
+
+---
+
 ## The ledger check the demo runs last
 
 Scenario 3 writes its ledger to `examples/ledger.example.jsonl`, and that file is committed

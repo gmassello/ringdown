@@ -131,6 +131,16 @@ SCENARIOS: list[tuple[str, str, Scenarios]] = [
             BEN: scenarios.answer_ack("Ben Mensah", "ben", "i can be on it in twenty minutes"),
         },
     ),
+    (
+        "Scenario 8 - The engineer answers in Spanish",
+        "Same ladder, same ledger, same two transports. The commitment, the name and the "
+        "minutes are quoted in the words they were spoken in. A hedge in Spanish is still "
+        "not an acknowledgement, so Alice's 'creo que lo tomo yo' hands the incident to Ben.",
+        {
+            ALICE: scenarios.hedged_yes_es("Alice Okafor", "alice"),
+            BEN: scenarios.answer_ack_es("Ben Mensah", "ben", "dame veinte minutos"),
+        },
+    ),
 ]
 
 

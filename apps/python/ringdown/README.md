@@ -56,7 +56,7 @@ Python 3.11 or newer, and [uv](https://docs.astral.sh/uv/). No runtime dependenc
 git clone https://github.com/gmassello/ringdown
 cd ringdown/apps/python/ringdown
 uv sync
-uv run pytest -q          # 512 tests, no credentials, no outbound calls
+uv run pytest -q          # 568 tests, no credentials, no outbound calls
 ```
 
 Eleven of those tests read the project site and skip where `docs/` is absent, which is the case in
@@ -80,7 +80,7 @@ Locally, the demo needs no account either:
 uv run python -m demo.run_local
 ```
 
-Eight scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
+Nine scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
 nothing rings — the demo supplies its own throwaway key. `python -m demo.audio` renders the first
 three of them as audio next to the transcript that produced it, writing to `demo/out/audio` unless
 `--out` says otherwise; it needs `say` and `ffmpeg`, which is why it is a separate command and not
@@ -237,6 +237,32 @@ The list of qualifiers is deliberately short, and deliberately leaves out "but" 
 Both of them appear in perfectly firm commitments — "yes, I'm on it, but who else is paged?" — and
 a list that flags them wakes the next person for no reason. See ceiling 23 for why that error is
 worse than it looks.
+
+### In Spanish, on the same rules
+
+The four conditions above are not English conditions. The phrase tables carry Spanish beside
+English — one table per family, not one per language — so *"sí, lo tomo yo"* takes the incident and
+*"creo que lo tomo yo, tal vez"* does not, for the same reason *"I think I'll take it"* does not.
+Minutes are read the same way: `quince minutos`, `45 minutos`, `media hora`, `treinta y cinco
+minutos`. `normalise` folds accents before anything is matched, so `José` and `Muñoz` confirm an
+owner where they used to be read as `jos` and `mu`.
+
+There is no language flag, and that is deliberate. A real on-call call code-switches — *"yes, dale,
+quince minutos"* — and the language is not known until somebody answers, so a flag would have to be
+set before the thing it describes has happened. `examples/guardia.script.txt` is the call script in
+Spanish, and `validate_task_template` accepts it because the two questions it requires now have a
+Spanish form; a script that asks neither question in either language is still refused. Scenario 8
+of the demo runs the whole ladder in Spanish, and the second channel re-derives the verdict from
+the Spanish transcript.
+
+One word the fold takes away with the accent, and it is worth knowing which: `sí` and `si` become
+the same string, so *"sí puedo, lo tomo yo"* and *"lo tomo yo si puedo"* are indistinguishable to the
+extractor. Reading them as qualified would escalate past someone who firmly committed, which is the
+failure this section exists to avoid, so `si puedo` is not in the qualifier list and the conditional
+form is accepted. `si llego a` and `si es que` carry the same meaning with no such collision.
+
+What this is not is comprehension — see ceiling 10. These are lists of phrases, so an engineer who
+agrees in words nobody wrote down escalates past a real acknowledgement, in either language.
 
 ## Asking to be called back
 
@@ -833,9 +859,15 @@ own call over a second transport. Same technique, different product.
    `per_call_timeout_seconds`. A callback waits against that same deadline, which is what stops a
    long request from eating the escalation: the wait is honoured only if the minutes asked for plus
    one more call still fit inside what is left.
-10. Disposition and ETA extraction are English-only phrase lists and regexes, and so is the call
-    script check: a script in another language is refused because it cannot contain the English
-    sentence the extractor looks for. Translating the call means translating the extractor with it.
+10. The extractor reads English and Spanish, and nothing else. Both languages live in the same
+    phrase tables rather than behind a locale flag, because a real call code-switches and the
+    language is not known before somebody answers; `normalise` folds accents away, so `José` and
+    `Muñoz` reach the same rules as any other name. What that buys is two languages, not
+    comprehension: these are still lists of phrases, so an engineer who agrees in words nobody
+    wrote down produces an exit 20 over a real acknowledgement, in either language. A third
+    language is the same work again — the tables, the two questions `task.py` requires of a script,
+    the three injection families — and the tables can only take phrases of two words or more, since
+    a single short word matches inside unrelated speech in the other language.
 11. The chain proves internal consistency, not completeness, and it proves nothing against an
     adversary. It is unkeyed and anchored to nothing outside the file: cutting records off the end
     leaves a file that verifies, and so does renumbering and resealing the whole chain. The
@@ -890,7 +922,7 @@ own call over a second transport. Same technique, different product.
     supported set at load time is a preflight this app does not do.
 15. Almost every artefact in this repository was produced with one channel wearing two names.
     The demo points both flags at a single `FakeCalleServer` — same process, same port, one
-    transcript in memory — so the eight scenarios, the committed ledger and most of the suite
+    transcript in memory — so the nine scenarios, the committed ledger and most of the suite
     verify against the server that placed the call. Ringdown refuses that collision off
     loopback, announces it on loopback and records both hostnames either way, so the gap is
     visible rather than hidden. The exception is now real: [`tests/fixtures/`](tests/fixtures/)
@@ -910,9 +942,10 @@ own call over a second transport. Same technique, different product.
     transcript. A ladder run against this provider should expect to be exhausted by infrastructure
     rather than by people, and `failure_code` is the only honest signal for it.
 
-17. `instructed` is a heuristic, not a classifier. It matches three families of English phrasing —
-    instruction override, role or system impersonation, and commands that name a verdict — so an
-    attack phrased outside them, or in another language, is stored without the flag. That is a gap
+17. `instructed` is a heuristic, not a classifier. It matches three families of phrasing in the
+    two languages the extractor reads — instruction override, role or system impersonation, and
+    commands that name a verdict — so an attack phrased outside them, or in a third language, is
+    stored without the flag. That is a gap
     in the evidence, not in the defence: the flag decides nothing. What keeps a hostile transcript
     from acknowledging is structural, and holds whether or not the flag trips — every verdict field
     comes from deterministic rules over recipient turns, each one must be quoted by a span the

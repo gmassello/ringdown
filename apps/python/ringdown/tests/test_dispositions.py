@@ -40,6 +40,30 @@ def test_a_clean_acknowledgement_with_a_grounded_eta_is_acknowledged():
     assert judged.reason == ""
 
 
+def test_a_clean_acknowledgement_in_spanish_is_acknowledged():
+    judged = judge(scenarios.answer_ack_es(ALICE.name, "alice"))
+
+    assert judged.verdict == "acknowledged"
+    assert judged.reason == ""
+
+
+def test_a_commitment_with_a_condition_in_spanish_is_still_not_an_acknowledgement():
+    judged = judge(scenarios.hedged_yes_es(ALICE.name, "alice"))
+
+    assert judged.verdict == "not_acknowledged"
+    assert judged.reason == "hedged_acknowledgement"
+
+
+def test_an_accented_contact_can_confirm_their_own_name():
+    jose = replace(ALICE, name="José Pérez")
+    scenario = scenarios.answer_ack_es(jose.name, "José")
+
+    judged = classify(*parts(snapshot_for(scenario)), jose, POLICY)
+
+    assert judged.verdict == "acknowledged"
+    assert judged.reason == ""
+
+
 def test_an_ambiguous_yes_without_an_eta_does_not_acknowledge():
     judged = judge(scenarios.ambiguous_yes(ALICE.name, "alice"))
 

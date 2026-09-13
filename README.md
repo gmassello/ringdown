@@ -24,7 +24,7 @@ one that never placed the call and has no reason to agree. What comes out the en
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="512 tests" src="https://img.shields.io/badge/tests-512-2f6f4e">
+  <img alt="568 tests" src="https://img.shields.io/badge/tests-568-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -87,11 +87,11 @@ drops to the next rung, and the backup commits.
 cd apps/python/ringdown && uv sync && uv run python -m demo.run_local
 ```
 
-Eight scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
+Nine scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
 nothing rings — the demo supplies its own throwaway key.
 
 <details>
-<summary><b>The eight scenarios</b> — what each one is there to break</summary>
+<summary><b>The nine scenarios</b> — what each one is there to break</summary>
 
 | # | Scenario | The point |
 |---|---|---|
@@ -311,7 +311,7 @@ failure is unsafe. The full argument, one project at a time, is in
   hash.
 - **Almost every artefact in this repository was produced with one channel wearing two names.** The
   demo points both flags at a single fake: same process, same port, one transcript in memory. The
-  eight scenarios, the committed ledger and nearly the whole suite verify against the server that
+  nine scenarios, the committed ledger and nearly the whole suite verify against the server that
   placed the call. The exception is `tests/fixtures/`, parsed by tests that never touch the fake —
   and one of those shapes proves the parser is wrong. It is the only thing here confirmed by
   something other than itself.

@@ -36,6 +36,19 @@ def test_an_expired_ladder_timeout_stops_before_the_next_rung(serving, rest_clie
     assert len(server.created) == 1
 
 
+def test_a_ladder_settles_on_an_engineer_who_answers_in_spanish(serving, rest_client):
+    server = serving({ALICE.phone: scenarios.hedged_yes_es(ALICE.name, "alice"),
+                      BEN.phone: scenarios.answer_ack_es(BEN.name, "ben", "dame veinte minutos")})
+
+    result = run_ladder(rest_client(server), an_incident(policy=FAST), LADDER)
+
+    assert result.verdict == "acknowledged"
+    assert [a.verdict for a in result.attempts] == ["not_acknowledged", "acknowledged"]
+    assert result.attempts[0].reason == "hedged_acknowledgement"
+    assert result.attempts[1].extraction.eta_minutes == 20
+    assert result.attempts[1].extraction.disposition_span == "sí, lo tomo yo"
+
+
 def test_an_ambiguous_yes_without_an_eta_does_not_acknowledge(serving, rest_client):
     server = serving(
         {
