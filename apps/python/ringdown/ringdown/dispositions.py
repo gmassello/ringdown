@@ -50,6 +50,10 @@ def confident(snapshot: CallSnapshot, policy: Policy) -> bool:
     )
 
 
+def owner_matches(extraction: Extraction, contact: Contact) -> bool:
+    return extraction.owner_confirmed == first_name(contact)
+
+
 def classify(
     snapshot: CallSnapshot,
     extraction: Extraction,
@@ -81,7 +85,7 @@ def classify(
         return Assessment("not_acknowledged", "unclear")
     if not grounded.disposition:
         return Assessment("not_acknowledged", "ungrounded_disposition")
-    if extraction.owner_confirmed != first_name(contact):
+    if not owner_matches(extraction, contact):
         return Assessment("not_acknowledged", "owner_not_confirmed")
     if not grounded.owner:
         return Assessment("not_acknowledged", "ungrounded_owner")
