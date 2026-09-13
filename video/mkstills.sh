@@ -27,7 +27,7 @@ $(line 'CALL-E REST + MCP      Python stdlib      zero dependencies' $FAINT 32 9
 card video/closing.png "\
 $(line 'Notification sent proves nothing.' $INK 62 300),\
 $(line 'A commitment has an owner and a clock.' $GO 62 385),\
-$(line 'Nine calls to the live provider — the second channel could never read one back.' $DIM 34 600),\
+$(line 'Nine real calls to the provider. It could never read one of them back to us.' $DIM 34 600),\
 $(line 'github.com/gmassello/ringdown' $GO 44 830)"
 
 [ -n "${1:-}" ] || { echo "no screenshot given, keeping video/dashboard.png"; exit 0; }
