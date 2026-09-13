@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Rebuilds out/raw-fitted.mov: the eight terminal stills, then the dashboard as the closing
-# evidence. Every still is pulled straight out of raw-terminal.mov at an explicit mark, so
-# the class of bug that made s6 a duplicate of s5 cannot come back. Frame counts are
-# asserted at the end — a drift of one slides the whole video against the voice and nothing
-# else would catch it. See "The body" in video/README.md.
+# Rebuilds out/raw-fitted.mov: six terminal stills, the two ledger stills off the published
+# site, then the dashboard as the closing evidence. Every terminal still is pulled straight out
+# of raw-terminal.mov at an explicit mark, so the class of bug that made s6 a duplicate of s5
+# cannot come back. Frame counts are asserted at the end — a drift of one slides the whole video
+# against the voice and nothing else would catch it. See "The body" in video/README.md.
 set -e
 cd "$(dirname "$0")/.."
 [ -d /opt/homebrew/opt/ffmpeg@7/bin ] && PATH="/opt/homebrew/opt/ffmpeg@7/bin:$PATH"
@@ -19,8 +19,11 @@ CROP="crop=3019:1565:111:218,scale=1920:996:flags=lanczos,pad=1920:1080:0:42:$BG
 
 # One mark per still, each landing in that screen's settled state — never on the transition.
 # s4 waits for the live model call to come back, which is why it is not 17.
-MARKS=(3 7 13 24 29 35 40 46)
-# Beat lengths from out/timing-noslide.txt; the ledger beat (21.9) is split across s7 and s8.
+MARKS=(3 7 13 24 29 35)
+# s7 and s8 are the ledger beat, and they come off the published site rather than the terminal:
+# the widget runs the same file through a port of audit.chain_checks, so it counts the same 26.
+STILLS=(video/ledger-clean.png video/ledger-tampered.png)
+# Beat lengths from out/timing.txt; the ledger beat (21.9) is split across s7 and s8.
 HOLDS=(18.1 17.5 35.5 12.8 12.8 23.2 10.0 11.9)
 
 TERMINAL_FRAMES=4254
@@ -28,13 +31,20 @@ BODY_FRAMES=276
 ENC="-c:v libx264 -preset medium -crf 20 -profile:v high -level 4.0 -pix_fmt yuv420p -fps_mode cfr -r 30 -an"
 
 mkdir -p "$FRAMES"
-: > "$OUT/terminal.txt"
 for i in "${!MARKS[@]}"; do
-  n=$((i + 1))
-  ffmpeg -y -loglevel error -ss "${MARKS[$i]}" -i "$SRC" -frames:v 1 -vf "$CROP" "$FRAMES/s$n.png"
-  printf "file 'frames/s%s.png'\nduration %s\n" "$n" "${HOLDS[$i]}" >> "$OUT/terminal.txt"
+  ffmpeg -y -loglevel error -ss "${MARKS[$i]}" -i "$SRC" -frames:v 1 -vf "$CROP" \
+    "$FRAMES/s$((i + 1)).png"
 done
-printf "file 'frames/s%s.png'\n" "${#MARKS[@]}" >> "$OUT/terminal.txt"
+for i in "${!STILLS[@]}"; do
+  [ -f "${STILLS[$i]}" ] || { echo "${STILLS[$i]} is missing — run video/mkledger.sh"; exit 1; }
+  cp "${STILLS[$i]}" "$FRAMES/s$((${#MARKS[@]} + i + 1)).png"
+done
+
+: > "$OUT/terminal.txt"
+for i in "${!HOLDS[@]}"; do
+  printf "file 'frames/s%s.png'\nduration %s\n" "$((i + 1))" "${HOLDS[$i]}" >> "$OUT/terminal.txt"
+done
+printf "file 'frames/s%s.png'\n" "${#HOLDS[@]}" >> "$OUT/terminal.txt"
 
 ffmpeg -y -loglevel error -f concat -safe 0 -i "$OUT/terminal.txt" -frames:v "$TERMINAL_FRAMES" \
   -vf "fps=30,scale=1920:1080,setsar=1,format=yuv420p" $ENC "$OUT/terminal.mp4"
@@ -56,5 +66,5 @@ R=$(count "$OUT/raw-fitted.mov")
 [ "$R" = "$((TERMINAL_FRAMES + BODY_FRAMES))" ] || {
   echo "raw-fitted.mov has $R frames, expected $((TERMINAL_FRAMES + BODY_FRAMES))"; exit 1; }
 
-echo "wrote 8 stills into $FRAMES"
+echo "wrote ${#HOLDS[@]} stills into $FRAMES"
 echo "wrote $OUT/raw-fitted.mov  $R frames  $(echo "scale=3; $R/30" | bc) s"

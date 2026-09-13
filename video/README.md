@@ -8,12 +8,15 @@ live in `~/.claude/skills/personal-record-video/scripts/`.
 | `narration.tsv` | The script. Edit this and nothing downstream survives |
 | `mkstills.sh` | Regenerates the three stills. The closing line lives in the script |
 | `mkintro.sh` | Regenerates the opening 18.7 s and mixes the ringback under the voice |
-| `mkbody.sh` | Rebuilds the body: the seven terminal stills plus the dashboard as closing evidence |
+| `mkbody.sh` | Rebuilds the body: six terminal stills, the two ledger stills, the dashboard |
+| `mkledger.sh` | Regenerates the two ledger stills off the published site. Needs Chrome |
 | `reset.sh` | Demo state for the terminal take. `--check` reports without changing anything |
 | `take.sh` | The shot list. Enter advances, one screen per beat after the opening |
 | `slide.png` | The opening card. No longer in the video — `mkintro.sh` replaced it. Poster and thumbnail |
 | `dashboard.png` | First closing still: the real call, recorded and transcribed |
 | `closing.png` | Last still: the thesis, what the live provider answered, the repo |
+| `ledger-clean.png` | The `#ledger` widget as published. `exit 0`, 26 checks |
+| `ledger-tampered.png` | The same widget after `#tamper-btn`. `exit 40`, every seal still green |
 | `live/` | The live call: run files, pre-flight, evidence capture. Gitignored |
 | `out/` | Generated. `build-audio.sh` wipes it on every run, `narration.voice.wav` included |
 
@@ -139,75 +142,87 @@ own screen inside the 774x1692 source.
 from it, so the script is safe to re-run. **That backup is now as irreplaceable as
 `raw-fitted.mov`** — `build-audio.sh` deletes both.
 
-## 5. The body
+## 5. The ledger stills
 
-`mkbody.sh` rebuilds `out/raw-fitted.mov` — the 142.6 s between the opening and the outro:
+The beat at 2:18 used to be two screenshots of `verify` in the terminal. It is now the published
+site, which runs the same `examples/ledger.example.jsonl` through a port of `audit.chain_checks`
+and therefore counts the same **26 checks** the narration counts — `#tamper-btn` reseals the whole
+chain around a rewritten verdict, so the two states are exactly the two the voice describes.
 
 ```bash
-bash video/mkbody.sh          # -> out/frames/s6.png, out/terminal.mp4, out/evidence.mp4, out/raw-fitted.mov
+bash video/mkledger.sh        # -> video/ledger-clean.png, video/ledger-tampered.png
 ```
 
-Two things it fixes.
+It serves a copy of `docs/` on loopback rather than shooting `file://`, because the widget needs
+`fetch` and `crypto.subtle`, and appends a module that forces the dark palette (the page ships
+`data-rd-theme="light"`), hides the prose the still does not need, waits for `#ledger-body`, and —
+in the second pass only — clicks the button. `VIEW` and `SCALE` are the two knobs; the shot is
+padded to 1920x1080 on `#161826`, the site's own background, so the still carries no frame.
 
-**`s6.png` is regenerated from the recording, not taken from the fit.** The mark handed to
-`fit-to-audio.py` landed inside the previous screen's hold, so `s6` came out a duplicate of `s5`:
-ten seconds of `verified 6/10 · exit 40` while the voice says *"Every verdict is sealed into a
-hash-chained ledger / Twenty-six checks pass"*. The right screen is in `raw-terminal.mov` at
-`LEDGER_AT=36`; the crop lands the text where the other six stills put it.
+The bottom ~110 px of each shot is left empty on purpose: that is where the burned-in subtitles land.
 
-**The dashboard replaces the phone clip as the closing evidence.** It now runs from 2:32 to 2:45
-— 13.2 s instead of 4, because the body and the outro show the same image and the seam does not
-read. That puts all three spoken lines on top of it: *"CALL-E does not dial Argentina"*,
+`docs/demo.gif` is the same widget captured the same way, by hand — see the note at the top.
+
+## 6. The body
+
+`mkbody.sh` rebuilds `out/raw-fitted.mov` — the 151.0 s between the opening and the outro:
+
+```bash
+bash video/mkbody.sh          # -> out/frames/, out/terminal.mp4, out/evidence.mp4, out/raw-fitted.mov
+```
+
+Six of the eight stills come out of `raw-terminal.mov` at an explicit mark; `s7` and `s8` are
+copied from `ledger-clean.png` and `ledger-tampered.png`, and the script refuses to run if those
+are missing.
+
+**Why `MARKS` exists.** A mark handed to `fit-to-audio.py` once landed inside the previous screen's
+hold and `s6` came out a duplicate of `s5`: ten seconds of the wrong screen under the voice, and
+nothing failed. Every still now names its own timestamp in `raw-terminal.mov`, so that class of bug
+cannot come back silently.
+
+**The dashboard replaces the phone clip as the closing evidence.** `evidence.mp4` is 276 frames,
+9.2 s, and the two outro stills cover the remaining 8.2 s of the 17.3 s beat — the body and the
+outro show the same image, so the seam does not read. That puts all three spoken lines on top of
+it: *"CALL-E does not dial Argentina"*,
 *"lands on a US Twilio number"*, *"bridged to a real phone, recorded and transcribed"*. The clip it
 replaces showed the caller ID unmasked and the phone's home screen, and repeated what the opening
 already shows better.
 
-Frame counts are asserted, and they are the whole point: `terminal.mp4` must be 4002 and
-`evidence.mp4` 277, because a drift of one frame slides the entire video against the voice and
+Frame counts are asserted, and they are the whole point: `terminal.mp4` must be 4254 and
+`evidence.mp4` 276, because a drift of one frame slides the entire video against the voice and
 `build-video.sh` absorbs it into `RATIO` without complaining.
 
-## 6. Assembling
+## 7. Assembling
 
-The audio is already built and under the cap — `out/timing.txt` has the verdict and the
-per-beat lengths, and it is the only source for the numbers below. Re-run `build-audio.sh`
-only if the narration changes, and then redo `timing-noslide.txt`, the stills, the marks and
-the fit, because it wipes `out/`.
+`out/timing.txt` has the per-beat lengths and it is the only source for the numbers below. Re-run
+`build-audio.sh` only if the narration changes: it wipes `out/`, `narration.voice.wav` included, and
+then the holds in `mkbody.sh`, the cuts in `mkintro.sh` and every number here have to be redone. The
+track sits at 177.9 s against a 180 s cap, so a new line means dropping one.
 
-Concatenate first. The phone is vertical, so it gets scaled and pillarboxed onto the same
-`0x0e131f` the stills use, and both clips are normalised to 1920x1080 before concat.
-
-```bash
-# raw-terminal.mov + phone.mov -> raw.mov
-```
-
-Then find the seven marks (the timestamp in `raw.mov` where each screen appears) from a
-timestamped contact sheet:
+`mkbody.sh` already lays each still on its own beat length, so there is no `fit-to-audio.py` step
+any more. Concatenate the opening onto the front and hand `build-video.sh` one clip:
 
 ```bash
-VIDEO_DIR=$PWD/video python3 ~/.claude/skills/personal-record-video/scripts/fit-to-audio.py \
-  video/raw.mov --beats <m1,m2,m3,m4,m5,m6,m7> --timing video/out/timing-noslide.txt
-
 printf "file 'intro.mov'\nfile 'raw-fitted.mov'\n" > video/out/intro-concat.txt
 ffmpeg -y -f concat -safe 0 -i video/out/intro-concat.txt -c copy video/out/raw-with-intro.mov
 
-VIDEO_DIR=$PWD/video END=161.3 \
+VIDEO_DIR=$PWD/video END=169.7 \
   OUTRO="video/dashboard.png:4,video/closing.png:4.2" OUTRO_REPLACE=8.2 \
   bash ~/.claude/skills/personal-record-video/scripts/build-video.sh video/out/raw-with-intro.mov
 ```
 
-**No `SLIDE`.** The intro is concatenated onto the front of the screencast instead, so the whole
-161.3 s goes through the fit as one clip: `RATIO = 161.3 / (169.5 - 8.2) = 1.000`.
-
-The arithmetic, all of it out of `out/timing.txt`: the track is 169.5 s and beat 1 is 18.7 s,
-so the recording covers beats 2 to 8 = 150.8 s. The two closing stills cover the tail, so
-`OUTRO_REPLACE = 4 + 4.2` and `END = 18.7 + 150.8 - 8.2 = 161.3`. Beat 8 is 17.2 s, so the phone
-keeps `17.2 - 8.2 = 9` of them.
+**No `SLIDE`.** The arithmetic, all of it derivable from what is on disk: `narration.wav` is
+177.9 s; `intro.mov` is 561 frames and `raw-fitted.mov` 4530, so the clip is 5091 frames =
+**169.7 s**, which is `END`. `build-video.sh` fits at `RATIO = END / (A - OUTRO_REPLACE)`, and the
+two closing stills cover the tail, so `OUTRO_REPLACE = 177.9 - 169.7 = 8.2` — exactly their combined
+length, and `RATIO = 1.000`. **Read that line in the output.** Anything else and the cut slides
+against the voice with nothing to catch it.
 
 `TOTAL = A + max(0, OUTRO_TOTAL - OUTRO_REPLACE)` does not depend on `END`, so the video is pinned
-to the length of `narration.wav` and nothing else. What `END` does control is the fit — and if
-`intro.mov` is not exactly 561 frames the whole screencast slides against the voice, silently.
-`mkintro.sh` asserts that count and refuses to finish without it. Under ~3.5 s a still cannot be read; adjust the split once the
-footage exists.
+to the length of `narration.wav` and nothing else. `intro.mov` has to be exactly 561 frames for the
+same reason; `mkintro.sh` asserts that count and refuses to finish without it.
 
 Out comes `video/out/demo.mp4` and `video/out/demo.en.srt`. Upload public or unlisted, never
-private, with the SRT as the caption track.
+private, with the SRT as the caption track. YouTube does not replace the file of a video that is
+already up, so a new cut is a new URL: `README.md`, `docs/index.html` (twice), the pull request and
+the Devpost submission all carry it.
