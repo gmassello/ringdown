@@ -30,20 +30,22 @@ one that never placed the call and has no reason to agree. What comes out the en
 </p>
 
 <p align="center">
-  <img src="docs/demo.gif" alt="The ledger check, recomputed in the browser: after every verdict in the committed ledger is rewritten and the chain resealed, all eight links, all eight seals and all eight positions still pass, and the verdict check fails — exit 0 becomes exit 40" width="900">
+  <img src="docs/demo.gif" alt="The close of a real call placed on 20 August 2026: the phone ends the call at eighty-two seconds, and beside it the words the recipient actually spoke — he takes the incident and names fifteen minutes" width="900">
 </p>
 
 <p align="center">
-  <em>Every verdict rewritten, the chain resealed and relinked from the genesis hash.<br>
-  Every link, every seal and every position still passes. The verdict does not —
-  <a href="https://gmassello.github.io/ringdown/#ledger">tamper with it yourself</a>.</em>
+  <em>A real call, 20 August 2026. Every line on the right is a span he actually spoke — the grey
+  note is the provider hearing <b>banking</b> where he said <b>taking</b>, recorded and not
+  smoothed over.<br>
+  Eighty-two seconds, an owner, and a clock.</em>
 </p>
 
 <p align="center">
   <a href="https://youtu.be/cZg4hbkCVMA"><b>▶ Watch the demo</b></a> (2:55) ·
   <a href="apps/python/ringdown/README.md"><b>Operational manual</b></a> ·
   <a href="apps/python/ringdown/demo/EXPECTED.md"><b>Demo output</b></a> ·
-  <a href="apps/python/ringdown/examples/ledger.example.jsonl"><b>A real ledger</b></a>
+  <a href="apps/python/ringdown/examples/ledger.example.jsonl"><b>A real ledger</b></a> ·
+  <a href="https://gmassello.github.io/ringdown/#ledger"><b>Tamper with it</b></a>
 </p>
 
 ---

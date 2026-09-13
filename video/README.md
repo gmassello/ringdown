@@ -11,6 +11,7 @@ live in `~/.claude/skills/personal-record-video/scripts/`.
 | `mkbody.sh` | Rebuilds the body: one still per beat, then the real call |
 | `mksite.sh` | Shoots the four stills that come off the published site. Needs Chrome |
 | `mkcall.sh` | Builds the real call: the phone that rang beside the words that were said |
+| `mkgif.sh` | Cuts `docs/demo.gif` out of the finished cut. Needs `out/demo.mp4` to still exist |
 | `reset.sh` | Demo state for the terminal take. `--check` reports without changing anything |
 | `take.sh` | The shot list. Enter advances, one screen per beat after the opening |
 | `slide.png` | The opening card. No longer in the video — `mkintro.sh` replaced it. Poster and thumbnail |
@@ -24,12 +25,20 @@ live in `~/.claude/skills/personal-record-video/scripts/`.
 | `live/` | The live call: run files, pre-flight, evidence capture. Gitignored |
 | `out/` | Generated. `build-audio.sh` wipes it on every run, `narration.voice.wav` included |
 
-`docs/demo.gif`, the animation at the top of the root README, comes from none of this. It is
-captured off the published site, not off a terminal take: the `#ledger` section at
-<https://gmassello.github.io/ringdown/#ledger>, with `#tamper-btn` and the `verify` card lifted
-into a fixed full-bleed container so the screenshot needs no cropping, three states — clean,
-button focused, tampered — grabbed with `screencapture` at 2.5x and assembled by `ffmpeg`
-(`concat`, then `palettegen` with `stats_mode=full`, which the red of `exit 40` needs).
+`docs/demo.gif`, the animation at the top of the root README, is a slice of the finished cut —
+`mkgif.sh` with no arguments takes the close of the real call, 157.7 s in, for 9.9 s. It used to be
+three screenshots of the site's `#ledger` panel, assembled by hand; the call is the thing the site
+cannot show.
+
+A GIF has no audio, so the slice keeps the full 16:9 frame: the bottom band is where
+`build-video.sh` burned the subtitles, and without it the narration is gone. The knobs are
+`START`, `DUR`, `WIDTH`, `FPS`, `STATS` and `OUT`, and the script prints the size it produced,
+which is the number that decides whether it ships — 900 px wide at 15 fps lands near 330 KB.
+`STATS` defaults to `diff` because the slice is nearly still and the palette is better spent on
+what moves; the old ledger GIF needed `full` for the red of `exit 40`.
+
+**The hard edge**: the outro replaces the last 7.7 s, so anything past **167.76 s** is
+`closing.png` and not the phone. `DUR` is sized against that, not against the beat table.
 
 Two recordings feed one video, and both reach it. `raw-terminal.mov` (the CLI) is down to one
 screen: everything it used to carry is now shot off the published site, which is written to be
@@ -180,7 +189,8 @@ height comes from seeing it, not from arithmetic, and the bottom ~110 px stays e
 is where the burned-in subtitles land. The shot is padded to 1920x1080 on `#161826`, the site's
 own background, so the still carries no frame around it.
 
-`docs/demo.gif` is the same widget captured the same way, by hand — see the note at the top.
+`docs/demo.gif` no longer comes from here at all — `mkgif.sh` cuts it out of the finished cut.
+See the note at the top.
 
 ## 6. The real call
 
