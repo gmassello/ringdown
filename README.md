@@ -5,12 +5,26 @@
   "Notification sent" proves nothing. A commitment has an owner and a clock.
 </p>
 
+## In plain words
+
+Software breaks at three in the morning, and somebody has to wake up. Every on-call tool sends a
+push, an SMS or an email at that point and treats the sending as the job done. Ringdown places a
+phone call instead — a real one, to the person whose shift covers this moment — and asks two
+things: who is taking this, and in how many minutes.
+
+A voice that says *"yeah, sure, I'll take a look at some point"* answers neither, so that call is
+not an acknowledgement and the next person on the list gets dialled. When somebody does commit,
+their name and the number of minutes are quoted from what they actually said out loud, written to a
+file where a later edit cannot hide, and then checked a second time over a different connection —
+one that never placed the call and has no reason to agree. What comes out the end is not
+"notification sent". It is a named human, a number of minutes, and the evidence for both.
+
 <p align="center">
   <a href="https://github.com/gmassello/ringdown/actions/workflows/ci.yml"><img src="https://github.com/gmassello/ringdown/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none%20(stdlib)-2f6f4e">
-  <img alt="502 tests" src="https://img.shields.io/badge/tests-502-2f6f4e">
+  <img alt="512 tests" src="https://img.shields.io/badge/tests-512-2f6f4e">
   <img alt="CALL-E REST + MCP" src="https://img.shields.io/badge/CALL--E-REST%20%2B%20MCP-black">
   <img alt="Hash-chained ledger" src="https://img.shields.io/badge/ledger-SHA--256%20chain-black">
 </p>
@@ -33,20 +47,6 @@
 </p>
 
 ---
-
-## In plain words
-
-Software breaks at three in the morning, and somebody has to wake up. Every on-call tool sends a
-push, an SMS or an email at that point and treats the sending as the job done. Ringdown places a
-phone call instead — a real one, to the person whose shift covers this moment — and asks two
-things: who is taking this, and in how many minutes.
-
-A voice that says *"yeah, sure, I'll take a look at some point"* answers neither, so that call is
-not an acknowledgement and the next person on the list gets dialled. When somebody does commit,
-their name and the number of minutes are quoted from what they actually said out loud, written to a
-file where a later edit cannot hide, and then checked a second time over a different connection —
-one that never placed the call and has no reason to agree. What comes out the end is not
-"notification sent". It is a named human, a number of minutes, and the evidence for both.
 
 ## "Notification sent" proves nothing
 

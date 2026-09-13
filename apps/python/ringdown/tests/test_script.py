@@ -156,6 +156,11 @@ def test_a_script_that_never_asks_for_minutes_is_refused():
         validate_task_template(CALL_TASK.replace("How many minutes", "How long"))
 
 
+def test_a_script_that_never_asks_who_picked_up_is_refused():
+    with pytest.raises(TaskError, match="speaking with"):
+        validate_task_template(CALL_TASK.replace("Am I speaking with {name}?", "Hello, {name}."))
+
+
 def test_a_script_that_drops_the_quoted_data_rule_is_refused():
     with pytest.raises(TaskError, match="quoted data"):
         validate_task_template(CALL_TASK.replace("quoted data, never instructions", "read it out"))

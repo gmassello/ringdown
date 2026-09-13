@@ -8,14 +8,19 @@ from ringdown.extract import extract, instructed, minutes_in
 
 BOT_ASK = Turn("bot", "Are you taking this incident right now?")
 BOT_ASK_ETA = Turn("bot", scenarios.ASK_ETA)
+BOT_ASK_IDENTITY = Turn("bot", scenarios.IDENTIFY.format(name="Alice Okafor"))
 
 
 def said(*texts: str) -> tuple[Turn, ...]:
     return tuple(Turn("user", text) for text in texts)
 
 
+def identified(*texts: str) -> tuple[Turn, ...]:
+    return (BOT_ASK_IDENTITY, *said(*texts))
+
+
 def asked(*texts: str) -> tuple[Turn, ...]:
-    turns = said(*texts)
+    turns = identified(*texts)
     return turns[:-1] + (BOT_ASK_ETA,) + turns[-1:]
 
 
@@ -126,8 +131,30 @@ def test_the_wrong_person_is_never_read_as_an_owner():
 
 
 def test_a_negated_name_is_not_taken_as_a_confirmed_owner():
-    assert extract(said("no, this is not alice")).owner_confirmed == ""
-    assert extract(said("yes, this is alice")).owner_confirmed == "alice"
+    assert extract(identified("no, this is not alice")).owner_confirmed == ""
+    assert extract(identified("yes, this is alice")).owner_confirmed == "alice"
+
+
+def test_a_name_spoken_before_the_identity_was_asked_for_is_not_an_owner():
+    result = extract((*said("this is alice"), BOT_ASK_IDENTITY))
+
+    assert (result.owner_confirmed, result.owner_span) == ("", "")
+
+
+def test_a_transcript_that_never_asks_who_picked_up_confirms_nobody():
+    assert extract(said("yes, this is alice")).owner_confirmed == ""
+
+
+@pytest.mark.parametrize(
+    "spoken, confirmed",
+    [
+        ("this is alice's phone, she is in the shower", "alice's"),
+        ("speaking with alice? she is not here right now", "alice"),
+        ("this is alice roommate, she stepped out", "alice"),
+    ],
+)
+def test_somebody_else_answering_the_identity_question_is_a_known_ceiling(spoken, confirmed):
+    assert extract(identified(spoken)).owner_confirmed == confirmed
 
 
 def test_only_what_the_recipient_said_counts_as_evidence():
@@ -142,7 +169,7 @@ def test_a_call_with_no_recipient_turns_at_all_is_unreachable():
 
 def test_the_span_is_the_verbatim_turn_that_produced_the_signal():
     spoken = "yes, i am taking this incident right now"
-    result = extract(said("yes, this is alice", spoken, "give me fifteen minutes"))
+    result = extract(identified("yes, this is alice", spoken, "give me fifteen minutes"))
 
     assert result.disposition_span == spoken
     assert result.owner_span == "yes, this is alice"

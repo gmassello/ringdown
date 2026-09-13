@@ -8,6 +8,11 @@ by reading the docs alone.
 
 Ordered by how much they cost us.
 
+Six findings carry a stored response, so the shape can be read rather than taken on trust. Each one
+lives in [`tests/fixtures/`](https://github.com/gmassello/ringdown/blob/main/apps/python/ringdown/tests/fixtures) with its own `what` / `source` / `unobserved` / `why_it_matters`,
+and every value in them was rewritten for the repository: no real number, identifier, recording or
+transcript is stored. The shape is what is evidentiary.
+
 ---
 
 ## 1. Four calls in six were dropped, and reported as the recipient hanging up
@@ -36,6 +41,8 @@ and the recipient's phone never rang.
 It is not tied to a surface: a call placed over `run_call` connected between two REST failures, and
 a REST call connected between two others. It is not the destination either, since the same number
 answered twice in the same window.
+**Evidence:** [`rest-call-declined-without-dialling.json`](https://github.com/gmassello/ringdown/blob/main/apps/python/ringdown/tests/fixtures/rest-call-declined-without-dialling.json) — the whole body of the second of the two attempts that failed this way. No carrier reason is exposed anywhere in it; the zero-second duration and the empty `transcript_turns` are the only signals that separate this from a real rejection.
+
 
 Two problems, and the second is worse than the first. A ~60% drop rate is an availability problem
 you may already know about. But reporting it as `Hangup by: user` is a **correctness** problem for
@@ -79,6 +86,8 @@ confirmed through the transport that did.
 
 **What would fix it:** have `get_call_run` accept a call id as well as a run id, or expose the run
 id on the `CallTask` that REST already returns. Either one is small.
+**Evidence:** [`mcp-get-call-run-rejects-a-call-id.json`](https://github.com/gmassello/ringdown/blob/main/apps/python/ringdown/tests/fixtures/mcp-get-call-run-rejects-a-call-id.json), [`mcp-get-call-run-missing.json`](https://github.com/gmassello/ringdown/blob/main/apps/python/ringdown/tests/fixtures/mcp-get-call-run-missing.json) — the first is the whole JSON-RPC envelope of the rejection, down to the identifier quoted back inside the validation error; the second is the `run_id not found` shape, which also arrives as an HTTP 200 with no error key.
+
 
 ## 3. A run you do serve still cannot be verified against
 
@@ -95,6 +104,8 @@ verification, for reasons independent of finding 2:
 
 Serving on the run the same identity fields REST already returns would make the surface auditable
 without changing anything else.
+**Evidence:** [`mcp-get-call-run-completed.json`](https://github.com/gmassello/ringdown/blob/main/apps/python/ringdown/tests/fixtures/mcp-get-call-run-completed.json) — the first successful `get_call_run` we ever saw. It is the fixture that proves our own client wrong as well: the call id lives at `result.call_id`, not where we read it, and a known ceiling of ours records that rather than quietly correcting it.
+
 
 ## 4. Creating a call takes longer than any client will wait
 
@@ -147,6 +158,8 @@ nobody is awake — cannot use MCP at all once its interactively obtained token 
 
 Accepting the existing API key as a bearer token, or adding `client_credentials`, would fix this
 without changing anything else.
+**Evidence:** [`mcp-authorization-server.json`](https://github.com/gmassello/ringdown/blob/main/apps/python/ringdown/tests/fixtures/mcp-authorization-server.json) — the authorization server metadata, transcribed in full. It is public discovery metadata and carries no call content.
+
 
 ## 8. Which regions you serve is undiscoverable
 
@@ -202,5 +215,7 @@ And a last one that is a compliment in a strange shape. On one connected call yo
 the incident and gave a 15-minute working estimate."* The recipient's turn behind that reads
 *"Yes. I'm banking this incident right now"* — speech recognition heard "banking" for "taking". The
 summary was right about what happened and the transcript was not, which is the correct direction
-for a summary to err. We mention it only because any consumer that grounds its own fields in the
+for a summary to err.
+**Evidence:** [`rest-call-completed-without-an-acknowledgement.json`](https://github.com/gmassello/ringdown/blob/main/apps/python/ringdown/tests/fixtures/rest-call-completed-without-an-acknowledgement.json) — the body of that call, and the one place where the provider's verdict and ours are both visible side by side.
+ We mention it only because any consumer that grounds its own fields in the
 transcript, as we do, will disagree with your summary on calls like that one, and should.

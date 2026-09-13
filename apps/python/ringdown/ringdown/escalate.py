@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable, Literal, Sequence
 
 from ringdown.calle import CalleError, RestClient
 from ringdown.calls import CallSnapshot
 from ringdown.dispositions import Verdict, classify, ground
 from ringdown.extract import Extraction, extract, instructed
-from ringdown.incident import Incident, Policy, Rung
+from ringdown.incident import Contact, Incident, Policy, Rung
 from ringdown.script import attempt_id, call_payload, idempotency_key
 
 LadderVerdict = Literal["acknowledged", "declined", "unacknowledged", "unknown"]
@@ -159,6 +159,7 @@ def walk_rung(
     watch: Callable[[int, Rung, Attempt | None], None],
     announce: Callable[[str, str, Rung], None],
     pause: Callable[[float], None],
+    resolve: Callable[[str], Contact | None],
 ) -> list[Attempt]:
     made: list[Attempt] = []
     for number in range(1, CALLS_PER_RUNG + 1):
@@ -175,6 +176,10 @@ def walk_rung(
         log(f"{rung.contact.name} asked to be called back in {minutes} minutes")
         log(f"waiting {minutes} minutes, which fits the time this ladder has left")
         pause(wait)
+        fresh = resolve(rung.scope)
+        if fresh is not None and fresh.id != rung.contact.id:
+            log(f"{rung.scope} changed hands while waiting: {fresh.name}, not {rung.contact.name}")
+            rung = replace(rung, contact=fresh)
     return made
 
 
@@ -186,6 +191,7 @@ def run_ladder(
     watch: Callable[[int, Rung, Attempt | None], None] = lambda *_: None,
     announce: Callable[[str, str, Rung], None] = lambda *_: None,
     pause: Callable[[float], None] = time.sleep,
+    resolve: Callable[[str], Contact | None] = lambda _: None,
 ) -> LadderResult:
     deadline = time.monotonic() + incident.policy.ladder_timeout_seconds
     attempts: list[Attempt] = []
@@ -194,7 +200,9 @@ def run_ladder(
             log(f"ladder timeout after {len(attempts)} attempt(s)")
             break
         attempts.extend(
-            walk_rung(rest, incident, rung, position, deadline, log, watch, announce, pause)
+            walk_rung(
+                rest, incident, rung, position, deadline, log, watch, announce, pause, resolve
+            )
         )
         if attempts[-1].verdict != "not_acknowledged":
             break

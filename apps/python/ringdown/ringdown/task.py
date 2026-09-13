@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from string import Formatter
 
-from ringdown.extract import ETA_QUESTION, normalise
+from ringdown.extract import ETA_QUESTION, IDENTITY_QUESTION, normalise
 
 CALL_TASK = """You are placing an automated on-call page. Follow these steps in order.
 
@@ -88,6 +88,11 @@ def validate_task_template(template: str, where: str = "the call script") -> str
         raise TaskError(
             f"{where} never says {{name}}, so the agent would read the incident out without "
             "confirming who picked up"
+        )
+    if not IDENTITY_QUESTION.search(normalise(template)):
+        raise TaskError(
+            f"{where} never asks whether it is speaking with {{name}}, so no name answers that "
+            "question and every call would settle as not acknowledged"
         )
     if not ETA_QUESTION.search(normalise(template)):
         raise TaskError(

@@ -293,6 +293,40 @@ def test_a_request_to_be_called_back_returns_to_the_same_person_instead_of_escal
     assert waited == [600.0]
 
 
+@pytest.mark.parametrize(
+    ("on_call", "dialled"),
+    [
+        (lambda _: BEN, [ALICE.id, BEN.id]),
+        (lambda _: ALICE, [ALICE.id, ALICE.id]),
+        (lambda _: None, [ALICE.id, ALICE.id]),
+    ],
+    ids=["the scope changed hands", "the same shift is still on", "nobody covers the scope"],
+)
+def test_a_callback_rings_whoever_covers_the_scope_when_the_wait_ends(
+    serving, rest_client, on_call, dialled
+):
+    server = serving(
+        {
+            ALICE.phone: scenarios.asks_for_callback(ALICE.name, "alice"),
+            BEN.phone: scenarios.answer_ack(BEN.name, "ben"),
+        }
+    )
+
+    result = run_ladder(
+        rest_client(server),
+        an_incident(policy=FAST),
+        LADDER,
+        pause=lambda _: None,
+        resolve=on_call,
+    )
+
+    assert [a.rung.contact.id for a in result.attempts] == dialled
+    assert [a.attempt_id for a in result.attempts] == [
+        "inc-2026-08-09-0113/primary/1",
+        "inc-2026-08-09-0113/primary/2",
+    ]
+
+
 def test_the_call_back_is_a_second_call_with_its_own_idempotency_key(serving, rest_client):
     server = serving({ALICE.phone: scenarios.asks_for_callback(ALICE.name, "alice")})
 

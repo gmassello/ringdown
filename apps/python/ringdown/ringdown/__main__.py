@@ -44,8 +44,10 @@ from ringdown.incident import (
     Incident,
     IncidentError,
     Rung,
+    Shift,
     load_incident,
     load_rotation,
+    on_call_for,
     parse_incident,
     read_json,
     resolve_ladder,
@@ -100,8 +102,8 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _ladder(incident: Incident, rotation: Path, moment: datetime) -> tuple[Rung, ...]:
-    rungs = resolve_ladder(incident, load_rotation(rotation), moment)
+def _ladder(incident: Incident, shifts: Sequence[Shift], moment: datetime) -> tuple[Rung, ...]:
+    rungs = resolve_ladder(incident, shifts, moment)
     for scope in unstaffed_scopes(incident, rungs):
         emit(f"note: scope {scope} has nobody on call and was skipped")
     return rungs
@@ -110,7 +112,7 @@ def _ladder(incident: Incident, rotation: Path, moment: datetime) -> tuple[Rung,
 def preview(args: argparse.Namespace) -> int:
     incident = load_incident(args.incident)
     moment = datetime.now(UTC)
-    rungs = _ladder(incident, args.rotation, moment)
+    rungs = _ladder(incident, load_rotation(args.rotation), moment)
     payload = call_payload(incident, rungs[0])
     emit(*report.header_lines(incident, rungs, moment))
     emit(f"idempotency key {idempotency_key(payload)}", "", call_task(incident, rungs[0]))
@@ -150,7 +152,8 @@ def run(args: argparse.Namespace) -> int:
         return EXIT_USAGE
     incident = load_incident(args.incident)
     start = datetime.now(UTC)
-    rungs = _ladder(incident, args.rotation, start)
+    shifts = load_rotation(args.rotation)
+    rungs = _ladder(incident, shifts, start)
     emit(*report.header_lines(incident, rungs, start))
 
     total = len(rungs)
@@ -176,6 +179,7 @@ def run(args: argparse.Namespace) -> int:
             log=lambda line: emit(report.progress_line(line)),
             watch=watch,
             announce=announce,
+            resolve=lambda scope: on_call_for(scope, shifts, datetime.now(UTC)),
         )
         emit(*report.verdict_lines(result))
         append_record(args.ledger, verdict_record(incident.id, result))

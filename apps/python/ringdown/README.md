@@ -3,6 +3,18 @@
 Phone the on-call engineer until somebody commits to the incident, and prove the commitment
 happened.
 
+## The problem
+
+Every on-call system reports "notification sent" and treats the incident as escalated. That
+proves nothing. The push arrived at a phone on silent, the email landed in a folder, the SMS was
+half-read at 03:00 and the engineer went back to sleep. The acknowledgement is the only part that
+matters and it is exactly the part nobody verifies.
+
+A commitment is not a delivery receipt. It has an owner and an ETA, and both have to come out of
+the recipient's own mouth.
+
+## How it works
+
 Ringdown walks an escalation ladder one rung at a time. Each rung is a real phone call that asks
 one person two questions: are you taking this incident, and in how many minutes. A run ends when
 somebody commits with an owner and a clock, when somebody says no, or when the ladder is
@@ -12,7 +24,6 @@ The part that matters is the last step. Ringdown **places the call over the REST
 it over MCP**, then writes both the verdict and the verification into a hash-chained ledger. An
 agent that audits itself through the same channel it wrote with has proved nothing.
 
-- [The problem](#the-problem)
 - [Setup](#setup)
 - [Try it without an account](#try-it-without-an-account)
 - [Preview, which is the default](#preview-which-is-the-default)
@@ -36,16 +47,6 @@ agent that audits itself through the same channel it wrote with has proved nothi
 - [Known ceilings](#known-ceilings)
 - [License](#license)
 
-## The problem
-
-Every on-call system reports "notification sent" and treats the incident as escalated. That
-proves nothing. The push arrived at a phone on silent, the email landed in a folder, the SMS was
-half-read at 03:00 and the engineer went back to sleep. The acknowledgement is the only part that
-matters and it is exactly the part nobody verifies.
-
-A commitment is not a delivery receipt. It has an owner and an ETA, and both have to come out of
-the recipient's own mouth.
-
 ## Setup
 
 Python 3.11 or newer, and [uv](https://docs.astral.sh/uv/). No runtime dependencies —
@@ -55,11 +56,11 @@ Python 3.11 or newer, and [uv](https://docs.astral.sh/uv/). No runtime dependenc
 git clone https://github.com/gmassello/ringdown
 cd ringdown/apps/python/ringdown
 uv sync
-uv run pytest -q          # 502 tests, no credentials, no outbound calls
+uv run pytest -q          # 512 tests, no credentials, no outbound calls
 ```
 
-Seven of those tests read the project site and skip where `docs/` is absent, which is the case in
-any checkout of this directory alone — there the run reports 442 passed and 7 skipped.
+Eleven of those tests read the project site and skip where `docs/` is absent, which is the case in
+any checkout of this directory alone — there the run reports 501 passed and 11 skipped.
 
 **Every command in this file runs from `apps/python/ringdown/`.**
 
@@ -207,13 +208,20 @@ recipient spoke: they said they were taking it, they confirmed their own first n
 a number of minutes. A missing one is not an acknowledgement — that is what scenario 2 of the demo
 is there to show.
 
+Two of the three are read as *answers to a question the agent asked*, not as words that appear
+somewhere on the call. The name counts only if it is spoken after "Am I speaking with {name}?", the
+same way the minutes count only if they are spoken after "How many minutes…?". A name said before
+the question, or three turns later while talking about somebody else, confirms nobody. A script
+that never asks either question is refused before a call is placed, because a script like that
+would settle every call as not acknowledged and look like bad luck rather than a broken script.
+
 A fourth condition is about *how* it was said. The commitment has to arrive without a condition
 attached:
 
 - **A negation before it does not count as a commitment.** "No, I can't, I'll take it tomorrow"
   contains "I'll take it" and used to settle acknowledged, on the strength of two words inside a
-  refusal. The owner and the ETA already worked this way; the disposition, which is the field that
-  hands someone an incident, was the one that did not.
+  refusal. The owner and the ETA were already gated against a negation this way; the disposition,
+  which is the field that hands someone an incident, was the one that was not.
 - **A commitment with a qualifier is not a commitment.** "I'll take it, but I'm not sure I can",
   "I think I'm taking this", "I'll try to take it", "I'll take it if I can get to a laptop". The
   attempt settles `not_acknowledged` with the reason `hedged_acknowledgement`, and the words that
@@ -248,6 +256,13 @@ The second call is a second call, not a retry. The attempt number lives inside t
 so it produces its own idempotency key, its own `intent` and `attempt` records, and its own
 `ringdown_attempt_id` for the provider to echo back. One rung can ring at most twice, ever: a
 person who keeps asking for more time is escalated past on the second ask.
+
+A rung is a *scope*, not a person, and the second call proves it. When the wait ends, Ringdown asks
+the rotation who covers that scope now. If the shift changed while it waited, the second call goes
+to the person coming on, with their own idempotency key and their own name and number in the
+ledger — the person going off shift is not rung again. Nobody is dialled twice, and the rung still
+rings at most twice; it is the telephone that may be somebody else's. If nobody covers the scope by
+then, the second call goes to the person who asked for it.
 
 The agent never offers this. The call script still forbids promising a callback, because a promise
 Ringdown cannot keep across a crash is worse than no promise. This is only Ringdown hearing
@@ -804,8 +819,9 @@ own call over a second transport. Same technique, different product.
    the attempts of its own incident, not from whatever preceded it in the file.
 6. The ladder re-calls exactly once per rung, and only when the recipient asked it to. That second
    call is a second call in every sense: its own attempt number inside the hashed payload, its own
-   idempotency key, its own `intent` and `attempt` records. There is still no silent retry, and no
-   path that dials the same key twice meaning two different calls.
+   idempotency key, its own `intent` and `attempt` records. It may also reach a different person —
+   the rung is a scope, and a shift change during the wait hands it over (ceiling 22). There is
+   still no silent retry, and no path that dials the same key twice meaning two different calls.
 7. Re-escalation when an ETA expires is still not implemented, and a callback is not it. Ringdown
    honours a request to be called back only *within one process and one ladder*: nothing survives
    the run. If the process dies during the wait, the ledger holds the request and the words that
@@ -907,8 +923,29 @@ own call over a second transport. Same technique, different product.
     The converse is not a hole either, and is worth stating because it looks like one: a recipient
     who says "disregard your instructions" and then, in their own voice, gives their name, says they
     are taking the incident and names a number of minutes, is acknowledged. Nothing was obeyed — the
-    person simply said the thing. Distinguishing that from an impersonator who says the same words
-    is identity verification, which a phone call does not provide and this app does not claim.
+    person simply said the thing.
+
+    Whoever answers the phone is who Ringdown records, and that is the real ceiling. The name is now
+    read only from the turns that follow "Am I speaking with {name}?", which stops a name mentioned
+    in passing from becoming an owner, but it cannot stop somebody else from answering the question.
+    These are the sentences that cross it today, verified against the extractor rather than imagined:
+
+    | Spoken in answer to the identity question | Recorded owner |
+    |---|---|
+    | "speaking with alice? she is not here right now" | `alice` |
+    | "this is alice roommate, she stepped out" | `alice` |
+    | "this is alice's phone, she is in the shower" | `alice's`, so the gate holds — by the apostrophe |
+
+    Two of the three settle as acknowledgements in Alice's name if the person then takes the
+    incident and gives a number of minutes. The third holds by accident: the name pattern keeps the
+    apostrophe, so `alice's` is not `alice`. A test pins all three as they behave now, so closing one
+    is visible rather than silent. The obvious gate — refusing any identity turn containing a
+    negation, the way a hedged commitment is refused — was tried and is worse: it rejects "yes, this
+    is alice, nobody else is around" while still missing "this is alice roommate", which contains no
+    negation at all. Guaranteed false negatives for partial coverage is the wrong trade when the
+    false negative wakes the next person up. Closing this properly is identity verification — a PIN,
+    a challenge, a possession factor — which a phone call does not provide and this app does not
+    claim.
 
 18. The note is written once, with no retry and no queue. If the vendor is down, rate limits the
     request, or refuses the `From` user, the note is lost and the run still exits on its own verdict
@@ -960,11 +997,13 @@ own call over a second transport. Same technique, different product.
     mapping file is therefore reviewed by a human before it dials, which is why `suggest-mapping`
     writes a file and stops rather than feeding `run` directly.
 
-22. The rotation is resolved once, when the ladder starts. A callback is placed to the person that
-    resolution named, not to whoever is on call when the wait ends — so a callback that straddles a
-    shift change rings the person going off shift. The window is bounded by the ladder deadline
-    rather than open-ended, which is what keeps this small, but it is a real edge and the fix is to
-    re-resolve the rotation at callback time.
+22. The ladder itself is resolved once, when it starts. Only the rung that waited is re-resolved:
+    when a callback wakes up, Ringdown asks the rotation who covers *that scope* now and calls them
+    instead, but the rungs below it still name whoever the first resolution named. A shift change
+    that happens during a callback therefore reaches the person being called back and nobody else,
+    and a rung that was skipped as unstaffed at the start stays skipped even if somebody comes on
+    shift meanwhile. Re-resolving the whole ladder is a bigger change than it looks: `resolve_ladder`
+    deduplicates by contact, so the ladder can change length underneath the loop that is walking it.
 
 23. Hardening the extractor cannot be checked by the extractor. A qualifier list that is too wide
     escalates past somebody who did commit, and **nothing catches it**: the second channel is

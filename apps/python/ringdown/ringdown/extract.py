@@ -91,6 +91,7 @@ TENS = {"twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60}
 
 MINUTES = r"(?:minutes?|mins?)"
 ETA_QUESTION = re.compile(rf"how many {MINUTES}\b")
+IDENTITY_QUESTION = re.compile(r"\bam i speaking with\b")
 DIGIT_ETA = re.compile(rf"(\d{{1,3}})\s*{MINUTES}\b")
 WORD_ETA = re.compile(
     rf"\b({'|'.join([*TENS, *UNITS])})(?:[\s\-]+({'|'.join(UNITS)}))?\s*{MINUTES}\b"
@@ -183,15 +184,19 @@ def _minutes_in_normalised(lowered: str) -> int | None:
     return None
 
 
-def find_eta(turns: Sequence[Turn]) -> tuple[int | None, str]:
-    asked = max(
+def _asked(turns: Sequence[Turn], question: re.Pattern[str]) -> int | None:
+    return max(
         (
             index
             for index, turn in enumerate(turns)
-            if turn.speaker == "bot" and ETA_QUESTION.search(normalise(turn.text))
+            if turn.speaker == "bot" and question.search(normalise(turn.text))
         ),
         default=None,
     )
+
+
+def find_eta(turns: Sequence[Turn]) -> tuple[int | None, str]:
+    asked = _asked(turns, ETA_QUESTION)
     if asked is None:
         return None, ""
     for turn, text in _spoken(turns[asked + 1 :]):
@@ -225,8 +230,11 @@ def find_callback(spoken: Sequence[tuple[Turn, str]]) -> tuple[int | None, str]:
     return None, ""
 
 
-def find_owner(spoken: Sequence[tuple[Turn, str]]) -> tuple[str, str]:
-    for turn, text in spoken:
+def find_owner(turns: Sequence[Turn]) -> tuple[str, str]:
+    asked = _asked(turns, IDENTITY_QUESTION)
+    if asked is None:
+        return "", ""
+    for turn, text in _spoken(turns[asked + 1 :]):
         for pattern in OWNER:
             found = pattern.search(text)
             if found and not NEGATION.search(text[: found.start()]):
@@ -236,7 +244,7 @@ def find_owner(spoken: Sequence[tuple[Turn, str]]) -> tuple[str, str]:
 
 def extract(turns: Sequence[Turn]) -> Extraction:
     spoken = _spoken(turns)
-    owner, owner_span = find_owner(spoken)
+    owner, owner_span = find_owner(turns)
     eta_minutes, eta_span = find_eta(turns)
 
     for phrases, disposition in (
