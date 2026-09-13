@@ -40,7 +40,7 @@ one that never placed the call and has no reason to agree. What comes out the en
 </p>
 
 <p align="center">
-  <a href="https://youtu.be/tt7WPVJ0cJk"><b>▶ Watch the demo</b></a> (2:58) ·
+  <a href="https://youtu.be/cZg4hbkCVMA"><b>▶ Watch the demo</b></a> (2:55) ·
   <a href="apps/python/ringdown/README.md"><b>Operational manual</b></a> ·
   <a href="apps/python/ringdown/demo/EXPECTED.md"><b>Demo output</b></a> ·
   <a href="apps/python/ringdown/examples/ledger.example.jsonl"><b>A real ledger</b></a>
