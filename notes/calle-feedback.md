@@ -1,12 +1,15 @@
 # Feedback for the CALL-E team
 
-Eight findings from building Ringdown, an on-call escalation agent that places calls over REST and
+Eleven findings from building Ringdown, an on-call escalation agent that places calls over REST and
 audits them over MCP. Every item below was observed against the live API and the live MCP endpoint
-with a real account, and the first four come from **six real calls placed on 2026-08-20** to a US
-number that bridges to an unsupported region. Nothing here is speculative, and none of it was found
+with a real account, and they come from **nine real calls**: six placed on 2026-08-20 to a US
+number that bridges to an unsupported region, and three more placed to the same number on
+2026-09-13 to see what had changed. Nothing here is speculative, and none of it was found
 by reading the docs alone.
 
-Ordered by how much they cost us.
+Findings 1 to 8 are ordered by how much they cost us. Findings 9 to 11 come from the September
+session and are kept together at the end rather than renumbered into that order, so the evidence
+links above keep pointing at what they always pointed at.
 
 Six findings carry a stored response, so the shape can be read rather than taken on trust. Each one
 lives in [`tests/fixtures/`](https://github.com/gmassello/ringdown/blob/main/apps/python/ringdown/tests/fixtures) with its own `what` / `source` / `unobserved` / `why_it_matters`,
@@ -59,6 +62,13 @@ enough to stop reporting your outage as the engineer's refusal, and it is not en
 recipient who answers and hangs up within the same second is indistinguishable, and we are reading
 two timestamps whose equality you have never documented as meaning anything. One field from you
 replaces all of it.
+
+**Re-tested on 2026-09-13: three calls, none of them dropped.** All three rang, were answered, and
+ran 45 to 67 seconds end to end. We are not claiming the problem is fixed from a sample of three —
+at August's rate the odds of three clean calls are about one in twenty-eight — but we are not going
+to claim it is still happening when we did not see it. What the re-test does not change is the
+correctness half: the payload still exposes no way to tell an infrastructure drop from a refusal, so
+the ask for a distinct `failure_code` stands on the shape of the data, not on how often it fires.
 
 ## 2. MCP cannot read a call that REST placed, and now we have proof
 
@@ -127,6 +137,10 @@ happy path — send a create, read the id from the response — is not the path 
 actually take. Either the create should return promptly with a queued id, or the expected latency
 belongs in the docs next to a recommended timeout.
 
+**Re-tested on 2026-09-13: three creates, three timeouts.** That is **eight of eight** across two
+sessions three weeks apart. This is not a bad afternoon, it is the behaviour. Every one of the eight
+had in fact created the call, and every one was recovered by replaying the idempotency key.
+
 ## 5. The OpenAPI spec and the live API disagree about `result_schema`
 
 `CreateCallRequest` in `calle.openapi.yaml` v0.6.0 documents `result_schema` and
@@ -193,6 +207,71 @@ Two smaller notes on the same surface: the refusal arrives twice, once as a usef
 once as the bare string `Region is not allowed for this channel`, and it arrives as a
 `clarifying_question` — a shape that invites the caller to answer, when the correct handling is to
 stop.
+
+## 9. The agent does not wait for an answer it was told to wait for
+
+Step 2 of the task we send says, in these words: *"Ask, in these words: 'Am I speaking with {name}?'
+Do not describe the incident until they have answered that question."* On the third call of
+2026-09-13 the agent asked the question and read the incident straight through it, without a pause,
+before the recipient had said anything:
+
+```
+bot   This is an automated on-call page from Ringdown,
+user  Hi.
+bot   and this call is recorded. Am I speaking with German Massello?
+bot   There is a sev2 incident on checkout-api: checkout p99 latency above 3s.
+```
+
+The recipient reported afterwards that the opening never reached him — the first audio he heard was
+the incident description. So two things went wrong at once, and only one of them is visible in the
+transcript: the agent did not honour an explicit ordering constraint, and the first seconds of
+outbound audio did not arrive.
+
+For a paging agent that is the difference between a confidential incident read to the right person
+and one read to whoever picked up the phone. An instruction to wait for an answer before continuing
+is the whole of an identity check, and a task language that accepts such an instruction without
+enforcing it is worse than one that refuses it, because the integrator believes they have a gate.
+Either enforce ordering constraints in the task, or document that they are advisory so we can build
+the gate ourselves.
+
+## 10. Non-English speech comes back as English phonetics, and the call language is not selectable
+
+On that same call the recipient answered in Spanish. This is what the transcript recorded:
+
+| Spoken | Transcribed |
+| --- | --- |
+| "Sí, soy German" | `C is not a` |
+| "Sí, lo tomo yo" | `C, the Thomas` |
+
+Not a low-confidence guess and not an empty turn — confident English words, on a call your own
+`completion_confidence` labelled `high` at 0.9. The agent asked twice for clarification and the
+recipient gave up and switched to English, which is the only reason the call produced anything.
+
+`CreateCallRequest` exposes no language or locale parameter, so there is no way to tell you the
+recipient speaks Spanish even when the rotation says so in advance. Meanwhile `plan_call` refuses
+destinations by *region and language pair* — "The recognized destination is Argentina in English,
+which is not currently supported" (finding 8) — so the concept exists on your side and simply is not
+reachable from create. A language on the create request, or transcript turns marked when they could
+not be confidently placed in the expected language, would both work. Today the failure is silent and
+reads as the recipient talking nonsense.
+
+## 11. The agent told the recipient it recorded an acknowledgement, and the API told us it had not
+
+The close of that same call:
+
+```
+bot   I'll record that you acknowledged taking the incident and have 16 minutes until you're working it.
+bot   Bye.
+```
+
+The call came back `status: completed` with **`task_completed: false`**. We fail closed on that flag,
+which is the right thing for us to do and meant the incident was correctly reported as having no
+owner. But the person on the phone had been told the opposite, in your agent's own voice, and hung
+up believing they were on the hook.
+
+Whatever decides `task_completed` should also decide what the agent says at the close, or the agent
+should not make claims about what was recorded. An engineer who believes they acknowledged and a
+system that believes nobody did is the precise failure an escalation tool exists to prevent.
 
 ---
 

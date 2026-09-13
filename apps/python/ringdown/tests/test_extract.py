@@ -143,6 +143,33 @@ def test_a_negated_name_is_not_taken_as_a_confirmed_owner():
     assert extract(identified("yes, this is alice")).owner_confirmed == "alice"
 
 
+@pytest.mark.parametrize(
+    "spoken, confirmed",
+    [
+        ("yes, i am alice", "alice"),
+        ("i'm alice", "alice"),
+        ("yes, i am alice okafor", "alice"),
+        ("hi. yes. i am.", ""),
+        ("no, i am not alice", ""),
+    ],
+)
+def test_the_identity_answer_may_carry_the_name_without_saying_this_is(spoken, confirmed):
+    assert extract(identified(spoken)).owner_confirmed == confirmed
+
+
+def test_a_commitment_spoken_after_the_identity_answer_is_not_read_as_a_name():
+    assert extract(identified("hello?", "yes, i'm on it.")).owner_confirmed == ""
+
+
+def test_a_commitment_that_is_itself_the_identity_answer_is_a_known_ceiling():
+    assert extract(identified("yes, i'm on it.")).owner_confirmed == "on"
+
+
+def test_a_filler_turn_before_the_name_costs_only_the_phrasings_that_need_the_answer():
+    assert extract(identified("hi.", "yes, i am alice.")).owner_confirmed == ""
+    assert extract(identified("hi.", "yes, this is alice.")).owner_confirmed == "alice"
+
+
 def test_a_name_spoken_before_the_identity_was_asked_for_is_not_an_owner():
     result = extract((*said("this is alice"), BOT_ASK_IDENTITY))
 

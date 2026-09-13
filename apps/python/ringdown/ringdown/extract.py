@@ -117,10 +117,14 @@ CALLBACK = (
     "llama de nuevo",
 )
 
+NAME = r"[a-z][a-z'\-]+"
+
 OWNER = (
-    re.compile(r"\b(?:this is|speaking with|soy|habla) ([a-z][a-z'\-]+)"),
-    re.compile(r"\b([a-z][a-z'\-]+) speaking\b"),
+    re.compile(rf"\b(?:this is|speaking with|soy|habla) ({NAME})"),
+    re.compile(rf"\b({NAME}) speaking\b"),
 )
+
+ANSWERED_OWNER = re.compile(rf"\b(?:i am|i'm) ({NAME})(?:\s+{NAME})?\s*(?:[.,!?]|$)")
 
 UNITS = {
     "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
@@ -300,8 +304,8 @@ def find_owner(turns: Sequence[Turn]) -> tuple[str, str]:
     asked = _asked(turns, IDENTITY_QUESTION)
     if asked is None:
         return "", ""
-    for turn, text in _spoken(turns[asked + 1 :]):
-        for pattern in OWNER:
+    for index, (turn, text) in enumerate(_spoken(turns[asked + 1 :])):
+        for pattern in (*OWNER, ANSWERED_OWNER) if index == 0 else OWNER:
             found = pattern.search(text)
             if found and not NEGATION.search(text[: found.start()]):
                 return found.group(1), turn.text

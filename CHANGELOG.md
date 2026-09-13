@@ -10,6 +10,21 @@ Both packages are versioned together at `0.1.0`.
 
 ### Added
 
+- **The identity answer may carry the name without saying "this is".** A live call on 2026-09-13
+  asked "Am I speaking with German Massello?" and was answered "Hi. Yes. I am." — the ordinary
+  English answer. The recipient then took the incident and gave fifteen minutes, and the attempt
+  settled `not_acknowledged` with the reason `owner_not_confirmed`, because the owner table only
+  read "this is {name}", "{name} speaking", "soy {name}" and "habla {name}". "I am {name}" and
+  "I'm {name}" are now read too: the name comes out of the recipient's own mouth, so the grounding
+  is exactly the one the other four already satisfy, and it was missing rather than excluded. The
+  new phrasing is read only from the first recipient turn after the identity question, which narrows
+  that pattern's reach without closing it: "yes, I'm on it." still yields an owner called `on` when
+  it is itself that turn, and a test pins that rather than hiding it. Nothing hangs on the junk
+  capture — the token is compared against the roster's first name, so it settles
+  `owner_not_confirmed` either way. Assent with no name in it
+  ("yes, I am", "speaking") still confirms nobody: the only name spoken on that call is the agent's,
+  and a recorded field has to be quoted from the recipient. Ceiling 17 records both halves.
+
 - **`zero_duration`**, a reason for the call the provider ends in the second it starts. Four of the
   six calls placed against the live API on 2026-08-20 ended that way, with nothing transcribed and
   `failure_message` reading `Hangup by: user`, while the carrier that owns the destination number

@@ -56,7 +56,7 @@ Python 3.11 or newer, and [uv](https://docs.astral.sh/uv/). No runtime dependenc
 git clone https://github.com/gmassello/ringdown
 cd ringdown/apps/python/ringdown
 uv sync
-uv run pytest -q          # 581 tests, no credentials, no outbound calls
+uv run pytest -q          # 589 tests, no credentials, no outbound calls
 ```
 
 Eleven of those tests read the project site and skip where `docs/` is absent, which is the case in
@@ -211,7 +211,10 @@ is there to show.
 Two of the three are read as *answers to a question the agent asked*, not as words that appear
 somewhere on the call. The name counts only if it is spoken after "Am I speaking with {name}?", the
 same way the minutes count only if they are spoken after "How many minutes…?". A name said before
-the question, or three turns later while talking about somebody else, confirms nobody. A script
+the question, or three turns later while talking about somebody else, confirms nobody. The answer
+may carry the name in any of four shapes — "this is Alice", "Alice speaking", "I am Alice", "soy
+Alice" — but it has to carry it: "yes, I am" confirms nobody, because the only name on that call was
+spoken by the agent. A script
 that never asks either question is refused before a call is placed, because a script like that
 would settle every call as not acknowledged and look like bad luck rather than a broken script.
 
@@ -868,6 +871,14 @@ own call over a second transport. Same technique, different product.
     language is the same work again — the tables, the two questions `task.py` requires of a script,
     the three injection families — and the tables can only take phrases of two words or more, since
     a single short word matches inside unrelated speech in the other language.
+
+    A live call on 2026-09-13 found the ceiling under that ceiling: through this provider the
+    Spanish tables cannot be reached at all. A recipient answering *"Sí, soy German"* and *"Sí, lo
+    tomo yo"* was transcribed as `C is not a` and `C, the Thomas` — confident English words, on a
+    call the provider labelled `high` at 0.9 — and the create request exposes no language or locale
+    to tell it otherwise. So Spanish is proven against the fake and against fixtures, and live it
+    depends on a transcription that does not arrive. Scenario 8 of the demo is honest about what the
+    extractor does with a Spanish transcript; it cannot promise that this provider will produce one.
 11. The chain proves internal consistency, not completeness, and it proves nothing against an
     adversary. It is unkeyed and anchored to nothing outside the file: cutting records off the end
     leaves a file that verifies, and so does renumbering and resealing the whole chain. The
@@ -996,6 +1007,39 @@ own call over a second transport. Same technique, different product.
     false negative wakes the next person up. Closing this properly is identity verification — a PIN,
     a challenge, a possession factor — which a phone call does not provide and this app does not
     claim.
+
+    The mirror of that hole is a false negative, and a live call on 2026-09-13 walked straight into
+    it. Asked "Am I speaking with German Massello?", the recipient answered *"Hi. Yes. I am."* — the
+    ordinary English answer — then took the incident and gave fifteen minutes, and the attempt
+    settled `not_acknowledged` with the reason `owner_not_confirmed`. The extractor now also reads
+    the name out of "I am {name}" and "I'm {name}" when they answer that question: that phrasing is
+    grounded exactly as well as "this is {name}" and was simply missing from the table.
+
+    That new phrasing is read only from the first recipient turn after the question, and the scope is
+    worth describing precisely, because it narrows the exposure rather than closing it. "I am" is the
+    start of a great many sentences that are not an introduction, and "yes, I'm on it." yields an
+    owner called `on` when it *is* that first turn — a test pins exactly that, rather than a fixture
+    hiding it behind a filler turn. Nothing hangs on it: `owner_matches` compares the token against
+    the roster's first name, so a capture like `on` settles `owner_not_confirmed` the same as no
+    capture at all, and what it costs is an `owner` span in the ledger quoting a turn that named
+    nobody. The scope is also the reason a hostile transcript cannot multiply the pattern's cost by
+    its turn count. Two consequences to know: a filler turn — the provider really does emit a bare
+    "Hi." of its own accord — burns the window, and the four older patterns still run on every turn
+    after the question, so the scope can only fail to add a name, never take one away. And the
+    clause-end anchor assumes the provider punctuates its turns, which is true of all nine calls
+    captured so far and is a property of its transcriber rather than of speech.
+
+    The exit from all of it is to stop discovering an unknown name and match the known one: the
+    roster already holds the first name the gate compares against, so `find_owner` could take it and
+    match `(?:this is|I am|I'm|soy|habla) {first}` directly. That drops the anchor, the scope and
+    every junk capture in one move, and it costs a ledger schema version, because it changes what a
+    recorded `owner_confirmed` means — which is why it is the next entry rather than this one.
+
+    Assent carrying no name — "yes, I am", "speaking", "that's me" — still confirms nobody, and that
+    is the gate working rather than failing: the only name spoken on such a call is the agent's, and
+    a field Ringdown records has to be quoted from the recipient. The cost is real and worth stating
+    plainly, because `video/live/preflight.sh` has always told the operator to answer *"Yes, this is
+    {name}"* — a demo that works partly because the human was coached into an accepted phrasing.
 
 18. The note is written once, with no retry and no queue. If the vendor is down, rate limits the
     request, or refuses the `From` user, the note is lost and the run still exits on its own verdict
