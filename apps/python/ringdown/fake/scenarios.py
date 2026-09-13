@@ -135,6 +135,18 @@ def injected_voicemail(name: str) -> FakeScenario:
     return replace(base, turns=base.turns + [injection])
 
 
+def dropped_before_ringing(turns: list[dict] | None = None) -> FakeScenario:
+    return FakeScenario(
+        task_completed=False,
+        failure_code="call_failed",
+        confidence_score=0.72,
+        confidence_label="medium",
+        timeline=("queued", "failed"),
+        turns=turns or [],
+        duration_seconds=0,
+    )
+
+
 def queued_forever() -> FakeScenario:
     return FakeScenario(timeline=("queued",))
 

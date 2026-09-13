@@ -61,6 +61,8 @@ def classify(
     contact: Contact,
     policy: Policy,
 ) -> Assessment:
+    if snapshot.duration_seconds == 0 and not snapshot.turns:
+        return Assessment("not_acknowledged", "zero_duration")
     if snapshot.status != "completed":
         return Assessment("not_acknowledged", snapshot.failure_code or snapshot.status)
     if not confident(snapshot, policy):

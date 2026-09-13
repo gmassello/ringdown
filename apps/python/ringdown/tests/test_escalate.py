@@ -6,6 +6,7 @@ import pytest
 
 from fake import scenarios
 from ringdown.calls import snapshot_from
+from ringdown.report import verdict_lines
 from ringdown.escalate import Attempt, place_and_settle, run_ladder
 from ringdown.report import unknown_lines
 from ringdown.script import attempt_id
@@ -47,6 +48,28 @@ def test_a_ladder_settles_on_an_engineer_who_answers_in_spanish(serving, rest_cl
     assert result.attempts[0].reason == "hedged_acknowledgement"
     assert result.attempts[1].extraction.eta_minutes == 20
     assert result.attempts[1].extraction.disposition_span == "sí, lo tomo yo"
+
+
+def test_a_ladder_the_provider_never_dialled_still_walks_every_rung(serving, rest_client):
+    server = serving({ALICE.phone: scenarios.dropped_before_ringing(),
+                      BEN.phone: scenarios.dropped_before_ringing(),
+                      CARLA.phone: scenarios.dropped_before_ringing()})
+
+    result = run_ladder(rest_client(server), an_incident(policy=FAST), LADDER)
+
+    assert result.verdict == "unacknowledged"
+    assert [a.reason for a in result.attempts] == ["zero_duration"] * 3
+
+
+def test_a_ladder_says_how_many_calls_never_rang_even_when_only_some_did_not(serving, rest_client):
+    server = serving({ALICE.phone: scenarios.dropped_before_ringing(),
+                      BEN.phone: scenarios.no_answer(),
+                      CARLA.phone: scenarios.dropped_before_ringing()})
+
+    result = run_ladder(rest_client(server), an_incident(policy=FAST), LADDER)
+
+    assert [a.reason for a in result.attempts] == ["zero_duration", "no_answer", "zero_duration"]
+    assert "2 of 3 calls ended before they could ring" in "\n".join(verdict_lines(result))
 
 
 def test_an_ambiguous_yes_without_an_eta_does_not_acknowledge(serving, rest_client):

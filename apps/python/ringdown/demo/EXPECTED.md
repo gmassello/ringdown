@@ -423,6 +423,45 @@ verdict acknowledged  owner b.mensah  eta 20 minutes
 
 ---
 
+## Scenario 9 — The provider ends every call before it rings
+
+This is the shape the live API produced four times out of six on 2026-08-20: an attempt that began
+and ended in the same second, nothing transcribed, reported as the recipient hanging up. The Twilio
+account that owns the destination number had no record of any of them, so nobody hung up — the call
+never reached the network.
+
+The ladder walks every rung and is exhausted without a single telephone ringing. What changes is what
+it says at the end. `zero_duration` is named for what the payload shows rather than for what it
+suggests, because a recipient who answered and hung up inside the same second would look identical
+from here; ceiling 16 carries that distinction in full.
+
+```text
+[1/3] primary  Alice Okafor  +1********00
+      idempotency key rd-inc-2026-08-09-0113-primary-1-fa4c8e3b3de0
+      call call_fake1  status failed  failure call_failed
+      not acknowledged (zero_duration)  the attempt began and ended in the same second with nothing transcribed,
+                                        which is the shape of a call that never reached the network. The provider
+                                        reports it as the recipient hanging up; from here that cannot be told apart
+
+[2/3] secondary  Ben Mensah  +1********01
+      idempotency key rd-inc-2026-08-09-0113-secondary-1-fcff0fabef7e
+      call call_fake2  status failed  failure call_failed
+      not acknowledged (zero_duration)  the attempt began and ended in the same second with nothing transcribed,
+                                        which is the shape of a call that never reached the network. The provider
+                                        reports it as the recipient hanging up; from here that cannot be told apart
+
+[3/3] incident_commander  Carla Varga  +1********02
+      idempotency key rd-inc-2026-08-09-0113-incident-commander-1-3a6a6996349d
+      call call_fake3  status failed  failure call_failed
+      not acknowledged (zero_duration)  the attempt began and ended in the same second with nothing transcribed,
+                                        which is the shape of a call that never reached the network. The provider
+                                        reports it as the recipient hanging up; from here that cannot be told apart
+
+verdict unacknowledged  3 of 3 calls ended before they could ring, the ladder is exhausted and this incident has no owner
+```
+
+---
+
 ## The ledger check the demo runs last
 
 Scenario 3 writes its ledger to `examples/ledger.example.jsonl`, and that file is committed

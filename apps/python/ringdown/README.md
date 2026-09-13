@@ -56,7 +56,7 @@ Python 3.11 or newer, and [uv](https://docs.astral.sh/uv/). No runtime dependenc
 git clone https://github.com/gmassello/ringdown
 cd ringdown/apps/python/ringdown
 uv sync
-uv run pytest -q          # 568 tests, no credentials, no outbound calls
+uv run pytest -q          # 581 tests, no credentials, no outbound calls
 ```
 
 Eleven of those tests read the project site and skip where `docs/` is absent, which is the case in
@@ -80,7 +80,7 @@ Locally, the demo needs no account either:
 uv run python -m demo.run_local
 ```
 
-Nine scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
+Ten scenarios against a fake CALL-E on `127.0.0.1`. No account, no network beyond loopback,
 nothing rings — the demo supplies its own throwaway key. `python -m demo.audio` renders the first
 three of them as audio next to the transcript that produced it, writing to `demo/out/audio` unless
 `--out` says otherwise; it needs `say` and `ffmpeg`, which is why it is a separate command and not
@@ -922,7 +922,7 @@ own call over a second transport. Same technique, different product.
     supported set at load time is a preflight this app does not do.
 15. Almost every artefact in this repository was produced with one channel wearing two names.
     The demo points both flags at a single `FakeCalleServer` — same process, same port, one
-    transcript in memory — so the nine scenarios, the committed ledger and most of the suite
+    transcript in memory — so the ten scenarios, the committed ledger and most of the suite
     verify against the server that placed the call. Ringdown refuses that collision off
     loopback, announces it on loopback and records both hostnames either way, so the gap is
     visible rather than hidden. The exception is now real: [`tests/fixtures/`](tests/fixtures/)
@@ -938,9 +938,26 @@ own call over a second transport. Same technique, different product.
     user)`. The Twilio account that owns the destination number has no record of any of them, so
     nobody hung up: the call never reached the destination network. It is not tied to a surface —
     a call placed over MCP connected between two REST failures, and a REST call connected between
-    two others — and Ringdown cannot tell the difference from a real decline except by the empty
-    transcript. A ladder run against this provider should expect to be exhausted by infrastructure
-    rather than by people, and `failure_code` is the only honest signal for it.
+    two others. Ringdown now records the shape rather than the category: the snapshot carries the
+    attempt's measured duration, and a call that took no time at all and transcribed nothing settles
+    `not_acknowledged` with the reason **`zero_duration`**, whatever status the provider puts on it.
+    The run then says how many of its calls ended that way beside the verdict, so a ladder that was
+    exhausted without a telephone ringing does not read as one where nobody was willing.
+
+    What it does *not* do is act on the distinction. The ladder still places one call per rung and
+    moves on, because the promise that nobody is dialled twice rests on not being able to know the
+    call did not happen — the provider says it did. Whether to try that rung again is the operator's
+    call, and what changed is that they can now see which case they are in. The second channel
+    cannot help either: MCP serves no attempt timestamps, so `zero_duration` is corroborated by
+    nothing, which on this provider is the same wall as ceiling 12.
+
+    What it is not is proof. The reason is named for what the payload shows, not for what it
+    suggests: zero duration and an empty transcript are *consistent with* a call that never reached
+    the network, and what actually established that in August was the absence of any record on the
+    Twilio side, out of band. A recipient who answers and hangs up inside the same second would
+    produce the same shape. The provider still reports both as `Hangup by: user`, and a distinct
+    `failure_code` for "never connected" is the thing only they can give us — which is why the
+    feedback sent to them asks for exactly that.
 
 17. `instructed` is a heuristic, not a classifier. It matches three families of phrasing in the
     two languages the extractor reads — instruction override, role or system impersonation, and

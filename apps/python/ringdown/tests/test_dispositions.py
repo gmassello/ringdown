@@ -71,6 +71,47 @@ def test_an_ambiguous_yes_without_an_eta_does_not_acknowledge():
     assert judged.reason == "no_eta"
 
 
+def test_a_call_that_ended_before_it_rang_says_so_instead_of_blaming_the_recipient():
+    judged = judge(scenarios.dropped_before_ringing())
+
+    assert judged.verdict == "not_acknowledged"
+    assert judged.reason == "zero_duration"
+
+
+def test_a_call_the_provider_calls_completed_is_still_silent_if_it_took_no_time():
+    settled = {
+        "id": "call_1",
+        "status": "completed",
+        "task_completed": True,
+        "completion_confidence": {"score": 0.94, "label": "high"},
+        "recipients": [
+            {
+                "attempts": [
+                    {
+                        "started_at": "2026-08-20T00:30:03Z",
+                        "completed_at": "2026-08-20T00:30:03Z",
+                        "transcript_turns": [],
+                    }
+                ]
+            }
+        ],
+    }
+    snapshot = snapshot_from(settled)
+
+    judged = classify(*parts(snapshot), ALICE, POLICY)
+
+    assert judged.reason == "zero_duration"
+
+
+def test_a_call_that_ended_at_once_but_carries_words_is_not_reported_as_silent():
+    spoken = [turn("bot", scenarios.IDENTIFY.format(name=ALICE.name))]
+
+    judged = judge(scenarios.dropped_before_ringing(spoken))
+
+    assert judged.verdict == "not_acknowledged"
+    assert judged.reason == "call_failed"
+
+
 def test_a_high_label_with_a_low_score_is_not_confident():
     judged = judge(scenarios.low_confidence(ALICE.name))
 

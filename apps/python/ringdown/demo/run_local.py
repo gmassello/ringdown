@@ -141,6 +141,18 @@ SCENARIOS: list[tuple[str, str, Scenarios]] = [
             BEN: scenarios.answer_ack_es("Ben Mensah", "ben", "dame veinte minutos"),
         },
     ),
+    (
+        "Scenario 9 - The provider ends every call before it rings",
+        "Four of the six calls placed against the live API on 2026-08-20 ended in the second "
+        "they started, with nothing transcribed, reported as the recipient hanging up. The "
+        "carrier that owns the destination number had no record of any of them. This is that "
+        "shape: the ladder is exhausted without a single telephone ringing, and it says so.",
+        {
+            ALICE: scenarios.dropped_before_ringing(),
+            BEN: scenarios.dropped_before_ringing(),
+            CARLA: scenarios.dropped_before_ringing(),
+        },
+    ),
 ]
 
 

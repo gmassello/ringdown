@@ -52,6 +52,14 @@ one, never retry the other. The zero-second duration and the empty transcript ar
 that separate them, and neither is a documented contract. A distinct `failure_code` for "never
 connected" would fix it.
 
+We have since built the workaround, which is how we know how thin it is. Ringdown derives the signal
+itself — an attempt whose `started_at` and `completed_at` are the same second, with no transcript —
+and records that call under its own reason rather than folding it into a generic failure. It is
+enough to stop reporting your outage as the engineer's refusal, and it is not enough to be right: a
+recipient who answers and hangs up within the same second is indistinguishable, and we are reading
+two timestamps whose equality you have never documented as meaning anything. One field from you
+replaces all of it.
+
 ## 2. MCP cannot read a call that REST placed, and now we have proof
 
 This was in our earlier draft as a reading of the docs. It is now reproduced.

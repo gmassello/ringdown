@@ -10,6 +10,17 @@ Both packages are versioned together at `0.1.0`.
 
 ### Added
 
+- **`zero_duration`**, a reason for the call the provider ends in the second it starts. Four of the
+  six calls placed against the live API on 2026-08-20 ended that way, with nothing transcribed and
+  `failure_message` reading `Hangup by: user`, while the carrier that owns the destination number
+  had no record of them. `CallSnapshot` was dropping the two signals that show it, so those calls
+  reached the verdict as a generic failure, indistinguishable from nobody answering — and a ladder
+  exhausted that way reported that the incident had no owner, when no telephone had rung. The
+  snapshot now carries the attempt's measured `duration_seconds` — the evidence rather than a
+  conclusion drawn from it, and `None` where the provider gives no timestamps to measure — the
+  reason is recorded per attempt whatever status the provider puts on the call, and the run says how
+  many of its calls ended that way beside the verdict, so a mixed ladder is as legible as one that
+  failed all the way down. No verdict, exit code or ledger schema moves. Ceiling 16 rewritten around what the shape does and does not prove.
 - **Spanish.** The extractor's phrase tables carry Spanish beside English — commitments, declines,
   qualifiers, callbacks, voicemail greetings, wrong-number answers, the two questions a call script
   has to ask, spoken numbers, and the three injection families. `normalise` now folds accents, so

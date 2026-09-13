@@ -37,6 +37,8 @@ NOTHING_PLACED = (
 
 ADVICE = {EXIT_UNVERIFIED: MISMATCH_ADVICE, EXIT_UNRESOLVED: UNRESOLVED_ADVICE}
 
+SILENT_CALLS = "{silent} of {placed} calls ended before they could ring"
+
 LADDER_VERDICT_TAIL = {
     "unacknowledged": "the ladder is exhausted and this incident has no owner",
     "unknown": "call state could not be established",
@@ -104,6 +106,12 @@ def reason_prose(attempt: Attempt, policy: Policy) -> tuple[str, ...]:
         return (
             "the call completed and the provider was confident,",
             "and no number of minutes was committed to when asked",
+        )
+    if attempt.reason == "zero_duration":
+        return (
+            "the attempt began and ended in the same second with nothing transcribed,",
+            "which is the shape of a call that never reached the network. The provider",
+            "reports it as the recipient hanging up; from here that cannot be told apart",
         )
     return ()
 
@@ -185,6 +193,9 @@ def attempt_lines(attempt: Attempt, policy: Policy) -> list[str]:
 def verdict_lines(result: LadderResult) -> list[str]:
     last = result.deciding
     tail = LADDER_VERDICT_TAIL.get(result.verdict, "")
+    silent = sum(1 for attempt in result.attempts if attempt.reason == "zero_duration")
+    if silent:
+        tail = f"{SILENT_CALLS.format(silent=silent, placed=len(result.attempts))}, {tail}"
     if result.verdict == "acknowledged" and last is not None and last.extraction is not None:
         return [
             f"verdict acknowledged  owner {last.rung.contact.id}  "
