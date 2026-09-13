@@ -80,7 +80,7 @@
   <div style="background:var(--color-section);border-block:1px solid color-mix(in srgb, var(--color-text) 10%, transparent)">
     <div class="shell" style="padding-block:clamp(28px,4vw,44px);display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:clamp(20px,3vw,40px)">
       <div>
-        <div style="font-family:var(--font-heading);font-size:clamp(1.75rem,3.4vw,2.75rem);line-height:1;letter-spacing:-0.03em">512</div>
+        <div style="font-family:var(--font-heading);font-size:clamp(1.75rem,3.4vw,2.75rem);line-height:1;letter-spacing:-0.03em">589</div>
         <div style="font-size:0.8125rem;color:var(--color-neutral-300);margin-top:8px">tests, green in CI</div>
       </div>
       <div>
@@ -97,6 +97,28 @@
       </div>
       <div style="grid-column:1/-1">
         <span class="src src-strong">Source: <a href="https://github.com/gmassello/ringdown#readme" target="_blank" rel="noreferrer">README.md</a> badges and the <a href="https://github.com/gmassello/ringdown/blob/main/apps/python/ringdown/README.md#exit-codes" target="_blank" rel="noreferrer">exit-code table</a>.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="shell" style="padding-block:clamp(56px,8vw,110px)">
+    <div class="kicker" style="margin-bottom:clamp(20px,3vw,32px)">What Ringdown does</div>
+    <p style="font-size:clamp(1.0625rem,1.6vw,1.375rem);line-height:1.5;color:var(--color-neutral-300);max-width:62ch;text-wrap:pretty">Software breaks at three in the morning, and somebody has to wake up. Every on-call tool sends a push, an SMS or an email at that point and treats the sending as the job done. Ringdown places a phone call instead &mdash; a real one, to the person whose shift covers this moment.</p>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));gap:clamp(24px,4vw,48px);margin-top:clamp(36px,5vw,56px);align-items:start">
+      <div>
+        <div style="font-family:var(--font-heading);font-size:1.25rem;margin-bottom:10px">It asks two questions</div>
+        <p style="color:var(--color-neutral-400);max-width:40ch">Who is taking this, and in how many minutes. Nothing is written down until somebody answers out loud &mdash; a call that rings out leaves an intent and no acknowledgement.</p>
+      </div>
+      <div>
+        <div style="font-family:var(--font-heading);font-size:1.25rem;margin-bottom:10px">It needs all three answers</div>
+        <p style="color:var(--color-neutral-400);max-width:40ch">They confirmed their own name, they said they were taking it, and they named a number of minutes. Two out of three is not an acknowledgement, and the next person&rsquo;s phone rings. Spanish or English, the gates are the same.</p>
+      </div>
+      <div>
+        <div style="font-family:var(--font-heading);font-size:1.25rem;margin-bottom:10px">It keeps the evidence</div>
+        <p style="color:var(--color-neutral-400);max-width:40ch">Every recorded field is quoted from what the recipient actually said, sealed into a chain, and read back afterwards through a connection that never placed the call.</p>
+      </div>
+      <div style="grid-column:1/-1">
+        <span class="src src-strong">What comes out is not &ldquo;notification sent&rdquo;. It is a named human, a number of minutes, and the evidence for both &mdash; <a href="#run">watch a run</a>.</span>
       </div>
     </div>
   </div>
