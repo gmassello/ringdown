@@ -1,0 +1,15 @@
+# Criterios de juicio de CALL-E (call-e.devpost.com/rules, "Judging Criteria"), los cuatro
+# "equally weighted" -> 25 cada uno. Cada criterio se abre en senales observables cuya regex
+# se calibro contra el texto de las fichas de los cuatro ganadores, no contra el codigo.
+Real World Impact	25	physiotherapist|hairdresser|music teacher|charit|coordinator|beneficiar|solo professional|on-call|pager|small business|clinic
+Real World Impact	25	income|revenue|a day'?s|empty chair|hours of|costs? (a day|thirty seconds|a few cents)|per (call|hour)|\$[0-9]
+Real World Impact	25	after the hackathon|worth building further|in production|production-verified|real users|next (step|iteration)
+Quality of the Idea	25	\b(skill|plugin|extension|app)\b.{0,40}\b(reusable|community|open|install)|MIT|open source
+Quality of the Idea	25	were cut|we cut|cut for|out of scope|deliberately|only ([a-z]+ )?five|closed set
+Quality of the Idea	25	the opposite|inverted|mostly avoids|instead of (calling|dialling)|the interesting problem|what .{0,30}was missing
+Technical Implementation	25	standard library|stdlib|zero dependencies|no dependencies|urllib|http\.server
+Technical Implementation	25	test suite|unittest|pytest|\b[0-9]{2,4} tests\b|asserted|a dial counter
+Technical Implementation	25	validat|structured (answer|result)|checks? (run|pass|fail|all pass)|hash|audit (trail|log)|ledger|re-deriv
+Product Experience & Demo	25	dashboard|operator panel|wizard|planner|three steps|guided setup|screens?\b
+Product Experience & Demo	25	approval|approve|a human presses|press one button|preflight|never dial|do not call|masked
+Product Experience & Demo	25	demo video|this is the call|a real call|transcript|verbatim|quoted

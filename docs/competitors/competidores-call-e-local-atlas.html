@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang='es'>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>Competidores — CALL-E (Local Atlas, ganador Most Practical Use Case)</title>
+<style>
+:root {
+  --bg: #fbfaf8; --fg: #1a1b1e; --dim: #62656b; --line: #e2e0dc; --card: #ffffff;
+  --fuerte: #1f7a4d; --fuerte-bg: #e6f4ec;
+  --cumple: #2f6f9f; --cumple-bg: #e7f0f8;
+  --flojo: #9a6212; --flojo-bg: #fbf0dd;
+  --ausente: #a13b32; --ausente-bg: #fbeae8;
+  --sin: #6b3fa0; --sin-bg: #f0e9f9;
+}
+* { box-sizing: border-box; }
+html { color-scheme: light; }
+body {
+  margin: 0; padding: 32px 16px 64px; background: var(--bg); color: var(--fg);
+  font: 15px/1.6 ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+main { max-width: 1040px; margin: 0 auto; }
+h1 { font-size: 1.7rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+h2 { font-size: 1.15rem; margin: 36px 0 10px; }
+h3 { font-size: 1rem; margin: 24px 0 8px; color: var(--dim); }
+p { margin: 10px 0; }
+hr { border: 0; border-top: 1px solid var(--line); margin: 28px 0; }
+a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+code {
+  font: 0.86em ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;
+}
+blockquote {
+  margin: 16px 0; padding: 12px 16px; border-left: 3px solid var(--sin);
+  background: var(--sin-bg); border-radius: 0 6px 6px 0;
+}
+blockquote p { margin: 0; }
+.wrap { overflow-x: auto; margin: 14px 0; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 0.9rem; background: var(--card); }
+th, td { border-bottom: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+td + td, th + th { border-left: 1px solid var(--line); }
+tbody tr:last-child td { border-bottom: 0; }
+th {
+  position: sticky; top: 0; z-index: 1; background: #f1eee9;
+  font-weight: 600; white-space: nowrap; border-bottom: 2px solid var(--line);
+}
+tbody tr:nth-child(even) { background: #f7f5f2; }
+tbody tr:hover { background: #eef4fb; }
+table.sortable th { cursor: pointer; user-select: none; }
+table.sortable th::after { content: " \2195"; color: var(--dim); font-size: 0.8em; }
+table.sortable th.asc::after { content: " \2191"; color: var(--fg); }
+table.sortable th.desc::after { content: " \2193"; color: var(--fg); }
+.v { font-weight: 600; border-radius: 4px; padding: 1px 7px; white-space: nowrap; display: inline-block; }
+.v-fuerte { color: var(--fuerte); background: var(--fuerte-bg); }
+.v-cumple { color: var(--cumple); background: var(--cumple-bg); }
+.v-flojo { color: var(--flojo); background: var(--flojo-bg); }
+.v-ausente { color: var(--ausente); background: var(--ausente-bg); }
+.v-sin-evidencia { color: var(--sin); background: var(--sin-bg); outline: 1px dashed var(--sin); }
+details {
+  border: 1px solid var(--line); border-radius: 8px; margin: 12px 0;
+  padding: 0 16px; background: var(--card);
+}
+details[open] { padding-bottom: 12px; }
+summary {
+  cursor: pointer; padding: 12px 0; font-size: 1.05rem; font-weight: 600; list-style-position: outside;
+}
+.pie { color: var(--dim); font-size: 0.85rem; margin-top: 40px; }
+@media print {
+  body { background: #fff; color: #000; padding: 0; }
+  details { break-inside: avoid; }
+  details:not([open]) > *:not(summary) { display: revert; }
+  table.sortable th { cursor: auto; }
+}
+</style>
+</head>
+<body>
+<main>
+<h1>Competidores — CALL-E (Local Atlas, ganador Most Practical Use Case)</h1>
+<div class='wrap'><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Fecha</td><td>2026-10-19</td></tr><tr><td>Modo</td><td>hackathon</td></tr><tr><td>Evaluados</td><td>1 (<code>omarmiri/Local-atlas</code>) · clonados 1 (borrado) · <strong>nada se ejecuto</strong></td></tr><tr><td>Ventana</td><td>submissions 2026-07-23 → 2026-09-14 (ficha publicada 2026-09-10)</td></tr></tbody></table></div>
+<h2>En criollo</h2>
+<ul><li><strong>Que se miro:</strong> el repo, la ficha de Devpost y la web en vivo de Local Atlas, contra Ringdown con las mismas sondas.</li><li><strong>Quien es la amenaza:</strong> Local Atlas es la mas fuerte que vimos. Su tesis (guardar la respuesta y no volver a llamar) esta en el codigo, no solo en la ficha [3].</li><li><strong>Como estamos:</strong> en rigor tecnico y en prueba de evidencia estamos arriba; en producto e impacto estamos abajo.</li><li><strong>Que conviene hacer:</strong> cuantificar impacto con numeros reales y mostrar la reutilizacion de respuestas. Es lo que mas pesa y lo que mas nos separa.</li></ul>
+<p><strong>Pesos del jurado</strong> (<code>docs/judging.tsv</code>: los cuatro criterios &quot;equally weighted&quot;):</p>
+<div class='wrap'><table><thead><tr><th>Criterio</th><th>Peso</th><th>Secciones que lo responden</th></tr></thead><tbody><tr><td>Real World Impact</td><td>25</td><td>1, 6</td></tr><tr><td>Quality of the Idea</td><td>25</td><td>7, 4</td></tr><tr><td>Technical Implementation</td><td>25</td><td>4, 5, 6, 10</td></tr><tr><td>Product Experience &amp; Demo</td><td>25</td><td>1, 8</td></tr></tbody></table></div>
+<p><strong>Lo que no se pudo ver</strong> — el margen de error de todo lo que sigue:</p>
+<ul><li>No se ejecuto nada: que el cache de respuestas funcione en vivo, y que los tests pasen, quedan como lectura de codigo [3][5].</li><li>Cuantas llamadas reales hizo y cuantas respuestas se reutilizaron: sin evidencia (no hay ledger ni contador publico).</li><li>El video de Devpost (<code>youtu.be/VHswi1U5qkE</code>): existe, su contenido no se vio.</li></ul>
+<hr>
+<h2>Tabla comparativa</h2>
+<p>Escala: <code><span class="v v-fuerte">fuerte</span></code> · <code><span class="v v-cumple">cumple</span></code> · <code><span class="v v-flojo">flojo</span></code> · <code><span class="v v-ausente">ausente</span></code> (se miro y no esta) · <code><span class="v v-sin-evidencia">sin evidencia</span></code> (no se pudo ver).</p>
+<div class='wrap'><table class="sortable"><thead><tr><th>Proyecto</th><th>Nicho</th><th>Real World Impact</th><th>Quality of the Idea</th><th>Technical Implementation</th><th>Product Experience &amp; Demo</th><th>Nota</th><th>Amenaza</th></tr></thead><tbody><tr><td><code>omarmiri/Local-atlas</code></td><td>guia local con mapa que llama para verificar hechos</td><td><span class="v v-cumple">cumple</span></td><td><span class="v v-fuerte">fuerte</span></td><td><span class="v v-fuerte">fuerte</span></td><td><span class="v v-fuerte">fuerte</span></td><td>9/10</td><td>alta</td></tr><tr><td><code>gmassello/ringdown</code> (tuyo)</td><td>escalada de guardia con llamada verificada</td><td><span class="v v-flojo">flojo</span></td><td><span class="v v-fuerte">fuerte</span></td><td><span class="v v-fuerte">fuerte</span></td><td><span class="v v-cumple">cumple</span></td><td>8/10</td><td>—</td></tr></tbody></table></div>
+<p><strong>Amenaza</strong> es contra *tu* entrada, no calidad absoluta: alta porque comparte el nucleo (llamar, citar lo que dijo la persona, no inventar) y suma producto.</p>
+<hr>
+<details><summary><code>omarmiri/Local-atlas</code> — Local Atlas (Ask the Place)</summary>
+<p><strong>Que hace:</strong> un mapa de cualquier pueblo de EE.UU./Canada donde, si falta un dato de un comercio, una IA llama una sola vez y la respuesta queda guardada, fechada y citada para el que pregunte despues.</p>
+<div class='wrap'><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Repo</td><td><a href="https://github.com/omarmiri/Local-atlas">https://github.com/omarmiri/Local-atlas</a> · creado 2026-07-19 · JavaScript · MIT [1]</td></tr><tr><td>Demo</td><td><a href="https://local-atlas-api.onrender.com">https://local-atlas-api.onrender.com</a> · <code>curl</code> 200 en 0.57 s, llamadas reales activas [2]</td></tr><tr><td>Devpost</td><td><code>local-atlas-with-1st-party-faqs</code> · video si · ficha 2363 palabras [4]</td></tr><tr><td>Equipo</td><td>1 contribuyente (159 de 159 commits) [5]</td></tr><tr><td>Historial</td><td>primer commit 2026-07-19 · 159 commits · previos a la apertura (2026-07-23): <strong>si, 74</strong>; el modulo de llamadas <code>calle.js</code> aparece recien el 2026-08-09 [5][6]</td></tr></tbody></table></div>
+<div class='wrap'><table><thead><tr><th>Criterio</th><th>Veredicto</th><th>Evidencia</th></tr></thead><tbody><tr><td>Real World Impact 25%</td><td><span class="v v-cumple">cumple</span></td><td>App en vivo con llamadas reales activas [2]; <strong>cero numeros de impacto</strong> (ni llamadas, ni respuestas reutilizadas) en ficha ni README [4]</td></tr><tr><td>Quality of the Idea 25%</td><td><span class="v v-fuerte">fuerte</span></td><td>Reuso en codigo: busca respuesta vigente por hash de pregunta y, si no, por similitud con Gemini, antes de marcar [3]</td></tr><tr><td>Technical Implementation 25%</td><td><span class="v v-fuerte">fuerte</span></td><td>98 tests, 200 asserts, 7 archivos, CI en Node 20 y 22 [5][7]; 7 chequeos antes de publicar un hecho [3]</td></tr><tr><td>Product Experience &amp; Demo 25%</td><td><span class="v v-fuerte">fuerte</span></td><td>PWA, 6229 lineas de <code>index.html</code>, 14 plantillas, vista previa de confirmacion antes de llamar [3][8]</td></tr><tr><td>Calidad de codigo</td><td><span class="v v-cumple">cumple</span></td><td>2 dependencias; 0 tests sobre reuso, cupo diario o dedupe [3]</td></tr><tr><td>Seguridad</td><td><span class="v v-cumple">cumple</span></td><td>Sin <code>.env</code> en el historial [5]; <code>/api/health</code> publica la clave anonima de Supabase (publica por diseno, no se transcribe) [2]</td></tr></tbody></table></div>
+<p><strong>Lo mas <span class="v v-fuerte">fuerte</span>:</strong> el producto: mapa, cuentas, plantillas, comparar 2-3 comercios en una llamada, borrar cuenta [3][8].</p>
+<p><strong>Donde se cae:</strong> no mide su propia tesis: ninguna cifra de aciertos de cache ni de llamadas evitadas [4]; y no hay registro a prueba de alteraciones.</p>
+<p><strong><span class="v v-sin-evidencia">sin evidencia</span>:</strong> el video, y si el cache funciona en la practica (no se ejecuto).</p>
+<h3>Las cuatro preguntas del pedido</h3>
+<div class='wrap'><table><thead><tr><th>#</th><th>Pregunta</th><th>Respuesta medida</th></tr></thead><tbody><tr><td>1</td><td>El cache de llamadas, existe?</td><td><strong>Existe en el codigo</strong>: respuesta vigente por hash de pregunta, luego por similitud semantica con Gemini, solo si falla el hash; un recheck lo saltea [3]. Ademas candado de 10 min por pregunta y <code>Idempotency-Key</code> [3]. Pero <strong>0 tests</strong> lo cubren, pese a que el README dice &quot;cada regla esta testeada&quot; [3]</td></tr><tr><td>2</td><td>Como guarda la evidencia?</td><td>Cada hecho lleva <code>evidenceQuote</code> (≤200 caracteres), <code>collectedAt</code>, <code>expiresAt</code>, <code>staffConfidence</code>, <code>source: first_party_phone</code>, <code>simulated</code> [3]. La cita debe ser un turno entero del personal o un fragmento de 12+ caracteres; si no, baja a <code>unclear</code> [3]. <strong>No guarda quien contesto</strong> (sin campo de nombre o rol) y <strong>no hay cadena de hashes</strong>: el hash solo ata la tarea enviada (<code>taskHash</code>) [3]. Ringdown sella cada veredicto en un ledger encadenado re-derivable offline [9]</td></tr><tr><td>3</td><td>Que tiene de producto que nosotros no?</td><td>PWA, mapa Leaflet con 18 pestanas, 14 plantillas por categoria, preguntas sugeridas por IA, rondas de 2-3 comercios, cuentas y borrado, vista previa de confirmacion [3][8]. Ringdown: una pagina y un demo [10]</td></tr><tr><td>4</td><td>Como demuestra impacto?</td><td><strong>No lo cuantifica</strong>: sin llamadas hechas, sin tasa de reuso, sin costo evitado en ficha, README ni codigo [4]. La unica cifra es un caso de proveedores de mapas (64 lugares), ajeno al impacto [4]</td></tr></tbody></table></div>
+</details>
+<hr>
+<h2>Donde queda tu proyecto</h2>
+<div class='wrap'><table><thead><tr><th>Criterio</th><th>tu proyecto</th><th><code>omarmiri/Local-atlas</code></th></tr></thead><tbody><tr><td>Reuso/dedupe de respuestas</td><td>una llamada por escalon, clave de idempotencia; sin reuso entre usuarios [9]</td><td>si, exacto y semantico, 0 tests [3]</td></tr><tr><td>Evidencia por respuesta</td><td>ledger con hash encadenado, re-derivable offline [9]</td><td>cita + fecha + expiracion, sin cadena ni quien contesto [3]</td></tr><tr><td>Tests / asserts</td><td>404 funciones de test en los dos paquetes, 738 asserts solo en Ringdown [11]</td><td>98 tests, 200 asserts [5]</td></tr><tr><td>Commits</td><td>102, primer commit 2026-08-09, 0 previos a la apertura [11]</td><td>159, 74 previos a la apertura [5]</td></tr><tr><td>Producto en vivo</td><td>GitHub Pages 200 en 0.55 s; receptor <code>/demo</code> 200 en 0.76 s [10]</td><td>200 en 0.57 s, app completa con cuentas [2]</td></tr><tr><td>Impacto cuantificado</td><td>sin cifras de uso; una llamada real fechada 2026-08-20 [10]</td><td>ninguna [4]</td></tr></tbody></table></div>
+<h3>Sugerencias</h3>
+<div class='wrap'><table><thead><tr><th>#</th><th>Sugerencia</th><th>Por que importa</th><th>Criterio (peso)</th><th>Origen</th><th>Evidencia</th><th>Esfuerzo</th><th>Mueve nota</th></tr></thead><tbody><tr><td>S-01</td><td>Publicar numeros reales: llamadas hechas, veredictos, minutos de guardia ahorrados, por escrito en la ficha/README</td><td>El jurado premio a quien llamo &quot;practico&quot;; ninguno de los dos cuantifica</td><td>Real World Impact (25%)</td><td>hueco</td><td>Local Atlas y Ringdown sin cifras [4][10]</td><td>medio</td><td>si</td></tr><tr><td>S-02</td><td>Mostrar en el demo una respuesta ya verificada que se vuelve a leer sin llamar de nuevo (o un re-chequeo que reusa el veredicto del ledger)</td><td>Su tesis &quot;no llamar&quot; es lo que gano; la nuestra hoy no se ve</td><td>Quality of the Idea (25%)</td><td>brecha</td><td>cache exacto + semantico en <code>calle.js</code> [3] vs una llamada por escalon [9]</td><td>medio</td><td>si</td></tr><tr><td>S-03</td><td>Poner en primer plano que el ledger es re-derivable offline y que el de ellos no (cita sin cadena ni &quot;quien contesto&quot;)</td><td>Es nuestra diferencia tecnica verificable</td><td>Technical Implementation (25%)</td><td>brecha</td><td><code>taskHash</code> solo ata la tarea, no hay cadena [3]</td><td>bajo</td><td>si</td></tr><tr><td>S-04</td><td>Cerrar el techo de verificacion en vivo (hoy una corrida real termina en salida 45)</td><td>Un demo real que no confirma resta a Impact y a Demo</td><td>Product Experience &amp; Demo (25%)</td><td>brecha</td><td>Local Atlas: llamadas reales activas y hechos publicados [2][3]; techo propio documentado en CLAUDE.md [11]</td><td>alto</td><td>si</td></tr><tr><td>S-05</td><td>Agregar mas pantallas/screenshots y una vista de producto (hoy 4 contra 14 del nicho)</td><td>Mas superficie de producto</td><td>Product Experience &amp; Demo (25%)</td><td>brecha</td><td><code>benchmark-call-e.md</code>: 4 screenshots, mediana 14</td><td>bajo</td><td><strong>cosmetico</strong></td></tr></tbody></table></div>
+<blockquote><p>Control de sesgo: Ringdown salio abajo en 2 de 4 criterios del jurado (Impact <code>flojo</code>, Product <code>cumple</code>) y se revisaron las celdas comodas (Technical y Idea): Technical se sostiene por 404 tests y capas verificadas por test [11], Idea se sostiene por el ledger [9]; pero Local Atlas tambien tiene tesis en codigo [3], asi que la diferencia en Idea es de enfoque, no de nivel.</p></blockquote>
+<hr>
+<details><summary>Apendice — como se midio</summary>
+<div class='wrap'><table><thead><tr><th>Ref</th><th>Comando</th></tr></thead><tbody><tr><td>[1]</td><td><code>jq &#x27;{fork,created:.created_at,lang:.language,license:.license.spdx_id,homepage,archived}&#x27; Local-atlas.json</code></td></tr><tr><td>[2]</td><td><code>curl -s -o /dev/null -w &#x27;%{http_code} %{time_total}s&#x27; https://local-atlas-api.onrender.com/</code> y <code>curl -s https://local-atlas-api.onrender.com/api/health</code> (campo <code>calle.realCalls</code>)</td></tr><tr><td>[3]</td><td>Lectura de <code>README.md</code> y <code>calle.js</code> del clone superficial (<code>sed -n</code>, <code>grep -nE &quot;reused\|Idempotency\|quoteBinds\|TEMPLATES\|createHash&quot;</code>), lineas 545-580, 1109-1123, 1186-1214, 1341-1400</td></tr><tr><td>[4]</td><td><code>curl -A Mozilla/5.0 https://devpost.com/software/local-atlas-with-1st-party-faqs</code> → texto plano, busqueda de cifras de impacto y &quot;Built With&quot;</td></tr><tr><td>[5]</td><td><code>gh api repos/omarmiri/Local-atlas/commits --paginate</code>, <code>git rev-list --count HEAD</code>, <code>grep -cE &#x27;^\s*(test\|it)\(&#x27; test/*.js</code> y <code>grep -cE &#x27;assert\.&#x27;</code></td></tr><tr><td>[6]</td><td><code>gh api &quot;repos/omarmiri/Local-atlas/commits?until=2026-07-23T00:00:00Z&quot;</code> (74) y <code>commits?path=calle.js</code> (primero 2026-08-09)</td></tr><tr><td>[7]</td><td><code>cat .github/workflows/test.yml</code> (matriz Node 20/22, corre <code>npm test</code>); <code>gh run list</code> → 1 corrida <code>tests</code> success 2026-09-10</td></tr><tr><td>[8]</td><td><code>wc -l</code> de <code>index.html</code> (6229), <code>server.js</code> (1972), <code>calle.js</code> (2527); README &quot;Feature map&quot;</td></tr><tr><td>[9]</td><td>Lectura de <code>apps/python/ringdown/ringdown/audit.py</code> (hash por registro, <code>prev</code>) y <code>CLAUDE.md</code> del proyecto propio</td></tr><tr><td>[10]</td><td><code>curl</code> a <code>https://gmassello.github.io/ringdown/</code> y <code>https://calle-receiver.onrender.com/demo</code>; README propio (gif de llamada real 2026-08-20)</td></tr><tr><td>[11]</td><td><code>git rev-list --count HEAD</code>, <code>git log --until=2026-07-23</code>, <code>grep -hE &#x27;^\s*(async )?def test_&#x27; apps/python/*/tests/*.py</code>, <code>grep -rhE &#x27;^\s*(assert\|self\.assert)&#x27;</code>; <code>.env</code> propio no trackeado (<code>git check-ignore</code>)</td></tr></tbody></table></div>
+</details>
+<p class='pie'>Generado desde el .md por hackathon-review-competitor. El .md es la fuente: este archivo no se edita a mano.</p>
+</main>
+<script>
+const RANK = {"sin evidencia":0,"ausente":1,"flojo":2,"cumple":3,"fuerte":4,
+              "baja":0,"media":1,"alta":2};
+const key = (td) => {
+  const raw = td.textContent.trim();
+  const low = raw.toLowerCase();
+  for (const word in RANK) if (low.includes(word)) return [0, RANK[word]];
+  const num = parseFloat(raw.replace(",", "."));
+  if (!isNaN(num) && /^[\d.,\s/]+$/.test(raw)) return [0, num];
+  return [1, low];
+};
+document.querySelectorAll("table.sortable th").forEach((th, i) => {
+  th.addEventListener("click", () => {
+    const table = th.closest("table");
+    const body = table.tBodies[0];
+    const desc = !th.classList.contains("desc");
+    table.querySelectorAll("th").forEach(o => o.classList.remove("asc", "desc"));
+    th.classList.add(desc ? "desc" : "asc");
+    [...body.rows]
+      .sort((a, b) => {
+        const [ka, va] = key(a.cells[i]), [kb, vb] = key(b.cells[i]);
+        if (ka !== kb) return ka - kb;
+        const cmp = typeof va === "number" ? va - vb : String(va).localeCompare(String(vb), "es");
+        return desc ? -cmp : cmp;
+      })
+      .forEach(row => body.appendChild(row));
+  });
+});
+</script>
+</body>
+</html>

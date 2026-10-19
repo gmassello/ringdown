@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang='es'>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>Competidores — CALL-E (Honorable Mention: care-call-ai)</title>
+<style>
+:root {
+  --bg: #fbfaf8; --fg: #1a1b1e; --dim: #62656b; --line: #e2e0dc; --card: #ffffff;
+  --fuerte: #1f7a4d; --fuerte-bg: #e6f4ec;
+  --cumple: #2f6f9f; --cumple-bg: #e7f0f8;
+  --flojo: #9a6212; --flojo-bg: #fbf0dd;
+  --ausente: #a13b32; --ausente-bg: #fbeae8;
+  --sin: #6b3fa0; --sin-bg: #f0e9f9;
+}
+* { box-sizing: border-box; }
+html { color-scheme: light; }
+body {
+  margin: 0; padding: 32px 16px 64px; background: var(--bg); color: var(--fg);
+  font: 15px/1.6 ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+main { max-width: 1040px; margin: 0 auto; }
+h1 { font-size: 1.7rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+h2 { font-size: 1.15rem; margin: 36px 0 10px; }
+h3 { font-size: 1rem; margin: 24px 0 8px; color: var(--dim); }
+p { margin: 10px 0; }
+hr { border: 0; border-top: 1px solid var(--line); margin: 28px 0; }
+a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+code {
+  font: 0.86em ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;
+}
+blockquote {
+  margin: 16px 0; padding: 12px 16px; border-left: 3px solid var(--sin);
+  background: var(--sin-bg); border-radius: 0 6px 6px 0;
+}
+blockquote p { margin: 0; }
+.wrap { overflow-x: auto; margin: 14px 0; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 0.9rem; background: var(--card); }
+th, td { border-bottom: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+td + td, th + th { border-left: 1px solid var(--line); }
+tbody tr:last-child td { border-bottom: 0; }
+th {
+  position: sticky; top: 0; z-index: 1; background: #f1eee9;
+  font-weight: 600; white-space: nowrap; border-bottom: 2px solid var(--line);
+}
+tbody tr:nth-child(even) { background: #f7f5f2; }
+tbody tr:hover { background: #eef4fb; }
+table.sortable th { cursor: pointer; user-select: none; }
+table.sortable th::after { content: " \2195"; color: var(--dim); font-size: 0.8em; }
+table.sortable th.asc::after { content: " \2191"; color: var(--fg); }
+table.sortable th.desc::after { content: " \2193"; color: var(--fg); }
+.v { font-weight: 600; border-radius: 4px; padding: 1px 7px; white-space: nowrap; display: inline-block; }
+.v-fuerte { color: var(--fuerte); background: var(--fuerte-bg); }
+.v-cumple { color: var(--cumple); background: var(--cumple-bg); }
+.v-flojo { color: var(--flojo); background: var(--flojo-bg); }
+.v-ausente { color: var(--ausente); background: var(--ausente-bg); }
+.v-sin-evidencia { color: var(--sin); background: var(--sin-bg); outline: 1px dashed var(--sin); }
+details {
+  border: 1px solid var(--line); border-radius: 8px; margin: 12px 0;
+  padding: 0 16px; background: var(--card);
+}
+details[open] { padding-bottom: 12px; }
+summary {
+  cursor: pointer; padding: 12px 0; font-size: 1.05rem; font-weight: 600; list-style-position: outside;
+}
+.pie { color: var(--dim); font-size: 0.85rem; margin-top: 40px; }
+@media print {
+  body { background: #fff; color: #000; padding: 0; }
+  details { break-inside: avoid; }
+  details:not([open]) > *:not(summary) { display: revert; }
+  table.sortable th { cursor: auto; }
+}
+</style>
+</head>
+<body>
+<main>
+<h1>Competidores — CALL-E (Honorable Mention: care-call-ai)</h1>
+<div class='wrap'><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Fecha</td><td>2026-10-19</td></tr><tr><td>Modo</td><td>hackathon</td></tr><tr><td>Evaluados</td><td>1 (+ proyecto propio) · clonados 1 (borrado) · <strong>nada se ejecuto</strong></td></tr><tr><td>Ventana</td><td>submissions 2026-07-23 → 2026-09-14 (<code>/details/dates</code>)</td></tr></tbody></table></div>
+<h2>En criollo</h2>
+<ul><li><strong>Que se miro:</strong> <code>NeoSPU/care-call-ai</code>, ganador de Honorable Mention, leido solo por codigo, sin correr nada.</li><li><strong>Quien es la amenaza:</strong> media-alta. Hace lo que a Ringdown le falta (pantalla para que un humano apruebe antes de llamar) y lo hace con reglas reales en el codigo, no solo descritas.</li><li><strong>Como estamos:</strong> Ringdown le gana en pruebas automaticas, historial de trabajo y verificacion de lo que se dijo en la llamada; pierde en producto visible (no hay panel ni pantalla de aprobacion).</li><li><strong>Que conviene hacer:</strong> copiar la idea de la aprobacion del lote y de a quien no se llama (S-01, S-02), sin sumar dependencias.</li></ul>
+<p><strong>Pesos del jurado</strong> (<code>docs/judging.tsv</code>: los cuatro criterios de CALL-E, &quot;equally weighted&quot;):</p>
+<div class='wrap'><table><thead><tr><th>Criterio</th><th>Peso</th><th>Secciones que lo responden</th></tr></thead><tbody><tr><td>Real World Impact</td><td>25</td><td>1, 6</td></tr><tr><td>Quality of the Idea</td><td>25</td><td>7, 4</td></tr><tr><td>Technical Implementation</td><td>25</td><td>4, 5, 6, 10</td></tr><tr><td>Product Experience &amp; Demo</td><td>25</td><td>1, 8</td></tr></tbody></table></div>
+<p><strong>Lo que no se pudo ver</strong> — el margen de error de todo lo que sigue:</p>
+<ul><li>El dashboard en vivo pide usuario y contrasena (<code>/dashboard</code> redirige a <code>/login</code>) [4]: no se vio ninguna pantalla real; la superficie de producto se juzga por codigo.</li><li>El video de YouTube y las 14 capturas de Devpost no se miraron; solo se confirmo que el embed existe [11].</li><li>Los tests no se corrieron: se contaron, y que pasen solo lo dice el CI (verde) [8].</li><li>El repo publico es una copia &quot;sanitizada&quot; del privado (README): el historial real de trabajo no es visible [3].</li></ul>
+<hr>
+<h2>Tabla comparativa</h2>
+<p>Escala: <code><span class="v v-fuerte">fuerte</span></code> · <code><span class="v v-cumple">cumple</span></code> · <code><span class="v v-flojo">flojo</span></code> · <code><span class="v v-ausente">ausente</span></code> (se miro y no esta) · <code><span class="v v-sin-evidencia">sin evidencia</span></code> (no se pudo ver).</p>
+<div class='wrap'><table class="sortable"><thead><tr><th>Proyecto</th><th>Nicho</th><th>Real World Impact</th><th>Quality of the Idea</th><th>Technical Implementation</th><th>Product Experience &amp; Demo</th><th>Nota</th><th>Amenaza</th></tr></thead><tbody><tr><td><code>NeoSPU/care-call-ai</code></td><td>Llamadas de organizaciones de caridad a personas con enfermedad o discapacidad</td><td><span class="v v-fuerte">fuerte</span></td><td><span class="v v-cumple">cumple</span></td><td><span class="v v-fuerte">fuerte</span></td><td><span class="v v-fuerte">fuerte</span></td><td>8/10</td><td>media-alta</td></tr><tr><td><code>gmassello/ringdown</code> (propio)</td><td>Escalada telefonica de incidentes con verificacion de lo dicho</td><td><span class="v v-cumple">cumple</span></td><td><span class="v v-fuerte">fuerte</span></td><td><span class="v v-fuerte">fuerte</span></td><td><span class="v v-flojo">flojo</span></td><td>8/10</td><td>—</td></tr></tbody></table></div>
+<p><strong>Amenaza</strong> es contra *tu* entrada: care-call-ai compite en el mismo evento pero en otro nicho; lo que amenaza es la superficie de producto y la aprobacion humana, que el jurado ve y Ringdown no muestra.</p>
+<hr>
+<details><summary><code>NeoSPU/care-call-ai</code> — Care Call AI</summary>
+<p><strong>Que hace:</strong> una organizacion de caridad prepara una ronda de llamadas a beneficiarios, un coordinador la aprueba, se llama con CALL-E y las respuestas se vuelven pedidos imprimibles.</p>
+<div class='wrap'><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Repo</td><td><a href="https://github.com/NeoSPU/care-call-ai">https://github.com/NeoSPU/care-call-ai</a> · creado 2026-08-13 · Python (+ Next.js/TypeScript) · licencia sin reconocer (<code>NOASSERTION</code>) [1]</td></tr><tr><td>Demo</td><td><a href="https://care.alexraixon.com">https://care.alexraixon.com</a> · <code>curl</code> 200 en 1.8s la portada; <code>/dashboard</code> 307 a login [4]</td></tr><tr><td>Devpost</td><td><code>care-call-ai</code> · video si (YouTube) · Honorable Mention [11]</td></tr><tr><td>Equipo</td><td>1 contribuyente · 39/39 commits de una sola cuenta [3]</td></tr><tr><td>Historial</td><td>primer commit 2026-08-11 · 39 commits · previos al evento: no (0 commits antes del 2026-07-23) [2]</td></tr></tbody></table></div>
+<div class='wrap'><table><thead><tr><th>Criterio</th><th>Veredicto</th><th>Evidencia</th></tr></thead><tbody><tr><td>Real World Impact 25%</td><td><span class="v v-fuerte">fuerte</span></td><td>Nicho concreto (caridades, beneficiarios, coordinador), 19 menciones de approval/preflight/dashboard/operator en el README [9]</td></tr><tr><td>Quality of the Idea 25%</td><td><span class="v v-cumple">cumple</span></td><td>El humano conserva la decision: aprobacion obligatoria antes de marcar. La idea es una app de flujo, no una pieza reutilizable; sin licencia reconocida [1]</td></tr><tr><td>Technical Implementation 25%</td><td><span class="v v-fuerte">fuerte</span></td><td>Backend con <code>dependencies = []</code> (solo biblioteca estandar) [7]; 166 <code>def test_</code> y 683 asserts en Python + 126 <code>it(</code>/<code>test(</code> en TypeScript [7]; CI verde en 10 de 10 corridas [8]</td></tr><tr><td>Product Experience &amp; Demo 25%</td><td><span class="v v-fuerte">fuerte</span></td><td>Dashboard, panel de operador, tarjeta de destinatario, orden imprimible y pantalla de aprobacion: 2601 lineas en 4 componentes, y el front llama al backend por <code>carecall-api.ts</code> [12]</td></tr><tr><td>Calidad de codigo</td><td><span class="v v-cumple">cumple</span></td><td>30013 lineas sin lockfile ni imagenes; el primer commit trae 120 archivos y 20757 lineas, o sea un import [3]</td></tr><tr><td>Seguridad</td><td><span class="v v-cumple">cumple</span></td><td><code>make secrets-check</code> propio; sin <code>.env</code> en el historial; <code>.env.example</code> con datos de demo documentados en README:175-179 [13]</td></tr></tbody></table></div>
+<p><strong>Lo mas <span class="v v-fuerte">fuerte</span>:</strong> la aprobacion esta forzada en el codigo, no solo descrita (ver abajo), mas 166 + 126 pruebas.</p>
+<p><strong>Donde se cae:</strong> un solo autor, un solo commit de import (20757 lineas), licencia sin reconocer, y &quot;Kubernetes&quot; figura en Devpost pero hay 0 archivos de Kubernetes en el repo [10].</p>
+<p><strong><span class="v v-sin-evidencia">sin evidencia</span>:</strong> pantallas reales, video, y si el sistema llamo alguna vez a una persona de verdad (el repo publico tiene solo registros ficticios, <code>seed_recipients.json</code>).</p>
+<h3>Lo que pediste mirar</h3>
+<div class='wrap'><table><thead><tr><th>Pieza</th><th>Que hay realmente</th><th>Evidencia</th></tr></thead><tbody><tr><td>Aprobacion del lote (Approval Gate)</td><td><strong>Enforced en el servidor.</strong> Se genera un plan con las claves exactas de los destinatarios listos; la aprobacion debe coincidir con ese conjunto exacto, no estar vencida, llevar nombre del aprobador, 4 confirmaciones (<code>active_consent</code>, <code>care_route_match</code>, <code>exact_keyset</code>, <code>real_side_effects</code>) y la frase <code>EXECUTE LIVE CALLS</code>. La ejecucion en vivo la vuelve a chequear y exige <code>CARECALL_LIVE_CALLS_ENABLED=true</code>, lote maximo de 1 por defecto y readiness de CALL-E [5]</td><td><code>approval.py</code>, <code>approval_policy.py</code>, <code>server.py:391-420</code></td></tr><tr><td>&quot;No-call preflight&quot;</td><td>Es un plan en seco: arma el prompt y la clave de idempotencia (hash sha256 de fecha, destinatario, ruta, telefono, proposito) sin marcar nada. Hay endpoint de dry-run que aplica los mismos bloqueos [5]</td><td><code>call_planning.py</code>, <code>server.py:362-380</code></td></tr><tr><td>A quien NO se llama</td><td><strong>Enforced</strong>: <code>do_not_call</code>, consentimiento faltante o revocado, telefono invalido, ruta cuidador/staff sin telefono bloquean la fila [6]. Critico o ruta &quot;staff&quot; (solo-operador) se desvia a revision manual y queda fuera de la ronda automatica [6]. Repeticion el mismo dia: tope por destinatario (2 por defecto) y confirmacion extra [5]</td><td><code>validation.py</code>, <code>server.py:890-905</code>, <code>daily_limits.py</code></td></tr><tr><td>&quot;Llamado hace muy poco&quot;</td><td><strong>Solo mismo dia</strong> (<code>same_day_call_count</code>); no hay ventana de enfriamiento de varios dias en el codigo leido [6]</td><td><code>repository.py:860-880</code></td></tr><tr><td>Debilidad del gate</td><td><code>approved_at</code> se guarda como el texto fijo <code>&quot;api-request&quot;</code>, no una fecha; el aprobador sale del campo <code>operator</code> del pedido [5]</td><td><code>server.py:~340</code></td></tr><tr><td>Superficie de producto</td><td>Real en codigo: rutas <code>dashboard</code>, <code>operator</code>, <code>preflight</code>, <code>recipients/[id]</code>, <code>orders/print</code>, <code>urgent-callback</code>, con tests de componente (vitest) [12]. Que se vea bien en vivo: <span class="v v-sin-evidencia">sin evidencia</span> (login) [4]</td><td>arbol del repo</td></tr><tr><td>Tests</td><td>166 <code>def test_</code> y 683 asserts con <code>unittest</code> (stdlib) + 126 <code>it(</code>/<code>test(</code> de vitest [7]. Ringdown: 606 tests (dato tuyo) contra 376 <code>def test_</code> en <code>apps/python/ringdown/tests</code> [14]</td><td>ver apendice</td></tr></tbody></table></div>
+</details>
+<hr>
+<h2>Donde queda tu proyecto</h2>
+<div class='wrap'><table><thead><tr><th>Criterio</th><th><code>gmassello/ringdown</code></th><th><code>NeoSPU/care-call-ai</code></th></tr></thead><tbody><tr><td>Aprobacion humana antes de llamar</td><td><strong><span class="v v-ausente">ausente</span></strong> (no hay gate; el comando de escalada llama solo) [14]</td><td><span class="v v-fuerte">fuerte</span>: gate exacto, 4 confirmaciones, frase, tope de lote [5]</td></tr><tr><td>Reglas de a quien no llamar</td><td><span class="v v-flojo">flojo</span>: ladder por incidente, sin lista de bloqueados/consentimiento [14]</td><td><span class="v v-cumple">cumple</span>: consentimiento, do_not_call, critico, staff, tope diario [6]</td></tr><tr><td>Verificacion de lo dicho</td><td><span class="v v-fuerte">fuerte</span>: verificacion por MCP, citas, ledger con hash en cadena [14]</td><td><span class="v v-flojo">flojo</span>: sin segundo canal; hashea claves, no verifica resultados [7]</td></tr><tr><td>Tests / asserts</td><td>606 tests (dato tuyo), cero dependencias de runtime [14]</td><td>166 + 126 tests, backend sin dependencias [7]</td></tr><tr><td>Commits</td><td>102 [14]</td><td>39, de una sola cuenta, con import inicial [3]</td></tr><tr><td>Interfaz</td><td><span class="v v-flojo">flojo</span>: terminal, GIF y sitio estatico, sin panel [14]</td><td><span class="v v-fuerte">fuerte</span> en codigo, <span class="v v-sin-evidencia">sin evidencia</span> en vivo [12]</td></tr><tr><td>Endpoint desplegado</td><td>recibidor en Render (notes/plan-twilio-calle.md) [14]</td><td>portada 200 en 1.8s, panel tras login [4]</td></tr></tbody></table></div>
+<h3>Sugerencias</h3>
+<div class='wrap'><table><thead><tr><th>#</th><th>Sugerencia</th><th>Por que importa</th><th>Criterio (peso)</th><th>Origen</th><th>Evidencia</th><th>Esfuerzo</th><th>Mueve nota</th></tr></thead><tbody><tr><td>S-01</td><td>Agregar un paso de aprobacion explicito del lote en Ringdown: plan en seco con claves exactas, nombre del aprobador, fecha real y registro en el ledger</td><td>El jurado ve que un humano decide antes de que suene un telefono; hoy Ringdown no lo muestra</td><td>Product Experience &amp; Demo (25%)</td><td>brecha</td><td>care-call-ai fuerza el gate en servidor [5]; Ringdown no tiene [14]</td><td>medio</td><td>si</td></tr><tr><td>S-02</td><td>Lista de &quot;no llamar&quot; con consentimiento, bloqueados y tope diario, bloqueando antes del primer intento</td><td>Es la regla de seguridad que mas se cita en el nicho y hoy solo se explica en prosa</td><td>Technical Implementation (25%)</td><td>brecha</td><td><code>validation.py</code> y <code>daily_limits.py</code> bloquean en codigo [6]</td><td>medio</td><td>si</td></tr><tr><td>S-03</td><td>Una pagina estatica con la salida de la demo (ya hay sitio) que muestre el paso de aprobacion y los diez escenarios como pantalla</td><td>Cubre la superficie visible sin sumar una dependencia de runtime</td><td>Product Experience &amp; Demo (25%)</td><td>brecha</td><td>4 componentes de UI con 2601 lineas en care-call-ai [12]</td><td>medio</td><td>si</td></tr><tr><td>S-04</td><td>Declarar en el README la licencia y el origen del trabajo (repo, fechas) en el pitch</td><td>care-call-ai figura sin licencia reconocida y como copia de un repo privado; la transparencia suma</td><td>Quality of the Idea (25%)</td><td>brecha</td><td><code>NOASSERTION</code> [1], copia sanitizada [3]</td><td>bajo</td><td>si</td></tr><tr><td>S-05</td><td>Nombrar en el pitch la ventaja de verificar por un segundo canal, comparada con un panel que confia en el resultado de CALL-E</td><td>Es lo que ningun rival del set mide</td><td>Quality of the Idea (25%)</td><td>hueco</td><td>care-call-ai no re-verifica la llamada [7]</td><td>bajo</td><td>si</td></tr><tr><td>S-06</td><td>Estrellas, topics y el tamano del README</td><td>Ningun criterio del jurado los pondera</td><td>—</td><td>—</td><td>0 estrellas en el rival, ganador igual [1]</td><td>bajo</td><td><strong>cosmetico</strong></td></tr></tbody></table></div>
+<blockquote><p>Control de sesgo: Ringdown salio con <code>flojo</code> en Producto, <code>ausente</code> en aprobacion y <code>flojo</code> en reglas de bloqueo; las tres celdas mas comodas (tests, verificacion, historial) se releyeron contra los numeros de arriba. Las celdas de Ringdown salen de <code>CLAUDE.md</code>, <code>ls</code> y los conteos del apendice, no de una corrida nueva de sus tests. Solo se evaluo un rival: la columna <code>hueco</code> (S-05) vale solo contra este.</p></blockquote>
+<hr>
+<details><summary>Apendice — como se midio</summary>
+<div class='wrap'><table><thead><tr><th>Ref</th><th>Comando</th></tr></thead><tbody><tr><td>[1]</td><td><code>jq &#x27;{fork,stars:.stargazers_count,created:.created_at,pushed:.pushed_at,lang:.language,license:.license.spdx_id,homepage,archived}&#x27; care-call-ai.json</code></td></tr><tr><td>[2]</td><td><code>gh api &quot;repos/NeoSPU/care-call-ai/commits?until=2026-07-23T00:00:00Z&amp;per_page=1&quot; --jq &#x27;length&#x27;</code> (devuelve 0)</td></tr><tr><td>[3]</td><td><code>git clone --depth 50 --no-tags</code> + <code>git log --reverse --format=&#x27;%ad %s&#x27; --date=short \| head -3</code>, <code>git rev-list --count HEAD</code> (39), <code>git shortlog -sn HEAD</code> (39 Alex R), <code>git show --stat &lt;primero&gt; \| tail -2</code> (120 archivos, 20757 +)</td></tr><tr><td>[4]</td><td><code>curl -s -o /dev/null -w &#x27;%{http_code} %{time_total}s&#x27; https://care.alexraixon.com</code> (200 1.8s) y <code>/dashboard</code> (307, destino <code>/login?next=%2Fdashboard</code>)</td></tr><tr><td>[5]</td><td>Lectura de <code>backend/app/approval.py</code>, <code>approval_policy.py</code>, <code>server.py</code> (approve/dry-run/execute_live) y <code>daily_limits.py</code></td></tr><tr><td>[6]</td><td>Lectura de <code>backend/app/validation.py</code>, <code>repository.py</code> (<code>_default_safety_category</code>, <code>call_plan_previews_with_same_day_history</code>) y <code>server.py</code> (categorizacion de previews)</td></tr><tr><td>[7]</td><td><code>grep -rcE &quot;^\s*def test_&quot; backend/tests</code> (166); <code>grep -rhcE assert backend/tests</code> (683); <code>grep -rhoE &quot;^\s*(it\|test)\(&quot; frontend/src \| wc -l</code> (126); <code>grep -A3 dependencies backend/pyproject.toml</code> (<code>dependencies = []</code>)</td></tr><tr><td>[8]</td><td><code>jq -r &#x27;.[] \| &quot;\(.conclusion // .status)\t\(.name)\t\(.createdAt)&quot;&#x27; care-call-ai.runs</code> (10 success, 2026-09-13 a 2026-09-14)</td></tr><tr><td>[9]</td><td><code>grep -ciE &quot;approval\|preflight\|dashboard\|operator&quot; care-call-ai.readme</code> (19); <code>head -40</code> del README</td></tr><tr><td>[10]</td><td><code>git ls-files \| grep -ciE &quot;k8s\|kube\|helm&quot;</code> (0) contra el tag &quot;kubernetes&quot; en la ficha de Devpost</td></tr><tr><td>[11]</td><td><code>curl -s -A &quot;Mozilla/5.0&quot; https://devpost.com/software/care-call-ai</code> (200; embed <code>youtube.com/embed/Hc2bWjTnKFQ</code>; &quot;Honorable Mention&quot;)</td></tr><tr><td>[12]</td><td><code>wc -l</code> de <code>PreflightApprovalGate.tsx</code>, <code>PrintableOrderSheet.tsx</code>, <code>OperatorPanelClient.tsx</code>, <code>RecipientDetailClient.tsx</code> (2601); <code>grep -rlE &quot;fetch\(&quot; frontend/src</code> (incluye <code>lib/carecall-api.ts</code>)</td></tr><tr><td>[13]</td><td><code>git log --all --diff-filter=A --name-only --format= \| grep -iE &#x27;\.env$\|\.pem$&#x27;</code> (vacio); <code>make secrets-check</code> existe pero no se corrio</td></tr><tr><td>[14]</td><td>Proyecto propio: <code>CLAUDE.md</code>, <code>ls</code>, <code>grep -rcE &quot;^\s*def test_&quot; apps/python/ringdown/tests</code> (376 definiciones; los 606 son tu dato), <code>git rev-list --count HEAD</code> (102)</td></tr></tbody></table></div>
+</details>
+<p class='pie'>Generado desde el .md por hackathon-review-competitor. El .md es la fuente: este archivo no se edita a mano.</p>
+</main>
+<script>
+const RANK = {"sin evidencia":0,"ausente":1,"flojo":2,"cumple":3,"fuerte":4,
+              "baja":0,"media":1,"alta":2};
+const key = (td) => {
+  const raw = td.textContent.trim();
+  const low = raw.toLowerCase();
+  for (const word in RANK) if (low.includes(word)) return [0, RANK[word]];
+  const num = parseFloat(raw.replace(",", "."));
+  if (!isNaN(num) && /^[\d.,\s/]+$/.test(raw)) return [0, num];
+  return [1, low];
+};
+document.querySelectorAll("table.sortable th").forEach((th, i) => {
+  th.addEventListener("click", () => {
+    const table = th.closest("table");
+    const body = table.tBodies[0];
+    const desc = !th.classList.contains("desc");
+    table.querySelectorAll("th").forEach(o => o.classList.remove("asc", "desc"));
+    th.classList.add(desc ? "desc" : "asc");
+    [...body.rows]
+      .sort((a, b) => {
+        const [ka, va] = key(a.cells[i]), [kb, vb] = key(b.cells[i]);
+        if (ka !== kb) return ka - kb;
+        const cmp = typeof va === "number" ? va - vb : String(va).localeCompare(String(vb), "es");
+        return desc ? -cmp : cmp;
+      })
+      .forEach(row => body.appendChild(row));
+  });
+});
+</script>
+</body>
+</html>

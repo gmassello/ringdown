@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang='es'>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>Competidores — CALL-E (call-e.devpost.com)</title>
+<style>
+:root {
+  --bg: #fbfaf8; --fg: #1a1b1e; --dim: #62656b; --line: #e2e0dc; --card: #ffffff;
+  --fuerte: #1f7a4d; --fuerte-bg: #e6f4ec;
+  --cumple: #2f6f9f; --cumple-bg: #e7f0f8;
+  --flojo: #9a6212; --flojo-bg: #fbf0dd;
+  --ausente: #a13b32; --ausente-bg: #fbeae8;
+  --sin: #6b3fa0; --sin-bg: #f0e9f9;
+}
+* { box-sizing: border-box; }
+html { color-scheme: light; }
+body {
+  margin: 0; padding: 32px 16px 64px; background: var(--bg); color: var(--fg);
+  font: 15px/1.6 ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+main { max-width: 1040px; margin: 0 auto; }
+h1 { font-size: 1.7rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+h2 { font-size: 1.15rem; margin: 36px 0 10px; }
+h3 { font-size: 1rem; margin: 24px 0 8px; color: var(--dim); }
+p { margin: 10px 0; }
+hr { border: 0; border-top: 1px solid var(--line); margin: 28px 0; }
+a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+code {
+  font: 0.86em ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;
+}
+blockquote {
+  margin: 16px 0; padding: 12px 16px; border-left: 3px solid var(--sin);
+  background: var(--sin-bg); border-radius: 0 6px 6px 0;
+}
+blockquote p { margin: 0; }
+.wrap { overflow-x: auto; margin: 14px 0; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 0.9rem; background: var(--card); }
+th, td { border-bottom: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+td + td, th + th { border-left: 1px solid var(--line); }
+tbody tr:last-child td { border-bottom: 0; }
+th {
+  position: sticky; top: 0; z-index: 1; background: #f1eee9;
+  font-weight: 600; white-space: nowrap; border-bottom: 2px solid var(--line);
+}
+tbody tr:nth-child(even) { background: #f7f5f2; }
+tbody tr:hover { background: #eef4fb; }
+table.sortable th { cursor: pointer; user-select: none; }
+table.sortable th::after { content: " \2195"; color: var(--dim); font-size: 0.8em; }
+table.sortable th.asc::after { content: " \2191"; color: var(--fg); }
+table.sortable th.desc::after { content: " \2193"; color: var(--fg); }
+.v { font-weight: 600; border-radius: 4px; padding: 1px 7px; white-space: nowrap; display: inline-block; }
+.v-fuerte { color: var(--fuerte); background: var(--fuerte-bg); }
+.v-cumple { color: var(--cumple); background: var(--cumple-bg); }
+.v-flojo { color: var(--flojo); background: var(--flojo-bg); }
+.v-ausente { color: var(--ausente); background: var(--ausente-bg); }
+.v-sin-evidencia { color: var(--sin); background: var(--sin-bg); outline: 1px dashed var(--sin); }
+details {
+  border: 1px solid var(--line); border-radius: 8px; margin: 12px 0;
+  padding: 0 16px; background: var(--card);
+}
+details[open] { padding-bottom: 12px; }
+summary {
+  cursor: pointer; padding: 12px 0; font-size: 1.05rem; font-weight: 600; list-style-position: outside;
+}
+.pie { color: var(--dim); font-size: 0.85rem; margin-top: 40px; }
+@media print {
+  body { background: #fff; color: #000; padding: 0; }
+  details { break-inside: avoid; }
+  details:not([open]) > *:not(summary) { display: revert; }
+  table.sortable th { cursor: auto; }
+}
+</style>
+</head>
+<body>
+<main>
+<h1>Competidores — CALL-E (call-e.devpost.com)</h1>
+<div class='wrap'><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Fecha</td><td>2026-10-19</td></tr><tr><td>Modo</td><td>hackathon</td></tr><tr><td>Evaluados</td><td>1 · clonados 1 (rama <code>feat/ringback-app</code>, solo <code>apps/python/ringback/</code>, borrado al final) · <strong>nada se ejecuto</strong></td></tr><tr><td>Ventana</td><td>submissions 2026-07-23 → 2026-09-14 [1]</td></tr></tbody></table></div>
+<h2>En criollo</h2>
+<ul><li><strong>Que se miro:</strong> RingBack (Honorable Mention, $1.000), el rival mas parecido: mismo lenguaje, cero dependencias, enmascara telefonos y prueba a quienes no se llamo.</li><li><strong>Quien es la amenaza:</strong> RingBack. Gana por producto visible: asistente de 3 pasos, agenda, pantallas, 1221 pruebas [6], y dice con la voz de un cliente a quien le sirve.</li><li><strong>Como estamos:</strong> ganamos en ingenieria de verificacion (cadena de hashes, capas forzadas por test); perdemos en superficie de producto y en demostrar una llamada real exitosa.</li><li><strong>Que conviene hacer:</strong> mostrar una pantalla operable (no solo un replay), nombrar el usuario y la plata en juego, y decir en voz alta que se recorto y por que.</li></ul>
+<p><strong>Pesos del jurado</strong> (<code>docs/judging.tsv</code>: 4 criterios &quot;equally weighted&quot;):</p>
+<div class='wrap'><table><thead><tr><th>Criterio</th><th>Peso</th><th>Secciones que lo responden</th></tr></thead><tbody><tr><td>Real World Impact</td><td>25%</td><td>1, 6</td></tr><tr><td>Quality of the Idea</td><td>25%</td><td>7, 4</td></tr><tr><td>Technical Implementation</td><td>25%</td><td>4, 5, 10, 11</td></tr><tr><td>Product Experience &amp; Demo</td><td>25%</td><td>1, 6, 8</td></tr></tbody></table></div>
+<p><strong>Lo que no se pudo ver</strong> — el margen de error:</p>
+<ul><li>Las llamadas reales de RingBack: solo las afirma su ficha de Devpost [9]; no hay transcripcion ni linea de auditoria commiteada (<code>donnees/</code> no esta en el repo).</li><li>Si sus 1221 pruebas pasan: no se ejecuto nada. El README dice &quot;all green&quot; [6].</li><li>Que muestra el video (YouTube <code>S909yG8oZkU</code>, responde 200 [10]): no se vio el contenido, solo que existe.</li></ul>
+<hr>
+<h2>Tabla comparativa</h2>
+<p>Escala: <code><span class="v v-fuerte">fuerte</span></code> · <code><span class="v v-cumple">cumple</span></code> · <code><span class="v v-flojo">flojo</span></code> · <code><span class="v v-ausente">ausente</span></code> (se miro y no esta) · <code><span class="v v-sin-evidencia">sin evidencia</span></code> (no se pudo ver).</p>
+<div class='wrap'><table class="sortable"><thead><tr><th>Proyecto</th><th>Nicho</th><th>Product Experience (25%)</th><th>Technical Implementation (25%)</th><th>Real World Impact (25%)</th><th>Quality of the Idea (25%)</th><th>Nota</th><th>Amenaza</th></tr></thead><tbody><tr><td><code>Ludo321/awesome-phone-call-agents</code> (RingBack)</td><td>Citas: rellenar huecos de agenda llamando a una lista</td><td><span class="v v-fuerte">fuerte</span></td><td><span class="v v-fuerte">fuerte</span></td><td><span class="v v-cumple">cumple</span></td><td><span class="v v-cumple">cumple</span></td><td>8/10</td><td>alta</td></tr><tr><td><code>gmassello/ringdown</code> (propio)</td><td>Escalamiento de guardia + verificacion independiente</td><td><span class="v v-flojo">flojo</span></td><td><span class="v v-fuerte">fuerte</span></td><td><span class="v v-cumple">cumple</span></td><td><span class="v v-fuerte">fuerte</span></td><td>7/10</td><td>—</td></tr></tbody></table></div>
+<p><strong>Amenaza</strong> es contra *tu* entrada: RingBack es alta porque comparte stack y garantias, y le gana en la columna mas visible para un jurado.</p>
+<hr>
+<details><summary><code>Ludo321/awesome-phone-call-agents</code> — RingBack</summary>
+<p><strong>Que hace:</strong> una app web local para un profesional independiente: cuando se libera un turno, llama de a una persona hasta el primer &quot;si&quot; y actualiza la agenda sola.</p>
+<div class='wrap'><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Repo</td><td><a href="https://github.com/Ludo321/awesome-phone-call-agents">https://github.com/Ludo321/awesome-phone-call-agents</a> · creado 2026-09-03 · fork del monorepo <code>CALLE-AI/awesome-phone-call-agents</code> (entrega via PR #297, abierto) · Python · MIT [2]</td></tr><tr><td>Demo</td><td>sin sitio publicado (<code>homepage</code> vacio); corre en la maquina de quien la baja [2]</td></tr><tr><td>Devpost</td><td><code>ringback-sumnr6</code> · video si [10]</td></tr><tr><td>Equipo</td><td>1 autor (6 de 6 commits del PR) [3]</td></tr><tr><td>Historial</td><td>primer commit del PR 2026-09-03, 6 commits, posterior a la apertura del 2026-07-23; el fork hereda el historial del monorepo (desde 2026-05-22) [3]</td></tr></tbody></table></div>
+<div class='wrap'><table><thead><tr><th>Criterio</th><th>Veredicto</th><th>Evidencia</th></tr></thead><tbody><tr><td>Product Experience &amp; Demo 25%</td><td><span class="v v-fuerte">fuerte</span></td><td>Asistente de 3 pasos, agenda, lista de clientes, ajustes, EN/FR, claro/oscuro [4]; 33 menciones de pantalla/asistente/panel en el README contra 1 del propio [11]; reporte de banco de pruebas HTML commiteado [4]</td></tr><tr><td>Technical Implementation 25%</td><td><span class="v v-fuerte">fuerte</span></td><td>Solo libreria estandar: unico <code>urllib.request</code> en <code>calle_client.py</code> [5]; 1221 funciones de prueba, 4917 lineas de asercion [6]; banco de punta a punta de 661 chequeos en 121 combinaciones (segun README) [6]; tres cerrojos para llamar de verdad [7]</td></tr><tr><td>Real World Impact 25%</td><td><span class="v v-cumple">cumple</span></td><td>Persona clara (fisio, peluquero, profesor de musica: &quot;una silla vacia y el ingreso de un dia&quot;) [9]; sin cifras de plata propias, 4 menciones de dinero en el README [11]</td></tr><tr><td>Quality of the Idea 25%</td><td><span class="v v-cumple">cumple</span></td><td>Cascada &quot;primer si&quot; con 5 tipos de campana; recorta 3 tipos &quot;porque sus respuestas no tenian donde ir&quot; [8]; no es una idea invertida como la propia</td></tr><tr><td>Calidad de codigo</td><td><span class="v v-flojo">flojo</span></td><td>Archivos gigantes: <code>serveur.py</code> 11194 lineas, <code>test_ringback.py</code> 28894, <code>calle_client.py</code> 2853 [4]; sin linter ni config de estilo en el subdirectorio [12]</td></tr><tr><td>CI/CD</td><td><span class="v v-ausente">ausente</span></td><td>Sin workflows en la rama; el PR no reporta checks [13] (es &quot;sin CI&quot;, no &quot;CI roto&quot;)</td></tr><tr><td>Seguridad</td><td><span class="v v-cumple">cumple</span></td><td>Telefono enmascarado en 31 lugares del codigo [5]; clave API guardada solo si el usuario lo elige; 0 coincidencias de credenciales en el subdirectorio [14]</td></tr><tr><td>Trazabilidad</td><td><span class="v v-flojo">flojo</span></td><td>Auditoria <code>audit_appels_reels.jsonl</code> solo de llamadas reales, una linea con numero enmascarado y estado; sin cadena de hashes [7][15]</td></tr></tbody></table></div>
+<p><strong>Lo mas <span class="v v-fuerte">fuerte</span>:</strong> prueba con contador que el numero &quot;perdonado&quot; nunca se marco, en orden: 3 marcados, el cuarto jamas [6]. Mas el asistente de 3 pasos.</p>
+<p><strong>Donde se cae:</strong> sin CI, sin linter, archivos de 11k y 29k lineas, auditoria sin integridad; la llamada real exitosa solo esta en palabras.</p>
+<p><strong><span class="v v-sin-evidencia">sin evidencia</span>:</strong> llamadas reales, contenido del video, que las pruebas pasen.</p>
+<p><strong>Respuestas a las tres preguntas del pedido:</strong></p>
+<ul><li><strong>Superficie:</strong> asistente de 3 pasos (situacion, mensaje editable con vista previa, cargar gente), agenda/planificador que lanza campanas, lista de clientes, seguimientos programados, importacion pegada/CSV/ICS, primer arranque guiado con ✗/✓ [8][4].</li></ul>
+<p>  Se demuestra con un banco que levanta el producto en un puerto temporal y deja un reporte HTML identico byte a byte entre corridas.</p>
+<ul><li><strong>Como prueba:</strong> <code>ClientCompteur</code> registra cada numero marcado; asegura 3 marcados en orden y <code>assertNotIn</code> del cuarto [6].</li></ul>
+<p>  Un servidor falso local demuestra que con los cerrojos puestos no sale ninguna request de red (segun README, no ejecutado).</p>
+<ul><li><strong>Que acoto y dice:</strong> &quot;tres tipos de campana se quitaron porque sus respuestas no tenian donde ir&quot; [8]; ademas el aviso del 403 de CALL-E (&quot;la cuenta no esta autorizada&quot;) y que el cupo por intento es 1 [15].</li></ul>
+</details>
+<hr>
+<h2>Donde queda tu proyecto</h2>
+<div class='wrap'><table><thead><tr><th>Criterio</th><th>tu proyecto</th><th><code>RingBack</code></th></tr></thead><tbody><tr><td>Pantallas operables</td><td>sitio estatico con replay (<code>docs/index.html</code>, <code>app.js</code>, <code>demo.gif</code>) [16]</td><td>asistente + agenda + clientes + ajustes [4]</td></tr><tr><td>Pruebas (funciones <code>test_</code>)</td><td>404 [16]</td><td>1221 [6]</td></tr><tr><td>Contador de marcados</td><td>28 menciones de marcado/llamada unica en pruebas [16]</td><td><code>ClientCompteur</code> con <code>assertNotIn</code> [6]</td></tr><tr><td>Integridad del registro</td><td>cadena de hashes, verificacion por otro canal [16]</td><td>linea simple, solo llamadas reales [15]</td></tr><tr><td>CI</td><td>si (<code>ci.yml</code>, linter en raiz) [16]</td><td><span class="v v-ausente">ausente</span> [13]</td></tr><tr><td>Llamada real exitosa documentada</td><td>no: una corrida real termina siempre en 45 (dato de nuestro README) [16]</td><td>afirmada en Devpost, sin artefacto [9]</td></tr><tr><td>Commits / equipo</td><td>102 · 2026-08-09 → 2026-09-13 [16]</td><td>6 en el PR · 1 autor [3]</td></tr><tr><td>Demo publicado</td><td><code>render.yaml</code> + keepalive en verde [16]</td><td>ninguno [2]</td></tr></tbody></table></div>
+<h3>Sugerencias</h3>
+<div class='wrap'><table><thead><tr><th>#</th><th>Sugerencia</th><th>Por que importa</th><th>Criterio (peso)</th><th>Origen</th><th>Evidencia</th><th>Esfuerzo</th><th>Mueve nota</th></tr></thead><tbody><tr><td>S-01</td><td>Una pantalla que se pueda operar (elegir escenario, ver la escalera, el veredicto y el ledger), no solo un replay</td><td>Un jurado juzga lo que puede tocar</td><td>Product Experience (25%)</td><td>brecha</td><td>RingBack: asistente de 3 pasos, 33 vs 1 menciones [11][4]</td><td>alto</td><td>si</td></tr><tr><td>S-02</td><td>Publicar una pagina &quot;que recortamos y por que&quot; con las 3 o 4 cosas dejadas fuera</td><td>RingBack convierte el recorte en argumento de diseno</td><td>Quality of the Idea (25%)</td><td>brecha</td><td><code>README</code> de RingBack: 3 tipos quitados por &quot;sin destino&quot; [8]</td><td>bajo</td><td>si</td></tr><tr><td>S-03</td><td>Ponerle numero a la plata/tiempo en juego (que cuesta una guardia sin respuesta)</td><td>Hoy el impacto no tiene cifra visible</td><td>Real World Impact (25%)</td><td>brecha</td><td>RingBack 4 menciones de dinero vs 0 propias [11]</td><td>bajo</td><td>si</td></tr><tr><td>S-04</td><td>Exhibir un test con contador por escalon, titulado en la ficha, que pruebe &quot;al tercero no se lo llamo&quot;</td><td>El jurado debe ver la garantia sin leer el codigo</td><td>Technical Implementation (25%)</td><td>brecha</td><td><code>ClientCompteur</code> en <code>test_ringback.py</code> [6]</td><td>bajo</td><td>si</td></tr><tr><td>S-05</td><td>Documentar en un artefacto la corrida real (aunque termine en 45), con lo que se aprendio</td><td>RingBack afirma una llamada real; nadie del set tiene una auditada</td><td>Product Experience / Technical (25%)</td><td>hueco</td><td>ni el repo de RingBack tiene artefacto de llamada real [9][15]</td><td>medio</td><td>si</td></tr><tr><td>S-06</td><td>Tapar la estrella o el tamano del README</td><td>Nadie lo pondera</td><td>—</td><td>—</td><td>—</td><td>bajo</td><td><strong>cosmetico</strong></td></tr></tbody></table></div>
+<blockquote><p>Control de sesgo: el propio sale peor en Product Experience, Impact y pruebas, no mejor en todo; las celdas mas comodas revisadas fueron integridad del registro, CI y la mencion de la corrida real. La senal de regex sobre README es aproximada: cuenta palabras, no calidad.</p></blockquote>
+<hr>
+<details><summary>Apendice — como se midio</summary>
+<div class='wrap'><table><thead><tr><th>Ref</th><th>Comando</th></tr></thead><tbody><tr><td>[1]</td><td><code>curl -A &#x27;Mozilla/5.0&#x27; https://call-e.devpost.com/rules</code> y <code>/details/dates</code> (gana <code>/rules</code>: 23 jul → 14 sep 2026)</td></tr><tr><td>[2]</td><td><code>gh api repos/Ludo321/awesome-phone-call-agents</code> y <code>jq &#x27;{fork,created_at,license,homepage,archived}&#x27;</code></td></tr><tr><td>[3]</td><td><code>gh pr view 297 --repo CALLE-AI/awesome-phone-call-agents --json state,createdAt,changedFiles,commits</code> y <code>git log --format=%an</code> en el clone</td></tr><tr><td>[4]</td><td><code>gh pr view 297 --json files</code> (adiciones por archivo) y arbol <code>git/trees/feat%2Fringback-app?recursive=1</code> filtrado por <code>apps/python/ringback/</code></td></tr><tr><td>[5]</td><td><code>grep -nE &#x27;urllib.request\|http.client&#x27; ringback/*.py</code> y <code>grep -rn masquer_telephone ringback/*.py \| wc -l</code></td></tr><tr><td>[6]</td><td><code>grep -c &#x27;def test_&#x27;</code> y <code>grep -cE &#x27;self\.assert\|assert &#x27;</code> en <code>tests/test_ringback.py</code>; lectura de lineas 1190-1300; README seccion Testing</td></tr><tr><td>[7]</td><td>README secciones &quot;Dry-run and preview behaviour&quot; y &quot;Side effects&quot;</td></tr><tr><td>[8]</td><td>README seccion &quot;Campaigns: five situations, three steps&quot;</td></tr><tr><td>[9]</td><td><code>curl -A &#x27;Mozilla/5.0&#x27; https://devpost.com/software/ringback-sumnr6</code>, texto filtrado</td></tr><tr><td>[10]</td><td><code>curl ... &#x27;https://www.youtube.com/oembed?url=...S909yG8oZkU&#x27;</code> → 200</td></tr><tr><td>[11]</td><td>regex de <code>docs/judging.tsv</code> aplicadas con <code>python3 -I</code> a ambos README (Product Experience: 33 vs 1; dinero: 4 vs 0)</td></tr><tr><td>[12]</td><td><code>grep -E &#x27;ruff\|flake\|mypy&#x27; -r .</code> en el subdirectorio: sin coincidencias de config</td></tr><tr><td>[13]</td><td><code>gh run list --repo Ludo321/...</code> → <code>[]</code>; <code>gh pr checks 297</code> → &quot;no checks reported&quot;</td></tr><tr><td>[14]</td><td><code>grep -rnEi</code> de patrones AKIA/sk-/clave literal en <code>apps/python/ringback/</code> → 0; secretos: valor no transcripto</td></tr><tr><td>[15]</td><td>README secciones &quot;Credential handling&quot;, &quot;Side effects&quot;, &quot;If every call comes back 403&quot;</td></tr><tr><td>[16]</td><td>Recuento sobre el repo propio: <code>grep -rE &#x27;def test_&#x27;</code>, <code>git log</code>, <code>ls docs</code>, <code>gh run list --repo gmassello/ringdown</code></td></tr></tbody></table></div>
+</details>
+<p class='pie'>Generado desde el .md por hackathon-review-competitor. El .md es la fuente: este archivo no se edita a mano.</p>
+</main>
+<script>
+const RANK = {"sin evidencia":0,"ausente":1,"flojo":2,"cumple":3,"fuerte":4,
+              "baja":0,"media":1,"alta":2};
+const key = (td) => {
+  const raw = td.textContent.trim();
+  const low = raw.toLowerCase();
+  for (const word in RANK) if (low.includes(word)) return [0, RANK[word]];
+  const num = parseFloat(raw.replace(",", "."));
+  if (!isNaN(num) && /^[\d.,\s/]+$/.test(raw)) return [0, num];
+  return [1, low];
+};
+document.querySelectorAll("table.sortable th").forEach((th, i) => {
+  th.addEventListener("click", () => {
+    const table = th.closest("table");
+    const body = table.tBodies[0];
+    const desc = !th.classList.contains("desc");
+    table.querySelectorAll("th").forEach(o => o.classList.remove("asc", "desc"));
+    th.classList.add(desc ? "desc" : "asc");
+    [...body.rows]
+      .sort((a, b) => {
+        const [ka, va] = key(a.cells[i]), [kb, vb] = key(b.cells[i]);
+        if (ka !== kb) return ka - kb;
+        const cmp = typeof va === "number" ? va - vb : String(va).localeCompare(String(vb), "es");
+        return desc ? -cmp : cmp;
+      })
+      .forEach(row => body.appendChild(row));
+  });
+});
+</script>
+</body>
+</html>
