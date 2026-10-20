@@ -37,7 +37,7 @@ Patterns that repeat across the winners:
 
 ## Where Ringdown stands
 
-Devpost page against the 4 winners ([full benchmark](competitors/benchmark.md)):
+Devpost page against the 4 winners:
 
 | Signal | Ringdown | Winners' median | Percentile |
 |---|---|---|---|
@@ -74,11 +74,11 @@ the submission text never claims them.
 
 Deep review of 3 winners' repos (same probes on both sides, nothing executed):
 
-| Competitor | Competitor score | Ringdown score | Report |
-|---|---|---|---|
-| Local atlas | 9/10 | 8/10 | [md](competitors/competidores-call-e-local-atlas.md) · [html](competitors/competidores-call-e-local-atlas.html) |
-| RingBack | 8/10 | 7/10 | [md](competitors/competidores-call-e-ringback.md) · [html](competitors/competidores-call-e-ringback.html) |
-| Care Call AI | 8/10 | 8/10 | [md](competitors/competidores-call-e-care-call-ai.md) · [html](competitors/competidores-call-e-care-call-ai.html) |
+| Competitor | Competitor score | Ringdown score |
+|---|---|---|
+| Local atlas | 9/10 | 8/10 |
+| RingBack | 8/10 | 7/10 |
+| Care Call AI | 8/10 | 8/10 |
 
 What we already had going for us, measured against those three: the hash-chained ledger that
 re-derives a verdict offline is unique in the field — Local atlas stores `evidenceQuote`,
